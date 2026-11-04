@@ -117,11 +117,6 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'tl-win', gameId: 'three-legged', title: { bn: 'জোড়ায় জোড়ায়', en: 'Perfect Pair' }, desc: { bn: 'তিন পায়ে দৌড় জেতো।', en: 'Win the three-legged race.' } },
   { id: 'tl-clean', gameId: 'three-legged', title: { bn: 'এক তালে', en: 'In Step' }, desc: { bn: 'একবারও হোঁচট না খেয়ে শেষ করো।', en: 'Finish without a stumble.' } },
   { id: 'sp-win', gameId: 'short-pitch', title: { bn: 'পাড়ার ব্যাটসম্যান', en: 'Para Batter' }, desc: { bn: 'শর্ট-পিচ ম্যাচ জেতো।', en: 'Win a short-pitch match.' } },
-  { id: 'tt-win', gameId: 'tape-tennis', title: { bn: 'রাস্তার রাজা', en: 'King of the Street' }, desc: { bn: 'টেপ-টেনিস ম্যাচ জেতো।', en: 'Win a tape tennis match.' } },
-  { id: 'tt-sixes', gameId: 'tape-tennis', title: { bn: 'ছক্কার বৃষ্টি', en: 'Six Shower' }, desc: { bn: 'এক ম্যাচে ৩টা ছক্কা।', en: 'Hit three sixes in a match.' } },
-  { id: 'rc-win', gameId: 'rooftop-cricket', title: { bn: 'ছাদের চ্যাম্পিয়ন', en: 'Roof Champion' }, desc: { bn: 'ছাদ ক্রিকেট জেতো।', en: 'Win a rooftop match.' } },
-  { id: 'rc-tank', gameId: 'rooftop-cricket', title: { bn: 'ট্যাংক শিকারি', en: 'Tank Hunter' }, desc: { bn: 'এক ম্যাচে দুবার ট্যাংকে মারো।', en: 'Hit the water tank twice in a match.' } },
-  { id: 'gc-win', gameId: 'goli-cricket', title: { bn: 'গলির ওস্তাদ', en: 'Alley Master' }, desc: { bn: 'গলি ক্রিকেট জেতো।', en: 'Win a goli cricket match.' } },
   { id: 'br-one-bite', gameId: 'biscuit-race', title: { bn: 'এক কামড়ে', en: 'One Bite' }, desc: { bn: 'প্রথম লাফেই বিস্কুট ধরো।', en: 'Catch the biscuit on the first jump.' } },
 ];
 

@@ -6,7 +6,11 @@ export default defineConfig({
   retries: 0,
   use: {
     baseURL: 'http://localhost:4173',
-    launchOptions: { executablePath: process.env.PW_CHROMIUM || '/opt/pw-browsers/chromium-1243/chrome-linux64/chrome' },
+    launchOptions: {
+      executablePath: process.env.PW_CHROMIUM || '/opt/pw-browsers/chromium-1243/chrome-linux64/chrome',
+      // WebGL in software for the 3D game on machines without a GPU
+      args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
+    },
   },
   webServer: {
     command: 'npx vite preview --port 4173 --strictPort',

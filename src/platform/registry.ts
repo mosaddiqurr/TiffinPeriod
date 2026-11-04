@@ -85,10 +85,10 @@ export const GAMES: GameEntry[] = [
   p(16, 'sack-race', 2, 'sports', '#9a7d0a', 'বস্তা দৌড়', 'Sack Race', 'বস্তায় পা, লাফিয়ে লাফিয়ে।', 'Feet in the sack. Hop to the finish.'),
   p(17, 'three-legged', 2, 'sports', '#6c3483', 'তিন পায়ে দৌড়', 'Three-Legged Race', 'বন্ধুর সাথে পা বাঁধা, তাল মিলিয়ে দৌড়।', 'Legs tied to a friend. Run in step.'),
   // ---- Phase 3 (planned) ----
-  p(18, 'short-pitch', 3, 'para', '#196f3d', 'শর্ট-পিচ ক্রিকেট', 'Short-Pitch Cricket', 'এক থেকে চার — ছক্কা মারলে আউট!', 'One to four runs. Hit a six and you are out!'),
+  p(18, 'short-pitch', 3, 'para', '#196f3d', 'শর্ট-পিচ ক্রিকেট ৩ডি', 'Short-Pitch Cricket 3D', 'গোল মাঠ, মাটি দিয়ে চার — ছক্কা মারলে আউট!', 'A round para field. Fours along the ground — a six is out!'),
   p(19, 'tape-tennis', 3, 'para', '#1a5276', 'টেপ-টেনিস ক্রিকেট', 'Tape Tennis Cricket', 'টেপ পেঁচানো বলে রাস্তার ক্রিকেট।', 'Street cricket with a taped tennis ball.'),
   p(20, 'rooftop-cricket', 3, 'para', '#7b241c', 'ছাদ ক্রিকেট', 'Rooftop Cricket', 'বল ছাদের বাইরে গেলে আউট।', 'Ball off the roof? You are out.'),
-  p(21, 'goli-cricket', 3, 'para', '#4d5656', 'গলি ক্রিকেট', 'Goli Cricket', 'ইটের উইকেট, এক টিপ এক হাত।', 'Brick stumps. One tip, one hand.'),
+  p(21, 'goli-cricket', 3, 'para', '#4d5656', 'গলি ক্রিকেট', 'Goli Cricket', 'ইটের উইকেট, দেয়ালে লাগলে রান।', 'Brick stumps. Runs off the walls.'),
   p(22, 'pillow-fight', 3, 'sports', '#af601a', 'বালিশ যুদ্ধ', 'Pillow Fight', 'বাঁশের উপর বসে বালিশ পেটা।', 'Sit on the bamboo pole. Swing the pillow.'),
   p(23, 'kabaddi', 3, 'para', '#0e6655', 'হা-ডু-ডু', 'Kabaddi / Ha-du-du', 'এক দমে ঢুকে ছুঁয়ে ফিরে এসো।', 'One breath. Go in, touch, come back.'),
   p(24, 'rooftop-badminton', 3, 'para', '#1b4f72', 'ছাদে ব্যাডমিন্টন', 'Rooftop Badminton', 'শীতের সন্ধ্যায় ছাদে শাটল।', 'Winter evening shuttle on the roof.'),
@@ -98,23 +98,21 @@ function p(no: number, id: string, phase: Phase, category: Category, accent: str
   return { id, no, phase, category, accent, playable: false, modes: [], title: { bn, en }, blurb: { bn: bbn, en: ben } };
 }
 
-// Phase 2 games that are built. Each entry turns a planned game into a playable one.
+// Games from Phase 2 and later that are built. Each entry turns a planned game into a playable one.
 const BUILT: Record<string, { modes: GameEntry['modes']; load: GameEntry['load'] }> = {
   'pen-fight': { modes: ['ai', 'local2p'], load: () => import('../games/pen-fight/PenFight') },
   'rubber-band': { modes: ['solo', 'ai', 'local2p'], load: () => import('../games/rubber-band/RubberBand') },
   'paper-plane': { modes: ['solo', 'ai', 'local2p'], load: () => import('../games/paper-plane/PaperPlane') },
   'paper-boat': { modes: ['ai', 'local2p'], load: () => import('../games/paper-boat/PaperBoat') },
   'notebook-drawing': { modes: ['solo', 'local2p'], load: () => import('../games/notebook-drawing/NotebookDrawing') },
-  'short-pitch': { modes: ['ai', 'local2p'], load: () => import('../games/street-cricket/ShortPitch') },
-  'tape-tennis': { modes: ['ai', 'local2p'], load: () => import('../games/street-cricket/TapeTennis') },
-  'rooftop-cricket': { modes: ['ai', 'local2p'], load: () => import('../games/street-cricket/RooftopCricket') },
-  'goli-cricket': { modes: ['ai', 'local2p'], load: () => import('../games/street-cricket/GoliCricket') },
   'sack-race': { modes: ['ai', 'local2p'], load: () => import('../games/sack-race/SackRace') },
   'three-legged': { modes: ['ai', 'local2p'], load: () => import('../games/three-legged/ThreeLegged') },
   'spoon-marble': { modes: ['ai', 'local2p'], load: () => import('../games/spoon-marble/SpoonMarble') },
   'musical-chairs': { modes: ['ai', 'local2p'], load: () => import('../games/musical-chairs/MusicalChairs') },
   'haari-bhanga': { modes: ['solo', 'ai', 'local2p'], load: () => import('../games/haari-bhanga/HaariBhanga') },
   'elonti-belonti': { modes: ['ai', 'local2p'], load: () => import('../games/elonti-belonti/ElontiBelonti') },
+  // Phase 3: the 3D cricket game
+  'short-pitch': { modes: ['ai', 'local2p'], load: () => import('../games/short-pitch/ShortPitch3D') },
 };
 for (const g of GAMES) {
   const b = BUILT[g.id];

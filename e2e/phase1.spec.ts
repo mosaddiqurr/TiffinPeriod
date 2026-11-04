@@ -15,14 +15,14 @@ async function openGame(page: Page, id: string) {
   await expect(page.getByTestId('setup')).toBeVisible();
 }
 
-test('hub shows the playable games, the 7 coming in Phase 3, and the roadmap of 24', async ({ page }) => {
+test('hub shows the playable games, the 6 coming in Phase 3, and the roadmap of 24', async ({ page }) => {
   const errors = trackErrors(page);
   await page.goto('./');
   for (const id of ['hand-cricket', 'book-cricket', 'pakhir-ure', 'tug-of-war', 'balloon-burst', 'biscuit-race']) {
     await expect(page.getByTestId(`card-${id}`)).toBeVisible();
   }
-  await expect(page.locator('.card')).toHaveCount(17);
-  await expect(page.locator('.soon')).toHaveCount(7);
+  await expect(page.locator('.card')).toHaveCount(18);
+  await expect(page.locator('.soon')).toHaveCount(6);
   await page.getByRole('button', { name: /ভাষা|Language/ }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Tiffin period');
   await page.getByRole('link', { name: /full list of 24/ }).click();

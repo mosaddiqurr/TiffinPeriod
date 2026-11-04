@@ -414,3 +414,97 @@ a { color: var(--pen); }
 @media (orientation: portrait) and (max-width: 700px) {
   .shell-rotate { display: block; position: absolute; left: 50%; bottom: 14px; translate: -50% 0; z-index: 4; background: rgba(255,253,246,0.95); color: var(--ink); padding: 6px 14px; border-radius: 16px; font-weight: 700; font-size: 14px; white-space: nowrap; box-shadow: var(--shadow); pointer-events: none; }
 }
+
+/* ---------- Short-Pitch Cricket 3D ---------- */
+.sp-root { position: absolute; inset: 0; background: #7fb446; overflow: hidden; user-select: none; -webkit-user-select: none; }
+.sp-host { position: absolute; inset: 0; }
+.sp-host canvas { display: block; }
+.sp-map { position: absolute; top: 8px; right: 8px; width: 104px; height: 104px; z-index: 2; pointer-events: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); }
+.sp-score {
+  position: absolute; top: 8px; left: 8px; z-index: 2; pointer-events: none; min-width: 150px; max-width: 46vw;
+  background: rgba(24, 38, 30, 0.86); color: #f3f1e7; border-radius: 10px; padding: 6px 10px 7px; border-left: 6px solid var(--team, #13804f);
+  font-family: var(--font-display); line-height: 1.1; box-shadow: 0 4px 12px -6px rgba(0,0,0,0.6);
+}
+.sp-team { font-size: 13px; font-weight: 700; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp-big { display: flex; gap: 6px; align-items: baseline; white-space: nowrap; }
+.sp-big b { font-size: 28px; font-weight: 800; }
+.sp-big span { font-size: 14px; opacity: 0.85; }
+.sp-need { font-size: 13.5px; font-weight: 700; color: var(--rick-yellow); }
+.sp-batters { display: flex; flex-direction: column; font-size: 12.5px; opacity: 0.9; margin-top: 2px; font-family: var(--font-body); }
+.sp-batters b { font-family: var(--font-display); }
+.sp-over { position: absolute; top: 118px; right: 8px; z-index: 2; display: flex; gap: 3px; pointer-events: none; flex-wrap: wrap; justify-content: flex-end; max-width: 150px; }
+.sp-over .b { min-width: 22px; height: 22px; padding: 0 3px; border-radius: 11px; display: grid; place-items: center; background: rgba(255,253,246,0.92); color: var(--ink); font: 800 13px var(--font-display); box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+.sp-over .b.w { background: var(--pen-red); color: #fff; }
+.sp-over .b.f { background: var(--rick-yellow); color: #3a2a00; }
+.sp-over .b.x { background: #cfd8e8; }
+.sp-dtype, .sp-turn {
+  position: absolute; left: 50%; translate: -50% 0; z-index: 2; pointer-events: none; white-space: nowrap;
+  background: rgba(255,253,246,0.93); color: var(--ink); border-radius: 14px; padding: 3px 12px; font: 700 14px var(--font-display); box-shadow: var(--shadow);
+}
+.sp-dtype { top: 8px; }
+.sp-turn { top: 38px; background: rgba(31, 58, 147, 0.88); color: #fff; }
+.sp-banner {
+  position: absolute; left: 50%; top: 28%; translate: -50% -50%; z-index: 3; pointer-events: none; white-space: nowrap;
+  font: 800 clamp(30px, 7.5vw, 64px) var(--font-display); padding: 6px 28px; border-radius: 22px;
+  background: rgba(255,253,246,0.95); color: var(--pen); box-shadow: 0 8px 24px -10px rgba(0,0,0,0.55);
+  animation: sp-pop 0.35s cubic-bezier(.2,1.6,.4,1);
+}
+.sp-banner.good { background: linear-gradient(180deg, #ffd23f, #f3b61f); color: #3a2a00; }
+.sp-banner.out { background: linear-gradient(180deg, #e04545, #b82525); color: #fff; }
+.sp-banner.small { font-size: clamp(20px, 5vw, 34px); top: 40%; padding: 4px 18px; }
+@keyframes sp-pop { from { scale: 0.4; opacity: 0; } to { scale: 1; opacity: 1; } }
+.sp-timing { position: absolute; left: 50%; top: 44%; translate: -50% 0; z-index: 3; pointer-events: none; text-align: center; animation: sp-fade 1.6s forwards; }
+.sp-timing .bar { position: relative; width: 170px; height: 10px; border-radius: 5px; margin: 0 auto 3px; background: linear-gradient(90deg, #e0333f 0 16%, #f3b61f 16% 38%, #2ecc71 38% 62%, #f3b61f 62% 84%, #e0333f 84%); box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+.sp-timing .bar i { position: absolute; top: -4px; width: 4px; height: 18px; margin-left: -2px; background: #fff; border-radius: 2px; box-shadow: 0 0 0 1.5px #222; }
+.sp-timing b { font: 800 22px var(--font-display); color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.6); }
+.sp-timing.t-perfect b { color: #b8ffb0; }
+.sp-timing.t-miss b, .sp-timing.t-edge b { color: #ffd0d0; }
+@keyframes sp-fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+.sp-controls { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; pointer-events: none; padding: 0 12px 14px; display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.sp-controls > * { pointer-events: auto; }
+.sp-btn {
+  border: 0; border-radius: 18px; color: #fff; font: 800 22px var(--font-display); line-height: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  touch-action: none; -webkit-tap-highlight-color: transparent; box-shadow: 0 4px 0 rgba(0,0,0,0.3); cursor: pointer; position: relative;
+}
+.sp-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
+.sp-btn[aria-disabled="true"] { opacity: 0.55; }
+.sp-btn:disabled { opacity: 0.45; cursor: default; }
+.sp-btn .key-hint { position: absolute; bottom: -22px; }
+.sp-btn small { font-size: 12px; font-weight: 700; }
+.sp-shots { display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; gap: 10px; align-items: end; }
+.sp-btn.shot.loft { grid-column: 2; grid-row: 1; width: 76px; height: 64px; background: rgba(198, 47, 47, 0.9); justify-self: center; }
+.sp-btn.shot.defend { grid-column: 1; grid-row: 2; width: 76px; height: 76px; background: rgba(31, 58, 147, 0.88); }
+.sp-btn.shot.hit { grid-column: 2; grid-row: 2; width: 100px; height: 100px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #27a06e, #0b5d43); font-size: 26px; }
+.sp-btn.run { width: 132px; height: 84px; background: radial-gradient(circle at 35% 30%, #f6c443, #e09b12); color: #3a2a00; font-size: 26px; }
+.sp-btn.run.on { box-shadow: 0 0 0 4px rgba(255,255,255,0.85), 0 4px 0 rgba(0,0,0,0.3); }
+.sp-btn.run.safe { background: radial-gradient(circle at 35% 30%, #57d68d, #1f9c58); color: #fff; }
+.sp-btn.run.risky { background: radial-gradient(circle at 35% 30%, #f37b7b, #c62f2f); color: #fff; }
+.sp-stick { position: relative; width: 132px; height: 132px; border-radius: 50%; touch-action: none; background: radial-gradient(circle, rgba(255,255,255,0.18) 0 40%, rgba(255,255,255,0.32) 41% 70%, rgba(255,255,255,0.12) 71%); border: 2px solid rgba(255,255,255,0.75); box-shadow: 0 4px 12px -6px rgba(0,0,0,0.6); }
+.sp-stick .knob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffffff, #d6d6cf); box-shadow: 0 3px 6px rgba(0,0,0,0.4); transition: transform 0.08s; }
+.sp-stick.on .knob { transition: none; }
+.sp-stick .lbl { position: absolute; font: 700 11.5px var(--font-display); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.8); pointer-events: none; white-space: nowrap; }
+.sp-stick .lbl.top { top: -18px; left: 50%; translate: -50% 0; }
+.sp-stick .lbl.left { left: 4px; top: 50%; translate: 0 -50%; }
+.sp-stick .lbl.right { right: 4px; top: 50%; translate: 0 -50%; }
+.sp-controls.bowl { flex-wrap: wrap; align-items: flex-end; }
+.sp-hint { flex-basis: 100%; text-align: center; font: 700 14px var(--font-display); color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.8); pointer-events: none; }
+.sp-types { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+.sp-chip { position: relative; border: 2px solid rgba(255,255,255,0.8); border-radius: 14px; padding: 8px 10px; min-height: 44px; background: rgba(24, 38, 30, 0.78); color: #fff; font: 700 15px var(--font-display); cursor: pointer; }
+.sp-chip[aria-pressed="true"] { background: var(--rick-yellow); color: #3a2a00; border-color: #fff; }
+.sp-chip .key-hint { position: absolute; top: -10px; right: -6px; margin: 0; font-size: 11px; min-width: 18px; }
+.sp-btn.bowl-btn { width: 112px; height: 84px; background: radial-gradient(circle at 35% 30%, #e85a5a, #b82525); font-size: 24px; }
+@media (max-width: 420px) {
+  .sp-map { width: 88px; height: 88px; }
+  .sp-over { top: 100px; }
+  .sp-big b { font-size: 24px; }
+  .sp-stick { width: 118px; height: 118px; }
+  .sp-btn.shot.hit { width: 88px; height: 88px; }
+  .sp-btn.shot.defend { width: 68px; height: 68px; font-size: 19px; }
+  .sp-btn.shot.loft { width: 68px; height: 58px; font-size: 19px; }
+  .sp-btn.run { width: 118px; height: 78px; }
+  .sp-chip { padding: 6px 8px; font-size: 14px; }
+  .sp-btn.bowl-btn { width: 96px; height: 74px; }
+}
+@media (min-width: 900px) and (hover: hover) {
+  .sp-controls { padding-bottom: 32px; }
+}
