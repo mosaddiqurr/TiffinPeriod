@@ -1,0 +1,38 @@
+.tw-root { position: absolute; inset: 0; display: flex; flex-direction: column; background: #6ea23a; }
+.tw-score { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; background: var(--chalk); color: var(--chalk-line); font-family: var(--font-display); font-size: 17px; z-index: 2; }
+.tw-score b { font-size: 24px; }
+.tw-score .r b { color: #ff8a7a; }
+.tw-score .b b { color: #9ec0ff; }
+.tw-score .mid { opacity: 0.8; font-size: 15px; }
+.tw-canvas-wrap { position: relative; flex: 1; min-height: 0; }
+.tw-pads { display: flex; gap: 10px; padding: 10px; background: #5d8a30; }
+.tw-pad { position: relative; flex: 1; min-height: 118px; font-size: 30px; }
+@media (min-width: 900px) and (hover: hover) { .tw-pad { min-height: 84px; font-size: 26px; } .tw-pad small { display: none; } }
+.tw-pad small { font-size: 15px; font-weight: 600; opacity: 0.9; }
+.tw-pad.t0 { background: #c0392b; }
+.tw-pad.t1 { background: #1f4e9c; }
+.tw-landscape { display: none; }
+
+/* Two players in portrait: blue pad at the top for the player across the table. */
+@media (orientation: portrait) {
+  .tw-root.two-p .tw-pads { display: contents; }
+  .tw-root.two-p .tw-pad.t1 { order: -1; margin: 8px 10px 0; transform: rotate(180deg); flex: none; min-height: 110px; }
+  .tw-root.two-p .tw-pad.t0 { margin: 0 10px 10px; flex: none; min-height: 110px; }
+  .tw-root.two-p .tw-score { order: -2; }
+  .tw-landscape { display: block; position: absolute; left: 50%; top: 52px; translate: -50% 0; background: rgba(255,253,246,0.92); padding: 2px 12px; border-radius: 14px; font-size: 13px; pointer-events: none; white-space: nowrap; }
+  .tw-root.two-p .tw-landscape { top: 50%; }
+}
+/* Landscape phones: pads at the two sides of the field. */
+@media (orientation: landscape) and (max-height: 600px) {
+  .tw-root { flex-direction: row; flex-wrap: wrap; }
+  .tw-score { width: 100%; padding: 2px 12px; }
+  .tw-canvas-wrap { flex: 1; height: calc(100% - 36px); }
+  .tw-pads { display: contents; }
+  .tw-pad { flex: none; width: 150px; height: calc(100% - 36px); border-radius: 0; min-height: 0; }
+  .tw-pad.t0 { order: 1; }
+  .tw-root.vs-ai .tw-pad.t0 { order: 2; }
+  .tw-pad.t1 { order: 3; }
+  .tw-root.two-p .tw-pad.t0 { order: 0; }
+  .tw-root.two-p .tw-canvas-wrap { order: 1; }
+  .tw-root.vs-ai .tw-canvas-wrap { order: 1; }
+}

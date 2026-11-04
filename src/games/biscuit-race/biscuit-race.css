@@ -1,0 +1,10 @@
+.br-root { position: absolute; inset: 0; background: #6ea23a; overflow: hidden; }
+.br-pads { position: absolute; left: 8px; right: 8px; display: flex; justify-content: space-between; align-items: flex-end; pointer-events: none; z-index: 3; }
+.br-pads.bottom { bottom: 10px; }
+.br-pads.top { top: 10px; transform: rotate(180deg); }
+.br-move { display: flex; gap: 10px; }
+.br-btn { position: relative; pointer-events: auto; width: 82px; height: 82px; font-size: 30px; background: rgba(31, 58, 147, 0.78); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; }
+.br-btn small { font-size: 13px; font-weight: 700; line-height: 1; }
+.br-btn.jump { width: 116px; height: 96px; background: rgba(192, 57, 43, 0.88); font-size: 34px; }
+.br-btn .key-hint { position: absolute; bottom: -26px; white-space: nowrap; }
+@media (min-width: 900px) and (hover: hover) { .br-btn { width: 64px; height: 64px; font-size: 24px; opacity: 0.8; } .br-btn.jump { width: 90px; height: 72px; } .br-pads.bottom { bottom: 34px; } }
