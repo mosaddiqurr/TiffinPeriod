@@ -6,7 +6,9 @@ The platform has **24 confirmed games and modes** in three phases.
 
 - **Phase 1** (done): 6 games. They are built, tested and playable.
 - **Phase 2** (done): 11 games. They are built, tested and playable.
-- **Phase 3** (planned): 7 games. They are researched and planned. They are **not** playable. The hub shows them as "Coming soon" (শীঘ্রই).
+- **Phase 3** (in progress): 7 games. **1 is built and playable: 18 Short-Pitch Cricket 3D.** The other 6 are researched and planned. They are **not** playable. The hub shows them as "Coming soon" (শীঘ্রই).
+
+The owner changed the Phase 3 scope on 2026-11-04: build **one** cricket game only, a 3D short-pitch game, and do not build the other Phase 3 games yet. The 2D street-cricket prototype (four venues on one engine) was removed before release.
 
 ## Status legend
 
@@ -42,11 +44,11 @@ The platform has **24 confirmed games and modes** in three phases.
 | 16 | Sack Race | বস্তা দৌড় | Sports day | vs computer, 2 players | Tap to hop; best just after landing; too soon or in the air = wobble; too much = fall | Race base + hop model |
 | 17 | Three-Legged Race | তিন পায়ে দৌড় | Sports day | vs computer, 2 players (co-op) | Alternate the outer and the tied legs at a steady pace; in co-op, one player per leg | Race base + step model |
 
-## Phase 3 — hard games (PLANNED)
+## Phase 3 — hard games (1 PLAYABLE, 6 PLANNED)
 
 | No. | Game | Bangla | Where | Planned core mechanic | Planned tech | Reuses |
 |---|---|---|---|---|---|---|
-| 18 | Short-Pitch Cricket | শর্ট-পিচ ক্রিকেট | Para | Batting timing. Runs 1–4 only. **A six is OUT.** | Shared cricket engine (2.5D) | `src/shared/cricket.ts` scoring |
+| 18 | **Short-Pitch Cricket 3D — PLAYABLE** | শর্ট-পিচ ক্রিকেট ৩ডি | Para | Round field. Four along the ground; **over the rope on the full is OUT**. Standing bowler (no run-up), 5 delivery types, a direction stick + Hit / Loft / Block, swipe shots, running between the wickets. vs computer (3 levels) and 2 players on one device. | Three.js 3D (low-poly, no image files), pure TypeScript simulation | `src/shared/cricket.ts` scoring |
 | 19 | Tape Tennis Cricket | টেপ-টেনিস ক্রিকেট | Street | Fast, bouncy taped ball; swing | Shared cricket engine | same |
 | 20 | Rooftop Cricket | ছাদ ক্রিকেট | Rooftop | Roof edges, water tanks; ball off the roof = OUT (option) | Shared cricket engine + boundary rules | same, plus Paper Airplane rooftop scenery |
 | 21 | Goli Cricket | গলি ক্রিকেট | Alley | Narrow alley, wall rebounds, brick stumps | Shared cricket engine + wall colliders | same |
@@ -58,7 +60,7 @@ The platform has **24 confirmed games and modes** in three phases.
 
 1. **Phase 1 (done):** hub, registry, routing, language, settings, local records, achievements, audio, canvas host, fixed-step loop, particles, pendulum physics, beat and reaction timing, kid character, sports-day scenery, cricket scoring.
 2. **Phase 2 (done):** `GameShell` (setup, pads, keys, pause, results, records for any canvas game), `RaceScene` (lanes, countdown, cameras, standings), Matter.js integration, music loop, HRTF spatial sound, portrait cameras, the "turn your phone" hint.
-3. **Start of Phase 3:** one cricket engine with configurable rule sets (`sixIsOut`, `offRoofIsOut`, `wallRuns`), extending `src/shared/cricket.ts`.
+3. **Phase 3 (so far):** a pure 3D cricket simulation (`src/games/short-pitch/sim.ts`: delivery paths, timing, shot launch, fielders, running, catches, run outs, the circular boundary) and a Three.js view (`world.ts`, `game.ts`). Tape Tennis, Rooftop and Goli Cricket can later reuse the simulation with new rule options and new scenery.
 4. **Later (optional):** a tournament and house-points system for sports-day games; online multiplayer behind an interface (see `ARCHITECTURE.md`).
 
 ## Release path

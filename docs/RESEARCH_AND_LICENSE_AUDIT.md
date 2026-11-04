@@ -43,6 +43,8 @@ Date of audit: 2026-11-04.
 |---|---|---|---|---|
 | React, React DOM | 19.3.1 | MIT | runtime | `THIRD_PARTY_NOTICES.md` |
 | Matter.js (matter-js) | 0.20.0 | MIT | runtime (Pen Fight, Rubber Band Shooting only) | `THIRD_PARTY_NOTICES.md` |
+| three (three.js) | 0.186.1 | MIT (file `node_modules/three/LICENSE` read) | runtime (Short-Pitch Cricket 3D only, lazy loaded) | `THIRD_PARTY_NOTICES.md` |
+| @types/three | 0.186.0 | MIT | build only | not shipped |
 | workbox-window (via vite-plugin-pwa) | 7.4.1 | MIT | runtime (service worker) | `THIRD_PARTY_NOTICES.md` |
 | Baloo Da 2 font (@fontsource) | 5.3.0 | SIL OFL 1.1 | runtime | `THIRD_PARTY_NOTICES.md` |
 | Hind Siliguri font (@fontsource) | 5.3.0 | SIL OFL 1.1 | runtime | `THIRD_PARTY_NOTICES.md` |
@@ -67,6 +69,19 @@ A scan of `node_modules` found these licences: MIT, ISC, Apache-2.0, BSD-2/3-Cla
 - Security notes: it downloads and runs a package from npm. Run it from a trusted folder outside the project. Analyse only software that you are authorised to analyse.
 - **Decision for Phase 1: not installed, not used.** All six Phase 1 references are open-source projects with small, readable source files. Normal source reading gave all the information. REA would add no meaningful advantage. The brief asks us to use REA selectively, and this decision follows that instruction.
 - **Plan:** consider REA in Phase 2 or 3 only for a compiled web build that we are authorised to analyse, for example a minified browser game with a permissive licence and no source.
+
+### 4a. Short-Pitch Cricket 3D (Phase 3): controls research and REA
+
+- **Goal from the owner:** gameplay and controls "like Real Cricket or Cricket 26".
+- **Real Cricket (Nautilus Mobile) and Cricket 26 (Big Ant Studios) are commercial, closed-source games.** Their licences do not allow reverse engineering, and we have no authorisation to analyse their binaries. **REA was not used on them.** No code, models, textures, sounds, names or UI art were taken from them.
+- **What we did instead (OBSERVATION only):** we read public descriptions, reviews and player forum posts about the control schemes. The common pattern is: one stick chooses the shot direction (up = straight, left/right = off/leg side for a right-hander), a button or trigger chooses a ground shot or a lofted shot, a defensive shot exists, and timing feedback says "early / perfect / late". The mobile game uses swipes for shots and a loft option. Sources:
+  - https://www.planetcricket.org/forums/threads/perfect-batting-system.22938
+  - https://planetcricket.org/forums/threads/don-bradman-cricket-14-general-discussion.81753/page-22
+  - https://board.bigant.com/t/cricket-26-megathread/4503?page=10
+  - https://sameteem.com/threads/cricket-26-review.32466/
+  - https://mwm.ai/apps/real-cricket-swipe/6738698616
+- **Our implementation is original:** a direction stick, three shot buttons, swipe-to-hit, a timing bar, a standing bowler with tap-to-aim, a mini-map, and a broadcast-style long-lens camera. These are general game design ideas, not protected expression.
+- **The para rules** (round field, fours along the ground, "six is out", run outs, catches) come from common Bangladeshi street and para cricket practice (general knowledge). They are options that many neighbourhoods play.
 
 ## 5. Research limitations
 

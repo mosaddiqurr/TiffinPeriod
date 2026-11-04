@@ -2,11 +2,13 @@
 
 Bangladeshi childhood games from the class bench, the school sports day and the para rooftop. It runs as a website and as an installable app (PWA). There is no account, no ads and no server.
 
-**17 games are playable (Phase 1 and Phase 2):**
+**18 games are playable (Phase 1, Phase 2 and the first Phase 3 game):**
 - **Phase 1:** Hand Cricket, Book Cricket, Pakhir Ure, Tug of War, Balloon Burst, Biscuit Race.
 - **Phase 2:** Pen Fight, Rubber Band Shooting, Notebook Drawing Battle, Elonti Belonti, Spoon & Marble Race, Haari Bhanga, Paper Airplane, Paper Boat, Musical Chairs, Sack Race, Three-Legged Race.
 
-Phase 3 (7 games: the four street-cricket games, Pillow Fight, Ha-du-du and Rooftop Badminton) is planned. It is shown as "Coming soon" and is not playable. See `docs/MASTER_GAME_ROADMAP.md`.
+- **Phase 3:** Short-Pitch Cricket 3D (a 3D para cricket game: a round field, fours along the ground, and a six is out).
+
+The other 6 Phase 3 games (Tape Tennis Cricket, Rooftop Cricket, Goli Cricket, Pillow Fight, Ha-du-du and Rooftop Badminton) are planned. They are shown as "Coming soon" and are not playable. See `docs/MASTER_GAME_ROADMAP.md`.
 
 ## Requirements
 
@@ -85,6 +87,7 @@ To add a game, see `docs/ARCHITECTURE.md`, section 4.
 | Musical Chairs | SIT! | `Space` (P2 `L`) |
 | Sack Race | HOP | `Space` (P2 `L`) |
 | Three-Legged Race | Outer and Tied | `A` and `D` (co-op: `A` and `L`) |
+| Short-Pitch Cricket 3D | bat: hold the stick for the direction, then Hit / Loft / Block; or swipe on the field; Run. Bowl: type chips, tap the pitch, Bowl | bat: arrows (direction), `K`/`Space` hit, `L` loft, `J` block, `R` run. Bowl: `1`–`5` type, arrows move the spot, `Space` bowl |
 
 `Esc` or `P` pauses a game.
 

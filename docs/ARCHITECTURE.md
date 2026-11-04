@@ -31,7 +31,7 @@ src/
     rng.ts                   seeded random numbers (mulberry32)
     math.ts                  clamp, lerp, damp, easing
   shared/
-    cricket.ts               innings, overs, targets, results (Hand + Book Cricket, later Phase 3)
+    cricket.ts               innings, overs, targets, results (Hand Cricket, Book Cricket, Short-Pitch 3D)
     kid.ts                   2D school kid character (uniform, house vest)
     scenery.ts               school, flag, Shaheed Minar, krishnachura, bunting, field, crowd
   components/
@@ -96,6 +96,21 @@ A race only implements `stepRacer()`, `drawRacer()`, `control()` and the extra r
 - `createSpatialSource()`: an HRTF `PannerNode`. It is positioned relative to the listener's heading in a 2D top view.
 
 **Portrait screens.** A scene can change its design size and camera in `onResize()`. Tug of War, Paper Airplane and Haari Bhanga use a narrower view in portrait with a camera that follows the action.
+
+## 3b. The 3D game: Short-Pitch Cricket 3D (added in Phase 3)
+
+The game has three layers. Only the middle layer knows Three.js.
+
+| File | Role | Depends on |
+|---|---|---|
+| `src/games/short-pitch/sim.ts` | **Pure simulation** in metres and seconds: delivery types and planned paths (swing before the bounce, spin after it), timing judgement, shot launch (direction, power, elevation), the ball in play (drag, bounces, rolling), 9 fielders (chase, catch, gather, throw), runners, run outs, the circular boundary (four / six-out), computer bowler and batter. No DOM. Unit-tested in `tests/short-pitch.test.ts`. | `engine/rng.ts` |
+| `src/games/short-pitch/world.ts` | **3D scene builder**: the field, pitch, stumps, rope, para houses (instanced), krishnachura trees, chalk scoreboard, flag, ball, shadow, aim arrow, length zones. Faceless low-poly players (helmet or cap) and procedural poses (stance, stroke, run, bowl, throw, keeper, celebrate). All shapes and textures are made in code; there are no image or model files. | three.js |
+| `src/games/short-pitch/game.ts` | **Match controller** (`ShortPitchGame`): the ball state machine (pick → windup → delivery → play → result → next ball / innings break / done), the fixed 120 Hz step, cameras (broadcast long lens, bowling view, ball-follow view with cuts, orbit), input (keys, swipe, tap-to-aim raycast), the mini-map, the HUD snapshot, and full disposal of the WebGL context. | sim, world, `shared/cricket.ts`, audio |
+| `src/games/short-pitch/ShortPitch3D.tsx` | **React screen**: the setup sheet, the HUD (score, this over, delivery type, banners, timing bar), the touch controls (direction stick, shot buttons, Run, delivery chips, Bowl), pause and the report card. It creates one `ShortPitchGame` per match and shows a message if WebGL is missing. | game |
+
+Coordinates: physics `(x, h, y)` maps to Three.js `(x, h, −y)`. `x` is positive to the off side of a right-handed batter, `y` runs from the batter's stumps (0) to the bowler's stumps (11 m). The broadcast camera stands far behind the bowler (about 33 m from the batter) with a narrow lens, as on TV, so the off side appears on the left of the screen.
+
+Performance: about 100 draw calls and 13,000 triangles per frame (houses, flags, trees and tanks are instanced), Lambert materials, no real-time shadows (blob shadows), pixel ratio capped at 1.75. three.js is in the game's own chunk (about 155 kB gzip) and loads only when the game opens.
 
 ## 4. How to add a new game
 

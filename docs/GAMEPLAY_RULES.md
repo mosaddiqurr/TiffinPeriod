@@ -144,11 +144,38 @@
 4. Too many stumbles: both kids fall for 1.5 s.
 5. Two players: one team. Player 1 has the outer legs (`A`), Player 2 has the tied legs (`L`).
 
-## Phase 3 (planned rules)
+## Phase 3 (implemented): 18 Short-Pitch Cricket 3D (শর্ট-পিচ ক্রিকেট ৩ডি)
+
+**Field.** A round para field with a rope at 26 m from the batter's stumps. The pitch is short: 11 m between the stumps. Nine fielders (a wicketkeeper, mid-off, mid-on, point, square leg, long-off, long-on, third man and the bowler) wear caps. The batters wear helmets and pads. The players have no faces.
+
+**Scoring (para rules).**
+- The ball crosses the rope after it touches the ground: **FOUR**.
+- The ball crosses the rope in the air: **OUT ("six is out")**.
+- Runs between the wickets: 1, 2 or 3. The batters change ends after an odd number of runs.
+- A ball that the batter cannot reach (too wide or above the head): **wide**, +1 run, the ball is bowled again.
+- **Out:** bowled, caught (a clean catch before the bounce), six-out, run out (the throw reaches the end before the runner; a throw from far away can miss the stumps).
+- A match is 1, 2, 3 or 5 overs a side with 2, 3 or 5 wickets. The chasing side wins when it passes the target. The result says "won by N runs" or "won by N wickets", or "tied".
+
+**Bowling.** There is no run-up. The bowler stands at the crease and bowls. Types: fast (≈ 21 m/s, swing), medium (≈ 17 m/s, swing), slow (≈ 12.5 m/s), off spin (turns to the leg side after the bounce), leg spin (turns to the off side). The bowler taps the pitch to choose where the ball lands. Coloured zones show full, good and short lengths. The computer bowler varies type, line and length; its accuracy depends on the level.
+
+**Batting.**
+- The direction stick: up = straight past the bowler, left = off side, right = leg side, down = behind the wicket. With no direction, the shot follows the line of the ball and the timing (early pulls to the leg side, late pushes to the off side).
+- **Hit (মারো)** keeps the ball along the ground. **Loft (উঁচিয়ে)** goes in the air: it clears the infield, but a clean loft can carry the rope, and that is OUT. **Block (ঠেকাও)** is a soft defensive shot with a wider timing window.
+- A swipe on the field plays Hit in the swipe direction (the same mapping as the stick).
+- Timing windows (medium): perfect ±35 ms, good ±82 ms, early/late ±150 ms, edge beyond that. Easy widens the windows by 30 %; hard narrows them by 15 %. An edge flies behind the wicket (catch chance for the keeper and third man). Hitting against the line of the ball costs power.
+- **Run (দৌড়)** asks for a run; tap again during a run for another run. On easy, the Run button turns green when a run is safe and red when it is risky.
+- On easy, a yellow ring shows where the computer's delivery will bounce.
+
+**Fielding** is automatic: the two nearest fielders chase, the first to reach the ball gathers it, waits 0.5 s, and throws (19 m/s) to the end where a runner is in the most danger. Catch success depends on the level and the speed of the ball.
+
+**Computer batter.** It chooses gaps between the fielders, defends high balls, lofts more when the required rate is high, times its shots with noise by level, and runs when the estimated fielding time is longer than the running time plus a safety margin.
+
+**Balance (simulation, 1,500 balls per level, computer against computer).** Runs per ball: easy 0.65, medium 0.84, hard 1.15. Balls per wicket: about 7. Fours: 10–19 %. Six-outs: 1–4 %. Wides: about 1 %.
+
+## Phase 3 (other games: planned rules)
 
 | No. | Game | Planned rules |
 |---|---|---|
-| 18 | Short-Pitch Cricket | 1, 2, 3 and 4 runs are allowed. **A six is OUT.** There is no conventional six-run score. Local boundaries are configurable. |
 | 19 | Tape Tennis Cricket | Street cricket with a taped tennis ball: fast bounce, swing. Configurable street boundaries. |
 | 20 | Rooftop Cricket | Water tanks and parapets. Option: ball off the roof = OUT. |
 | 21 | Goli Cricket | A narrow alley. Brick stumps. Wall rebounds give configurable runs. |

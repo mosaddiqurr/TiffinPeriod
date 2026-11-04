@@ -61,7 +61,7 @@ const en = {
   rNone: 'Not played yet',
   // roadmap
   mTitle: 'All 24 games',
-  mLede: 'We build the games in three phases. Phase 1 and Phase 2 are playable now. Phase 3 is planned, not finished.',
+  mLede: 'We build the games in three phases. Phase 1 and Phase 2 are playable now. Phase 3 has started: Short-Pitch Cricket 3D is ready; the other games are planned.',
   mNo: 'No.',
   mGame: 'Game',
   mPlace: 'Where we played it',
@@ -155,7 +155,7 @@ const bn: Record<K, string> = {
   rAch: 'অর্জন',
   rNone: 'এখনো খেলোনি',
   mTitle: '২৪টা খেলার তালিকা',
-  mLede: 'খেলাগুলো তিন ধাপে বানানো হচ্ছে। এখন ধাপ ১ আর ধাপ ২ খেলা যায়। ধাপ ৩ পরিকল্পনায় আছে, এখনো তৈরি হয়নি।',
+  mLede: 'খেলাগুলো তিন ধাপে বানানো হচ্ছে। এখন ধাপ ১ আর ধাপ ২ খেলা যায়। ধাপ ৩ শুরু হয়েছে: শর্ট-পিচ ক্রিকেট ৩ডি তৈরি; বাকিগুলো পরিকল্পনায় আছে।',
   mNo: 'ক্রম',
   mGame: 'খেলা',
   mPlace: 'কোথায় খেলতাম',

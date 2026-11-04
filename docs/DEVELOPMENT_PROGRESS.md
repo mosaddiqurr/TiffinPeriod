@@ -33,6 +33,34 @@ Last update: 2026-11-04.
 | 15 | Card doodles, 22 achievements, portrait cameras, rotate hint | Done |
 | 16 | Tests: 96 unit tests, 18 + 13 browser tests | Done |
 
+## Phase 3 checklist (in progress)
+
+The owner set the scope on 2026-11-04: **one** cricket game only, in 3D, a short-pitch game; no other Phase 3 game yet.
+
+| Step | Item | Status |
+|---|---|---|
+| 1 | Remove the 2D street-cricket prototype (4 venues) and its tests | Done |
+| 2 | Controls research (observation only; REA not used on commercial games) | Done |
+| 3 | three.js 0.186.1 (MIT) | Done |
+| 4 | Pure simulation `sim.ts` (deliveries, timing, shots, fielding, running, para rules) | **Done** |
+| 5 | 3D world: field, para houses, trees, scoreboard, faceless players with helmets and caps | **Done** |
+| 6 | Match controller, cameras, input, mini-map | **Done** |
+| 7 | React screen: setup, HUD, stick, shot buttons, swipe, bowling chips, tap-to-aim, pause, report card | **Done** |
+| 8 | 18 Short-Pitch Cricket 3D registered as playable; achievement "Para Batter" | **Done** |
+| 9 | Tests: 20 unit tests (116 in total), 5 browser tests | Done |
+| 10 | 19 Tape Tennis, 20 Rooftop, 21 Goli Cricket, 22 Pillow Fight, 23 Ha-du-du, 24 Rooftop Badminton | **Not started (on hold by the owner)** |
+
+### Short-Pitch Cricket 3D status
+
+| vs computer | 2 players | Touch | Keyboard | Pause | Result card | Achievements |
+|---|---|---|---|---|---|---|
+| ✓ (3 levels: bowler accuracy, batter timing, catching, running margin) | ✓ (one device, sides take turns) | stick + buttons, swipe, tap the pitch | arrows, J K L, Space, R, 1–5 | ✓ (also when the tab is hidden) | ✓ | 1 |
+
+Tuning with simulations:
+- At first, the computer batters almost never ran: the fielders gathered and threw faster than a run. The gather wait (0.5 s), the throw speed (19 m/s) and the run time (1.3 s) now match children's cricket, and a far throw can miss the stumps. Singles went from 7 % to about 30 % of the balls.
+- At first, a clean loft never reached the rope, so "six is out" never happened. A clean loft now carries to the rope; six-outs are 1–4 % of the balls.
+- The camera behind the bowler was too close: the bowler blocked the batter. It is now a long lens from about 33 m, as on TV.
+
 ## Per-game status (Phase 2)
 
 | Game | vs computer | 2 players | Solo | Touch | Keyboard | Pause | Result card | Achievements |
@@ -66,19 +94,24 @@ The physics and computer opponents were tuned with headless simulations (Vitest)
 3. Layout fixes, project documents, README and notices.
 4. Build the eleven Phase 2 games on a shared game shell.
 5. Portrait cameras, rotate hint, Phase 2 documents.
+6. Phase 3: shared street-cricket engine and four venues (2D prototype; removed in commit 7 at the owner's request).
+7. Add 3D Short-Pitch Cricket (Three.js); remove the 2D street-cricket venues.
+8. Short-Pitch 3D documents and polish.
 
 ## Known gaps and not-verified items
 
 - Real-device testing (Android, iOS) is not done. See `TEST_PLAN.md`, section 4.
+- Short-Pitch Cricket 3D needs WebGL. It shows a message if WebGL is missing. Its frame rate and two-thumb play were not checked on real devices.
 - Spatial sound (Haari Bhanga) and the music loop (Musical Chairs) were not checked by ear.
 - Notebook Drawing Battle has no online play; party mode is pass-and-play on one device.
 - Rubber Band Shooting and Pen Fight are best in landscape. In portrait they show a hint.
 - The computer cannot guess player drawings (that needs image recognition, which is out of scope at $0 and offline).
 - "Tiffin Period" is a working title.
 
-## Recommended start for Phase 3
+## Recommended next steps for Phase 3
 
-1. Build the **shared cricket engine** first (batting timing, ball physics with bounce and swing, configurable boundaries and rules). Then add 18 Short-Pitch Cricket (six = OUT) as its first rule set.
-2. Then 20 Rooftop Cricket and 21 Goli Cricket. They reuse the rooftop scenery from Paper Airplane and add wall colliders.
+1. Test Short-Pitch Cricket 3D on real phones and tablets (frame rate, two-thumb play, timing feel). Tune the timing windows and the camera if needed.
+2. Optional extras for Short-Pitch: a replay of fours and wickets, a commentary line, named batters, tournaments.
+3. When the owner allows more games: 19 Tape Tennis, 20 Rooftop and 21 Goli Cricket can reuse `sim.ts` with new rule options (off the roof = out, wall runs) and new 3D scenery.
 3. Then 24 Rooftop Badminton (it reuses the glider and wind ideas from Paper Airplane) and 22 Pillow Fight (it reuses the Matter.js setup from Pen Fight).
 4. Kabaddi last: it needs team AI. Search again for an open-source Kabaddi reference first.

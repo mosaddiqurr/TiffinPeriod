@@ -120,7 +120,7 @@ All 11 Phase 2 games are built. No code from these references was copied. See `R
 | 17 Three-Legged | https://store.steampowered.com/app/2567870/Chained_Together/ | OBSERVATION | Commercial | — | Connected-character idea only. |
 | 11, 16, 17 | Matter.js constraints | ENGINE | MIT | JavaScript | Coupled bodies. |
 
-## Phase 3 — references (planned games)
+## Phase 3 — references
 
 | Game | Reference | Label | Licence (from files) | Stack | Notes |
 |---|---|---|---|---|---|
@@ -128,12 +128,14 @@ All 11 Phase 2 games are built. No code from these references was copied. See `R
 | 18–21 Cricket | Real Cricket series — https://www.nautilusmobile.com/ | OBSERVATION | Commercial | — | Batting timing feel, camera. |
 | 18–21 Cricket | World Cricket Championship — https://www.nextwavemultimedia.com/ | OBSERVATION | Commercial | — | Shot selection UI, bowling variety. |
 | 18–21 Cricket | Don Bradman Cricket, Cricket 26 (Big Ant Studios) | OBSERVATION | Commercial | — | Ball physics feel, timing windows. Observe public gameplay only. |
-| 18 Short-Pitch | Same as above | — | — | — | Rule: 1–4 runs; **six = OUT**. |
+| 18 Short-Pitch 3D (built) | Real Cricket, Cricket 26 / Don Bradman Cricket control schemes (public forum posts and reviews, see `RESEARCH_AND_LICENSE_AUDIT.md` 4a) | OBSERVATION | Commercial | — | Used for the control pattern only: direction stick + ground / loft / defend, swipe shots, timing feedback. No code, models or art. REA not used (not authorised). |
+| 18 Short-Pitch 3D (built) | three.js r186 | ENGINE (used) | MIT | JavaScript | The 3D renderer. |
+| 18 Short-Pitch | para cricket rules (general knowledge) | — | — | — | Round field; four along the ground; **six = OUT**. |
 | 22 Pillow Fight | https://store.steampowered.com/app/285900/Gang_Beasts/ | OBSERVATION | Commercial | — | Wobbly balance feel. |
 | 22 Pillow Fight | Matter.js | ENGINE | MIT | JavaScript | Controlled ragdoll-like balance. |
 | 23 Kabaddi | https://github.com/assishmoncs/battlebox | MECHANIC (multiplayer architecture only) | MIT | JavaScript | Not a Kabaddi game. A closer open-source Kabaddi game was not found in this run → search again at the start of Phase 3. |
 | 24 Badminton | https://github.com/mahjerion/Capsule-Badminton | MECHANIC | UNVERIFIED (the clone did not finish; the user reports MIT) | Unity (C#) | Verify licence and files before study. |
-| All 3D | Three.js (https://threejs.org) | ENGINE | MIT | JavaScript | Only if 3D is needed; 2D is the default for low-end phones. |
+| All 3D | Three.js (https://threejs.org) | ENGINE | MIT | JavaScript | Used by Short-Pitch Cricket 3D. Other games stay 2D for low-end phones. |
 | All 2D | Phaser (https://phaser.io) | ENGINE | MIT | JavaScript | Alternative to our canvas host. See `ARCHITECTURE.md`. |
 
 ## References that we must research again

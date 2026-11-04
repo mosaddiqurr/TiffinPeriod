@@ -791,7 +791,9 @@ export class ShortPitchGame {
     if (mode === 'bat') {
       // A long lens from far behind the bowler, as on TV: half-height 3.2 m, half-width 3.6 m at the batter.
       const D = BROADCAST.dist;
-      return deg(2 * Math.atan(Math.max(3.2, (a < 0.8 ? 2.9 : 3.6) / a) / D));
+      // Short screens (a phone held sideways) zoom in a little more.
+      const H = this.camera.aspect > 1.6 && this.host.clientHeight < 480 ? 2.5 : 3.2;
+      return deg(2 * Math.atan(Math.max(H, (a < 0.8 ? 2.9 : 3.6) / a) / D));
     }
     if (mode === 'bowl') return Math.min(62, deg(2 * Math.atan(Math.max(Math.tan(0.36), Math.tan(0.2) / a))));
     if (mode === 'follow') return Math.min(64, deg(2 * Math.atan(Math.max(Math.tan(0.4), Math.tan(0.36) / a))));

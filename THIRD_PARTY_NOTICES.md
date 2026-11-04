@@ -9,6 +9,10 @@ Copyright (c) Meta Platforms, Inc. and affiliates. https://github.com/facebook/r
 Copyright (c) Liam Brummitt and contributors. https://github.com/liabru/matter-js
 Used by Pen Fight and Rubber Band Shooting.
 
+## three.js — MIT
+Copyright © 2010-2026 three.js authors. https://github.com/mrdoob/three.js
+Used by Short-Pitch Cricket 3D only (loaded with that game). All 3D models, textures and animations in the game are original and made in code.
+
 ## Workbox (workbox-window, service worker runtime) — MIT
 Copyright Google LLC. https://github.com/GoogleChrome/workbox
 

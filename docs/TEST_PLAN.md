@@ -15,7 +15,11 @@ Command: `npm test`
 | `tests/phase2-a.test.ts` | Pen Fight: a still world stays still, a strong flick can push the other pen off, an off-centre flick spins, a pen off the bench is out, the computer finishes planning; Sack Race: perfect hop after landing, air taps wobble, wobble causes a fall, the computer finishes; Three-Legged: alternation, same-foot and together stumbles, the computer pair finishes; Spoon & Marble: speeding up rolls the marble back, braking rolls it forward, a drop stops the runner, the computer finishes (easy and hard); Elonti Belonti: nine-word chant, the caller turns, a moving walker is caught, a hard computer walker is rarely caught; Musical Chairs: foul during music, one kid left standing; Haari Bhanga: pot far from the start, hit and miss, honest shouts point the right way, the computer breaks the pot in ≥ 6 of 8 |
 | `tests/phase2-b.test.ts` | Rubber Band: the arc, the fan pushes bands down, the computer scores on every level, a weak pull does not shoot; Paper Airplane: a good throw flies farther, holding the nose up stalls, the score formula, the computer pilot; Paper Boat: the current is fastest in the middle, steering boats finish (≥ 7 of 8) while idle boats often sink, a soaked boat sinks; Notebook Drawing word and doodle data; every Phase 2 game has achievements |
 
+| `tests/short-pitch.test.ts` | 3D Short-Pitch Cricket simulation: a full straight ball hits the stumps and the timing points are in order; a good-length ball bounces before the bat; a ball far outside off stump is a wide; off spin turns to leg and leg spin to off; fast arrives before slow; timing grades (perfect, good, early, late, edge, miss) and the easy scale; the stick sends the ball straight / off / leg; early pulls and late pushes; loft goes up and Hit stays low; over the rope on the full = six-out; hard along the ground = four; greedy running gives run outs; lofted shots are caught and dropped; runs change ends; a held ball becomes dead; the boundary radius; computer against computer on 3 levels (1,500 balls each: runs per ball, balls per wicket, fours, six-outs and wides in realistic ranges) |
+
 **Result on 2026-11-04 (after Phase 2): 7 files, 96 tests, all passed.**
+
+**Result on 2026-11-04 (after Short-Pitch 3D): 8 files, 116 tests, all passed.**
 
 ## 2. Automated browser tests (Playwright)
 
@@ -50,6 +54,18 @@ Command: `npm run build && npm run test:e2e`. The tests run against `vite previe
 
 **Result on 2026-11-04: 13 tests passed (12 desktop full plays + 1 phone smoke), 5.4 minutes.** The Paper Airplane test first failed: its fixed number of key presses could end before the third throw when flights were long. A simulation of 300 random flights showed that every flight ends (the longest took 15 s), so the game was correct. The test now keeps pressing until the result appears, and it passes.
 
+### Phase 3 browser tests (`e2e/phase3.spec.ts`)
+
+The headless browser draws WebGL in software (SwiftShader flags in `playwright.config.ts`).
+
+| Test | Profile | What it does |
+|---|---|---|
+| field and HUD | mobile + desktop | starts a match; the 3D canvas, the score, the stick and the shot buttons show; one ball goes by; pause and resume |
+| bowling | mobile + desktop | the computer bats first; choose leg spin; tap the pitch moves the target; Bowl starts the delivery |
+| full match | desktop | a 1-over, 2-wicket match at 3× speed with an in-page driver (shots and bowling) until the report card |
+
+**Result on 2026-11-04: Phase 1 + Phase 3 browser tests: 23 passed, 1 skipped (the full match runs on desktop only), 3.4 minutes.** The hub test now expects 18 playable cards and 6 "coming soon" items.
+
 ## 3. Acceptance checklist (Phase 1)
 
 | Requirement | Status | Evidence |
@@ -82,6 +98,7 @@ Command: `npm run build && npm run test:e2e`. The tests run against `vite previe
 6. **Game balance** (difficulty tuning) comes from simulations and short manual play. It needs feedback from real players.
 7. **Phase 2 sound:** the HRTF direction in Haari Bhanga and the harmonium loop in Musical Chairs were not checked by ear. Haari Bhanga also gives visual shouts, so it is playable without sound.
 8. **Phase 2 two-player modes** (Pen Fight turns, the Three-Legged co-op, the Notebook Drawing party) were tested by scripts, not by real groups of children.
+9. **Short-Pitch Cricket 3D** was rendered only by the software WebGL renderer in headless Chromium (phone portrait 390 × 844, phone landscape 844 × 390, tablet 1024 × 768, desktop 1280 × 800). The frame rate on real phones and tablets, real two-thumb play (the stick and a shot button at the same time) and the feel of the timing windows are **not verified on real devices**.
 
 ## 5. Manual test checklist for real devices
 
@@ -92,3 +109,4 @@ Command: `npm run build && npm run test:e2e`. The tests run against `vite previe
 5. Switch the language during a game; open the help; check the Bangla line breaks.
 6. Mute and unmute. Set the volume. Turn the voice on.
 7. Turn on "Reduce motion". Check that the effects are calmer.
+8. Short-Pitch Cricket 3D on a mid-range Android phone and on a tablet: check the frame rate, hold the stick with the left thumb and tap Hit with the right thumb, try a swipe shot, bowl each delivery type, and run a 2 and a run out. Check portrait and landscape.
