@@ -1,0 +1,17 @@
+.nd-root { position: absolute; inset: 0; overflow-y: auto; background: repeating-linear-gradient(90deg, rgba(0,0,0,0.035) 0 2px, transparent 2px 11px), linear-gradient(#a8744a, #8f5f37); }
+.nd-board { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; padding: 10px; }
+.nd-chip { background: #fffdf6; border-radius: 16px; padding: 3px 12px; font-weight: 600; box-shadow: var(--shadow); }
+.nd-chip b { font-family: var(--font-display); color: var(--pen); margin-left: 4px; }
+.nd-chip.drawer { outline: 3px solid var(--gold); }
+.nd-play { display: grid; gap: 10px; justify-items: center; padding: 0 10px 16px; }
+.nd-status { background: #fffdf6; border-radius: 14px; padding: 4px 14px; font-weight: 600; text-align: center; }
+.nd-status .hot { color: var(--pen-red); }
+.nd-secret { font-family: var(--font-display); color: var(--pen-red); letter-spacing: 0.5px; }
+.nd-canvas { width: min(92vw, 62vh, 560px); aspect-ratio: 1; border-radius: 4px 10px 10px 4px; box-shadow: 0 14px 28px -12px rgba(0,0,0,0.6); touch-action: none; background: #fbf7ea; cursor: crosshair; }
+.nd-tools, .nd-who, .nd-options { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; }
+.nd-who span { color: #fff6df; font-weight: 700; }
+.nd-color { width: 40px; height: 40px; border-radius: 50%; border: 3px solid #fffdf6; box-shadow: 0 2px 0 rgba(0,0,0,0.3); }
+.nd-color.on { outline: 3px solid var(--gold); }
+.nd-tools .btn.on { box-shadow: inset 0 0 0 3px var(--gold); }
+.nd-options .btn { min-width: 140px; }
+.nd-options .btn.ok { background: #127a59; color: #fff; }

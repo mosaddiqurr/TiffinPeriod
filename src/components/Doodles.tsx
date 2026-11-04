@@ -155,6 +155,87 @@ export function Signature() {
   );
 }
 
+
+// ---- Phase 2 card doodles ----
+const D = (children: JSX.Element) => <svg viewBox="0 0 170 130" aria-hidden="true">{children}</svg>;
+export const DoodlePenFight = ({ accent = '#2c3e8f' }: { accent?: string }) => D(<>
+  <rect x="10" y="30" width="150" height="80" rx="4" {...common} fill="#e9c79a" />
+  <g transform="rotate(-18 60 70)"><rect x="25" y="64" width="70" height="10" rx="5" {...common} fill="#fff" strokeWidth={2.4} /><rect x="78" y="62" width="20" height="14" rx="5" fill="#c62f2f" /></g>
+  <g transform="rotate(160 118 62)"><rect x="85" y="57" width="70" height="10" rx="5" {...common} fill="#fff" strokeWidth={2.4} /><rect x="138" y="55" width="20" height="14" rx="5" fill={accent} /></g>
+  <path d="M60 50 L70 40 M66 56 L80 50" stroke="#c62f2f" strokeWidth="2.4" strokeLinecap="round" />
+</>);
+export const DoodleRubberBand = ({ accent = '#7d3c98' }: { accent?: string }) => D(<>
+  <path d="M20 95 L50 95 L50 75 M50 85 L62 85" {...common} fill="none" />
+  <path d="M50 75 Q75 80 62 85" stroke="#d4a017" strokeWidth="3" fill="none" />
+  <path d="M70 70 Q100 40 130 55" {...common} strokeDasharray="5 6" />
+  <ellipse cx="132" cy="56" rx="9" ry="3.5" fill="none" stroke="#d4a017" strokeWidth="3" />
+  <path d="M120 110 L126 82 L146 82 L152 110 Z M118 110 L154 110" {...common} fill="#fff" />
+  <path d="M124 96 L148 96" stroke={accent} strokeWidth="3" />
+</>);
+export const DoodleNotebook = ({ accent = '#1f4e9c' }: { accent?: string }) => D(<>
+  <rect x="35" y="15" width="100" height="100" rx="4" {...common} fill="#fffaf0" />
+  {[35, 50, 65, 80, 95].map((y) => <path key={y} d={`M35 ${y} L135 ${y}`} stroke="#c2d3e4" strokeWidth="1.5" />)}
+  <path d="M50 15 L50 115" stroke="#d9534f" strokeWidth="1.5" />
+  <path d="M65 85 Q90 105 115 85 L65 85 M90 85 L90 45 L112 78 L90 78" {...common} stroke={accent} />
+  <path d="M140 40 L158 22" stroke="#7a5530" strokeWidth="5" strokeLinecap="round" /><path d="M140 40 L136 46" stroke="#1b1b1b" strokeWidth="3" />
+</>);
+export const DoodleElonti = ({ accent = '#117a65' }: { accent?: string }) => D(<>
+  <path d="M140 120 L140 60" stroke="#6b4a2b" strokeWidth="8" /><circle cx="140" cy="45" r="25" fill="#5c9a44" />
+  <circle cx="118" cy="62" r="8" {...common} fill="#fde7cf" /><path d="M118 70 L118 98 M118 98 L110 118 M118 98 L126 118 M118 78 L128 70" {...common} />
+  <circle cx="45" cy="62" r="8" {...common} fill="#fde7cf" /><path d="M45 70 L45 98 M45 98 L35 118 M45 98 L55 116 M45 78 L32 86" {...common} />
+  <rect x="62" y="16" width="60" height="22" rx="10" {...common} fill="#fff" strokeWidth={2} />
+  <text x="92" y="32" textAnchor="middle" fontFamily="Baloo Da 2" fontWeight="800" fontSize="13" fill={accent}>১ ২ ৩!</text>
+</>);
+export const DoodleSpoon = ({ accent = '#5d6d7e' }: { accent?: string }) => D(<>
+  <circle cx="60" cy="58" r="20" {...common} fill="#fde7cf" />
+  <path d="M78 64 L118 60" stroke="#9aa0a6" strokeWidth="5" strokeLinecap="round" />
+  <ellipse cx="130" cy="59" rx="15" ry="6" fill="#d5dbe1" stroke="#9aa0a6" strokeWidth="2" />
+  <circle cx="131" cy="52" r="6.5" fill={accent} /><circle cx="129" cy="50" r="2" fill="#fff" />
+  <path d="M50 80 L45 120 M70 80 L76 120" {...common} />
+  <path d="M150 40 l6 -6 M146 34 l2 -8" stroke="#c62f2f" strokeWidth="2.4" strokeLinecap="round" />
+</>);
+export const DoodleHaari = ({ accent = '#a04000' }: { accent?: string }) => D(<>
+  <path d="M30 20 L140 20" stroke="#b89545" strokeWidth="6" strokeLinecap="round" />
+  <path d="M110 20 L110 40" {...common} strokeWidth={2} />
+  <ellipse cx="110" cy="58" rx="20" ry="18" fill={accent} stroke="#5a2a0a" strokeWidth="2.4" />
+  <circle cx="55" cy="72" r="11" {...common} fill="#fde7cf" /><rect x="45" y="66" width="21" height="6" fill="#d62a2a" />
+  <path d="M55 83 L55 110 M55 110 L46 124 M55 110 L64 124 M55 90 L92 70" {...common} />
+  <path d="M85 50 l-6 -6 M92 46 l-2 -8" stroke="#c62f2f" strokeWidth="2.4" strokeLinecap="round" />
+</>);
+export const DoodlePlane = ({ accent = '#2e86c1' }: { accent?: string }) => D(<>
+  <rect x="10" y="85" width="40" height="40" {...common} fill="#e8d7a6" strokeWidth={2} /><rect x="120" y="95" width="45" height="30" {...common} fill="#c9dfc1" strokeWidth={2} />
+  <rect x="128" y="80" width="16" height="15" fill="#1d1d1d" />
+  <path d="M40 80 Q90 30 140 50" {...common} strokeDasharray="5 6" />
+  <g transform="translate(110 40) rotate(-12)"><path d="M26 0 L-22 -12 L-14 0 L-22 6 Z" {...common} fill="#fff" strokeWidth={2.4} /><path d="M-18 -6 L14 -2" stroke={accent} strokeWidth="1.5" /></g>
+</>);
+export const DoodleBoat = ({ accent = '#148f77' }: { accent?: string }) => D(<>
+  <path d="M10 95 Q40 85 70 95 T130 95 T170 92" stroke="#5f7f8f" strokeWidth="3" fill="none" />
+  <path d="M40 80 L130 80 L115 98 L55 98 Z" {...common} fill="#f3efe2" />
+  <path d="M85 80 L85 40 L110 80 M85 40 L60 80" {...common} fill="#f3efe2" />
+  <path d="M65 88 L105 88" stroke="#999" strokeWidth="1.5" />
+  {[20, 50, 80, 110, 140].map((x) => <path key={x} d={`M${x} 10 L${x - 6} 26`} stroke={accent} strokeWidth="2" strokeLinecap="round" />)}
+</>);
+export const DoodleChairs = ({ accent = '#cb4335' }: { accent?: string }) => D(<>
+  <circle cx="85" cy="68" r="44" fill="none" stroke="#c9876a" strokeWidth="2" strokeDasharray="5 6" />
+  {[0, 1, 2, 3].map((i) => { const a = i * Math.PI / 2 + 0.78; return <rect key={i} x={85 + Math.cos(a) * 24 - 9} y={68 + Math.sin(a) * 24 - 9} width="18" height="18" fill="#8b5a2b" stroke={PEN} strokeWidth="2" />; })}
+  {[0, 1, 2, 3, 4].map((i) => { const a = i * 1.257; return <circle key={i} cx={85 + Math.cos(a) * 52} cy={68 + Math.sin(a) * 52} r="8" fill={i === 0 ? accent : '#1d140e'} />; })}
+  <text x="150" y="30" fontSize="22" fill={PEN}>♪</text>
+</>);
+export const DoodleSack = ({ accent = '#9a7d0a' }: { accent?: string }) => D(<>
+  <circle cx="85" cy="32" r="13" {...common} fill="#fde7cf" />
+  <path d="M85 45 L85 64 M85 52 L70 66 M85 52 L100 66" {...common} />
+  <path d="M64 62 L106 62 L104 118 Q85 124 66 118 Z" {...common} fill="#c9a25e" />
+  <text x="85" y="98" textAnchor="middle" fontFamily="Baloo Da 2" fontWeight="700" fontSize="13" fill="#6b4a1f">চিনি</text>
+  <path d="M30 122 L140 122" stroke={accent} strokeWidth="2" /><path d="M40 108 l-8 4 M44 98 l-9 0" stroke="#c62f2f" strokeWidth="2.4" strokeLinecap="round" />
+</>);
+export const DoodleThreeLegged = ({ accent = '#6c3483' }: { accent?: string }) => D(<>
+  <circle cx="68" cy="28" r="12" {...common} fill="#fde7cf" /><circle cx="102" cy="28" r="12" {...common} fill="#fde7cf" />
+  <path d="M68 40 L68 75 M102 40 L102 75 M68 50 L102 50" {...common} />
+  <path d="M68 75 L52 118 M102 75 L118 118 M68 75 L84 118 M102 75 L86 118" {...common} />
+  <rect x="75" y="96" width="20" height="10" fill="#d62a2a" /><path d="M78 96 L78 106 M84 96 L84 106 M90 96 L90 106" stroke="#fff" strokeWidth="1.5" />
+  <path d="M30 122 L140 122" stroke={accent} strokeWidth="2" />
+</>);
+
 export const DOODLES: Record<string, (p: { accent?: string }) => JSX.Element> = {
   'hand-cricket': DoodleHandCricket,
   'book-cricket': DoodleBookCricket,
@@ -162,6 +243,17 @@ export const DOODLES: Record<string, (p: { accent?: string }) => JSX.Element> = 
   'tug-of-war': DoodleTugOfWar,
   'balloon-burst': DoodleBalloon,
   'biscuit-race': DoodleBiscuit,
+  'pen-fight': DoodlePenFight,
+  'rubber-band': DoodleRubberBand,
+  'notebook-drawing': DoodleNotebook,
+  'elonti-belonti': DoodleElonti,
+  'spoon-marble': DoodleSpoon,
+  'haari-bhanga': DoodleHaari,
+  'paper-plane': DoodlePlane,
+  'paper-boat': DoodleBoat,
+  'musical-chairs': DoodleChairs,
+  'sack-race': DoodleSack,
+  'three-legged': DoodleThreeLegged,
 };
 
 // ---- UI icons ----

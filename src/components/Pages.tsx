@@ -50,7 +50,7 @@ export function Home() {
   const ready = GAMES.filter((g) => g.playable);
   const soon = GAMES.filter((g) => !g.playable);
   const modeLabel = { solo: t('modeSolo'), ai: t('modeAi'), local2p: t('mode2p') };
-  const cats: Category[] = ['bench', 'sports'];
+  const cats: Category[] = ['bench', 'sports', 'para'];
 
   const ring = () => {
     unlockAudio();
@@ -66,7 +66,7 @@ export function Home() {
         <button className={`bell-btn ${ringing ? 'ringing' : ''}`} onClick={ring} aria-label={t('ringBell')} title={t('ringBell')}>
           <SchoolBell size={96} />
         </button>
-        <p>{t('heroText')}</p>
+        <p>{t('heroText', { n: ready.length })}</p>
       </section>
 
       {cats.map((c) => (

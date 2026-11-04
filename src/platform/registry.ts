@@ -98,6 +98,25 @@ function p(no: number, id: string, phase: Phase, category: Category, accent: str
   return { id, no, phase, category, accent, playable: false, modes: [], title: { bn, en }, blurb: { bn: bbn, en: ben } };
 }
 
+// Phase 2 games that are built. Each entry turns a planned game into a playable one.
+const BUILT: Record<string, { modes: GameEntry['modes']; load: GameEntry['load'] }> = {
+  'pen-fight': { modes: ['ai', 'local2p'], load: () => import('../games/pen-fight/PenFight') },
+  'rubber-band': { modes: ['solo', 'ai', 'local2p'], load: () => import('../games/rubber-band/RubberBand') },
+  'paper-plane': { modes: ['solo', 'ai', 'local2p'], load: () => import('../games/paper-plane/PaperPlane') },
+  'paper-boat': { modes: ['ai', 'local2p'], load: () => import('../games/paper-boat/PaperBoat') },
+  'notebook-drawing': { modes: ['solo', 'local2p'], load: () => import('../games/notebook-drawing/NotebookDrawing') },
+  'sack-race': { modes: ['ai', 'local2p'], load: () => import('../games/sack-race/SackRace') },
+  'three-legged': { modes: ['ai', 'local2p'], load: () => import('../games/three-legged/ThreeLegged') },
+  'spoon-marble': { modes: ['ai', 'local2p'], load: () => import('../games/spoon-marble/SpoonMarble') },
+  'musical-chairs': { modes: ['ai', 'local2p'], load: () => import('../games/musical-chairs/MusicalChairs') },
+  'haari-bhanga': { modes: ['solo', 'ai', 'local2p'], load: () => import('../games/haari-bhanga/HaariBhanga') },
+  'elonti-belonti': { modes: ['ai', 'local2p'], load: () => import('../games/elonti-belonti/ElontiBelonti') },
+};
+for (const g of GAMES) {
+  const b = BUILT[g.id];
+  if (b) Object.assign(g, { playable: true, modes: b.modes, load: b.load });
+}
+
 export function getGame(id: string): GameEntry | undefined {
   return GAMES.find((g) => g.id === id);
 }

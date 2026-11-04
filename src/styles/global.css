@@ -381,3 +381,32 @@ a { color: var(--pen); }
   .soon small { font-size: 12.5px; line-height: 1.35; }
   .soon .stamp { font-size: 11.5px; right: 6px; bottom: 6px; }
 }
+
+/* ---------- GameShell (canvas games) ---------- */
+.shell-root { position: absolute; inset: 0; background: #6ea23a; overflow: hidden; }
+.shell-pads { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.pad-area { position: absolute; display: flex; gap: 10px; align-items: flex-end; }
+.pad-area.area-bl { left: 10px; bottom: 12px; }
+.pad-area.area-br { right: 10px; bottom: 12px; }
+.pad-area.area-bc { left: 50%; bottom: 12px; translate: -50% 0; }
+.pad-area.area-tl { left: 10px; top: 12px; align-items: flex-start; }
+.pad-area.area-tr { right: 10px; top: 12px; align-items: flex-start; }
+.pad-area.area-tc { left: 50%; top: 12px; translate: -50% 0; align-items: flex-start; }
+.pad-area.flip { rotate: 180deg; }
+.pad-area.area-tl.flip { left: auto; right: 10px; }
+.pad-area.area-tr.flip { right: auto; left: 10px; }
+.shell-pad { position: relative; pointer-events: auto; flex-direction: column; gap: 0; background: rgba(31, 58, 147, 0.82); display: flex; align-items: center; justify-content: center; }
+.shell-pad .lbl { font-size: 1em; line-height: 1; }
+.shell-pad small { font-size: 12.5px; font-weight: 700; line-height: 1.1; margin-top: 2px; }
+.shell-pad .key-hint { position: absolute; bottom: -24px; white-space: nowrap; }
+.shell-pad.size-s { width: 60px; height: 60px; font-size: 22px; }
+.shell-pad.size-m { width: 80px; height: 80px; font-size: 28px; }
+.shell-pad.size-l { width: 112px; height: 96px; font-size: 30px; }
+.shell-pad.size-wide { width: min(44vw, 240px); height: 86px; font-size: 26px; }
+@media (min-width: 900px) and (hover: hover) {
+  .shell-pad { opacity: 0.85; }
+  .shell-pad.size-m { width: 66px; height: 66px; font-size: 24px; }
+  .shell-pad.size-l { width: 92px; height: 78px; }
+  .shell-pad.size-wide { height: 70px; }
+  .pad-area.area-bl, .pad-area.area-br, .pad-area.area-bc { bottom: 34px; }
+}

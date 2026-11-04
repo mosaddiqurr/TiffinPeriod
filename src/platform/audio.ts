@@ -200,3 +200,130 @@ export function speak(bn: string, en: string, rate = 1.1): void {
     /* ignore */
   }
 }
+
+// ---- Music loop (Musical Chairs) ----
+// An original tune played by a harmonium-like synth. Notes are scheduled
+// a little ahead on the audio clock ("lookahead" scheduling), so the
+// timing does not drift when the main thread is busy.
+
+export type Note = [midi: number, beats: number]; // midi 0 = rest
+
+export interface MusicHandle {
+  stop(): void;
+  /** Volume 0..1 (used for fake "dips"). */
+  level(v: number): void;
+}
+
+const midiHz = (m: number) => 440 * Math.pow(2, (m - 69) / 12);
+
+export function playMelody(notes: Note[], bpm: number, bass: Note[] = []): MusicHandle {
+  const st = settingsStore.get();
+  const c = ensure();
+  if (!c || !master || !st.sound || c.state !== 'running') return { stop() {}, level() {} };
+  const out = c.createGain();
+  out.gain.value = 0.22;
+  const lp = c.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = 2200;
+  out.connect(lp).connect(master);
+  const beat = 60 / bpm;
+  const voices: Array<{ seq: Note[]; i: number; at: number; oct: number; gain: number }> = [
+    { seq: notes, i: 0, at: c.currentTime + 0.05, oct: 0, gain: 1 },
+  ];
+  if (bass.length) voices.push({ seq: bass, i: 0, at: c.currentTime + 0.05, oct: -12, gain: 0.7 });
+  const reed = (hz: number, t: number, dur: number, g: number) => {
+    for (const [type, mult, amp] of [['sawtooth', 1, 0.5], ['square', 2, 0.18]] as const) {
+      const o = c.createOscillator();
+      const e = c.createGain();
+      o.type = type;
+      o.frequency.value = hz * mult;
+      e.gain.setValueAtTime(0.0001, t);
+      e.gain.linearRampToValueAtTime(amp * g, t + 0.04);
+      e.gain.setValueAtTime(amp * g, t + Math.max(0.05, dur - 0.06));
+      e.gain.linearRampToValueAtTime(0.0001, t + dur);
+      o.connect(e).connect(out);
+      o.start(t);
+      o.stop(t + dur + 0.02);
+    }
+  };
+  const timer = setInterval(() => {
+    for (const v of voices) {
+      while (v.at < c.currentTime + 0.12) {
+        const [m, b] = v.seq[v.i];
+        if (m > 0) reed(midiHz(m + v.oct), v.at, b * beat * 0.95, v.gain);
+        v.at += b * beat;
+        v.i = (v.i + 1) % v.seq.length;
+      }
+    }
+  }, 25);
+  return {
+    stop() {
+      clearInterval(timer);
+      out.gain.setTargetAtTime(0.0001, c.currentTime, 0.03);
+      setTimeout(() => out.disconnect(), 300);
+    },
+    level(x) {
+      out.gain.setTargetAtTime(0.22 * x, c.currentTime, 0.02);
+    },
+  };
+}
+
+// ---- Spatial sound (Haari Bhanga) ----
+// A sound source in a 2D top view, heard through an HRTF panner.
+// With headphones the player can hear left/right and distance.
+
+export interface SpatialSource {
+  /** Place the listener (x, y, heading in radians, 0 = +x) and the source. */
+  update(lx: number, ly: number, heading: number, sx: number, sy: number): void;
+  ping(pitch?: number): void;
+  stop(): void;
+}
+
+export function createSpatialSource(scale = 0.01): SpatialSource {
+  const c = ensure();
+  if (!c || !master) return { update() {}, ping() {}, stop() {} };
+  const panner = c.createPanner();
+  panner.panningModel = 'HRTF';
+  panner.distanceModel = 'inverse';
+  panner.refDistance = 1;
+  panner.rolloffFactor = 1.2;
+  const g = c.createGain();
+  g.gain.value = 0.9;
+  panner.connect(g).connect(master);
+  let rel = { x: 0, z: -1 };
+  return {
+    update(lx, ly, heading, sx, sy) {
+      // Rotate the source into listener space: forward = −z, right = +x.
+      const dx = (sx - lx) * scale, dy = (sy - ly) * scale;
+      const cos = Math.cos(-heading), sin = Math.sin(-heading);
+      const fx = dx * cos - dy * sin; // forward component
+      const rx = dx * sin + dy * cos; // right component
+      rel = { x: rx, z: -fx };
+      if (panner.positionX) {
+        panner.positionX.setTargetAtTime(rel.x, c.currentTime, 0.05);
+        panner.positionY.setTargetAtTime(0, c.currentTime, 0.05);
+        panner.positionZ.setTargetAtTime(rel.z, c.currentTime, 0.05);
+      } else {
+        (panner as unknown as { setPosition(x: number, y: number, z: number): void }).setPosition(rel.x, 0, rel.z);
+      }
+    },
+    ping(pitch = 1) {
+      if (!settingsStore.get().sound || c.state !== 'running') return;
+      const t = c.currentTime + 0.01;
+      // A clay-pot "tung": a short resonant tone with a knock.
+      const o = c.createOscillator();
+      const e = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(330 * pitch, t);
+      o.frequency.exponentialRampToValueAtTime(250 * pitch, t + 0.25);
+      e.gain.setValueAtTime(0.0001, t);
+      e.gain.exponentialRampToValueAtTime(0.8, t + 0.005);
+      e.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+      o.connect(e).connect(panner);
+      o.start(t);
+      o.stop(t + 0.35);
+    },
+    stop() {
+      g.disconnect();
+    },
+  };
+}

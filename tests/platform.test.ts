@@ -25,11 +25,13 @@ describe('registry', () => {
     expect(GAMES).toHaveLength(24);
     expect(GAMES.map((g) => g.no)).toEqual(Array.from({ length: 24 }, (_, i) => i + 1));
   });
-  it('only the six Phase 1 games are playable and each has a loader', () => {
+  it('Phase 1 and Phase 2 games (17) are playable with loaders; Phase 3 is not', () => {
     const playable = GAMES.filter((g) => g.playable);
-    expect(playable.map((g) => g.id)).toEqual(['hand-cricket', 'book-cricket', 'pakhir-ure', 'tug-of-war', 'balloon-burst', 'biscuit-race']);
-    for (const g of playable) { expect(g.phase).toBe(1); expect(typeof g.load).toBe('function'); }
-    for (const g of GAMES.filter((x) => !x.playable)) expect(g.load).toBeUndefined();
+    expect(playable).toHaveLength(17);
+    expect(playable.every((g) => g.phase === 1 || g.phase === 2)).toBe(true);
+    expect(GAMES.filter((g) => g.phase === 2).every((g) => g.playable)).toBe(true);
+    for (const g of playable) { expect(typeof g.load).toBe('function'); expect(g.modes.length).toBeGreaterThan(0); }
+    for (const g of GAMES.filter((x) => x.phase === 3)) { expect(g.playable).toBe(false); expect(g.load).toBeUndefined(); }
   });
   it('every achievement belongs to a playable game', () => {
     const ids = new Set(GAMES.filter((g) => g.playable).map((g) => g.id));
