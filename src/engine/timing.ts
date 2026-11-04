@@ -48,3 +48,12 @@ export function classifyReaction(ms: number): 'anticipated' | 'fast' | 'ok' | 's
   if (ms < 700) return 'ok';
   return 'slow';
 }
+
+/** Capture a pointer on its target. Some browsers throw for unknown pointer ids, so this never throws. */
+export function capturePointer(e: { currentTarget: EventTarget | null; pointerId: number }): void {
+  try {
+    (e.currentTarget as HTMLElement | null)?.setPointerCapture?.(e.pointerId);
+  } catch {
+    /* ignore */
+  }
+}

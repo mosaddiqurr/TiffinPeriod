@@ -6,6 +6,7 @@ import { useSettings } from '../../platform/settings';
 import { sfx, vibrate } from '../../platform/audio';
 import { recordResult } from '../../platform/scores';
 import { createRng } from '../../engine/rng';
+import { capturePointer } from '../../engine/timing';
 import { GameCanvas } from '../../engine/GameCanvas';
 import { DifficultySeg, ModeSeg, Overlay, PauseMenu, ReportCard, useGameBar, usePlayerNames, type Difficulty, type Mode } from '../../components/ui';
 import { BiscuitScene } from './BiscuitScene';
@@ -155,14 +156,14 @@ export default function BiscuitRace({ onExit }: GameProps) {
       <div className="br-move">
         {(['left', 'right'] as const).map((k) => (
           <button key={k} className={`touch-pad br-btn ${k}`} aria-label={t(k)} data-testid={`l${lane}-${k}`}
-            onPointerDown={(e) => { e.preventDefault(); (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId); ctl(lane, k, true); }}
+            onPointerDown={(e) => { e.preventDefault(); capturePointer(e); ctl(lane, k, true); }}
             onPointerUp={() => ctl(lane, k, false)} onPointerCancel={() => ctl(lane, k, false)} onContextMenu={(e) => e.preventDefault()}>
             {k === 'left' ? '◀' : '▶'}<small>{t(k)}</small>
           </button>
         ))}
       </div>
       <button className="touch-pad br-btn jump" aria-label={t('jump')} data-testid={`l${lane}-jump`}
-        onPointerDown={(e) => { e.preventDefault(); (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId); ctl(lane, 'jump', true); }}
+        onPointerDown={(e) => { e.preventDefault(); capturePointer(e); ctl(lane, 'jump', true); }}
         onPointerUp={() => ctl(lane, 'jump', false)} onPointerCancel={() => ctl(lane, 'jump', false)} onContextMenu={(e) => e.preventDefault()}>
         ⤒<small>{t('jump')}</small>
         <span className="key-hint hide-touch">{lane === 1 ? (vsAI ? 'W / Space / ↑' : 'A D W') : '← → ↑'}</span>

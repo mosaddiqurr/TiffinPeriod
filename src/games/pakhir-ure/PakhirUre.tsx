@@ -5,6 +5,7 @@ import { UI } from '../../platform/strings';
 import { sfx, speak, vibrate } from '../../platform/audio';
 import { recordResult } from '../../platform/scores';
 import { createRng } from '../../engine/rng';
+import { capturePointer } from '../../engine/timing';
 import { DifficultySeg, ModeSeg, Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames, type Difficulty, type Mode } from '../../components/ui';
 import { ITEMS, artFor } from './items';
 import { PakhirEngine, type InputStyle } from './engine';
@@ -249,7 +250,7 @@ export default function PakhirUre({ onExit }: GameProps) {
               <button
                 className={`pu-pad ${input} ${p.holding ? 'down' : 'up'}`}
                 data-testid={`pad-${i}`}
-                onPointerDown={(ev) => { ev.preventDefault(); (ev.currentTarget as HTMLElement).setPointerCapture?.(ev.pointerId); if (!paused) e.press(i, now()); }}
+                onPointerDown={(ev) => { ev.preventDefault(); capturePointer(ev); if (!paused) e.press(i, now()); }}
                 onPointerUp={() => { if (!paused) e.release(i, now()); }}
                 onPointerCancel={() => { if (!paused) e.release(i, now()); }}
                 onContextMenu={(ev) => ev.preventDefault()}
