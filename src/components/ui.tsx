@@ -110,7 +110,6 @@ export function ReportCard({ outcome, title, subtitle, rows, newBest, onAgain, o
         <div className="school" style={{ fontWeight: 500, color: 'var(--ink-soft)' }}>{t('reportTitle')}</div>
         <h2>{title}</h2>
         {subtitle && <p className="sub">{subtitle}</p>}
-        {stamp && <div className={`grade-stamp ${outcome}`}>{stamp}</div>}
         <table>
           <tbody>
             {rows.map(([k, v]) => (
@@ -119,7 +118,7 @@ export function ReportCard({ outcome, title, subtitle, rows, newBest, onAgain, o
           </tbody>
         </table>
         {newBest && <div style={{ textAlign: 'center' }}><span className="new-best">★ {t('newBest')}</span></div>}
-        <div className="sign"><span>{new Date().toLocaleDateString(t.lang === 'bn' ? 'bn-BD' : 'en-GB')}</span><span style={{ textAlign: 'center' }}><Signature /><br />{t('signTeacher')}</span></div>
+        <div className="sign"><span>{new Date().toLocaleDateString(t.lang === 'bn' ? 'bn-BD' : 'en-GB')}</span>{stamp && <span className={`grade-stamp ${outcome}`}>{stamp}</span>}<span style={{ textAlign: 'center' }}><Signature /><br />{t('signTeacher')}</span></div>
         <div className="actions">
           <button className="btn big" onClick={onAgain} autoFocus>{t('playAgain')}</button>
           {onSetup && <button className="btn secondary" onClick={onSetup}>{t('changeSetup')}</button>}

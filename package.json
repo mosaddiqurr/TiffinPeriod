@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "description": "Tiffin Period: Bangladeshi nostalgic childhood games (web + PWA). Phase 1.",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "vite",

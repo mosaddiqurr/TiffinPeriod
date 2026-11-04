@@ -31,7 +31,7 @@ const en = {
   resume: 'Resume',
   restart: 'Restart',
   quit: 'Back to all games',
-  footer: 'Made for everyone who remembers the tiffin period. All art and sound in this app are original. No account. No ads. Your scores stay on this device.',
+  footer: 'Made for everyone who remembers the tiffin period. The drawings and sounds are original. The animal pictures in Pakhir Ure are Microsoft Fluent Emoji (MIT licence). No account. No ads. Your scores stay on this device.',
   credits: 'Credits and licences',
   // settings page
   sLang: 'Language',
@@ -128,7 +128,7 @@ const bn: Record<K, string> = {
   resume: 'আবার চালাও',
   restart: 'নতুন করে শুরু',
   quit: 'সব খেলায় ফিরে যাও',
-  footer: 'যাদের টিফিন পিরিয়ডের কথা মনে আছে, তাদের জন্য। এই অ্যাপের সব ছবি আর শব্দ নিজেদের বানানো। কোনো অ্যাকাউন্ট নেই, বিজ্ঞাপন নেই। তোমার স্কোর এই ডিভাইসেই থাকে।',
+  footer: 'যাদের টিফিন পিরিয়ডের কথা মনে আছে, তাদের জন্য। আঁকা আর শব্দ নিজেদের বানানো। পাখি উড়ে খেলার প্রাণীর ছবি Microsoft Fluent Emoji (MIT লাইসেন্স)। কোনো অ্যাকাউন্ট নেই, বিজ্ঞাপন নেই। তোমার স্কোর এই ডিভাইসেই থাকে।',
   credits: 'কৃতজ্ঞতা ও লাইসেন্স',
   sLang: 'ভাষা',
   sSound: 'শব্দ',

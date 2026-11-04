@@ -328,10 +328,14 @@ export class BalloonScene implements Scene {
       x += w + 52;
     });
     // Timer
-    ctx.font = `800 26px ${FONT}`;
+    ctx.font = `800 22px ${FONT}`;
+    const tl = `${this.tx.time} ${this.tx.num(Math.ceil(f.timeLeft))}`;
+    const tw = ctx.measureText(tl).width + 24;
+    ctx.fillStyle = f.timeLeft < 6 ? 'rgba(198, 47, 47, 0.95)' : 'rgba(255, 253, 246, 0.95)';
+    roundRectFill(ctx, lane.x + lane.w - 10 - tw, y0 - 18, tw, 36, 18);
     ctx.textAlign = 'right';
-    ctx.fillStyle = f.timeLeft < 6 ? '#c62f2f' : '#3a2516';
-    ctx.fillText(`${this.tx.time} ${this.tx.num(Math.ceil(f.timeLeft))}`, lane.x + lane.w - 12, y0 + 1);
+    ctx.fillStyle = f.timeLeft < 6 ? '#ffffff' : '#3a2516';
+    ctx.fillText(tl, lane.x + lane.w - 22, y0 + 1);
     // Target colour banner
     const fresh = f.t - f.lastTargetChange < 0.8 ? 1 + (0.8 - (f.t - f.lastTargetChange)) * 0.4 : 1;
     const label = this.tx.targetFmt(this.tx.colorName[f.targetColor]);
