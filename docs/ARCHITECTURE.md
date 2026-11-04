@@ -69,10 +69,38 @@ A game uses these shared parts:
 
 **Rule of separation.** Rules and physics live in pure modules with no DOM. Screens and scenes call those modules. This rule makes the logic unit-testable and portable to a future native app.
 
-## 4. How to add a new game (for Phase 2)
+## 3a. GameShell and RaceScene (added in Phase 2)
 
-1. Create `src/games/<id>/` with a default-export component.
-2. In `src/platform/registry.ts`, set `playable: true`, `modes`, and `load: () => import('../games/<id>/<Game>')`.
+Most canvas games now use two shared parts.
+
+**`src/components/GameShell.tsx`.** A game gives the shell:
+- `createScene(cfg)`: a `ShellScene`, which is a canvas `Scene` with `control(player, action, down)`, `onOver(result)`, and optional `onPause()` and `dispose()`.
+- `pads(cfg)`: a list of `PadDef` items. Each item has a player, an action, a label, a screen area (`bl`, `br`, `bc`, `tl`, `tr`, `tc`), key codes and an optional `flip` (turned 180° for the second player across the table). An item can be `hidden` (a keyboard-only binding).
+- `options`: extra setup choices, shown as segmented buttons.
+
+The shell then gives every game the same setup sheet, touch pads, key bindings, pause menu, result card, local records and achievements. It can also show a "turn your phone sideways" hint (`preferLandscape`).
+
+**`src/shared/race.ts`.** A base class for side-view races (Sack Race, Three-Legged Race, Spoon & Marble, Elonti Belonti). It owns:
+- the lanes (Player 1 always at the bottom, next to the pads)
+- a camera for each lane
+- the countdown and whistle
+- the progress bar, the finish order and the grace time
+- the result rows
+
+A race only implements `stepRacer()`, `drawRacer()`, `control()` and the extra result rows. `src/shared/raceKit.ts` gives the race texts in both languages and the lane roster.
+
+**Matter.js (MIT).** Pen Fight (top view, zero gravity, air friction = table friction) and Rubber Band Shooting (side view, desks, constraints for the paper bird) use Matter.js 0.20. Both games step the engine at the fixed 1/120 s. The Pen Fight computer copies the world and simulates candidate flicks over several frames. The Rubber Band computer searches launch pulls with a collision-free preview world.
+
+**Audio additions (`src/platform/audio.ts`).**
+- `playMelody(notes, bpm, bass)`: an original harmonium-like loop. Notes are scheduled on the audio clock with a lookahead timer, so the rhythm does not drift.
+- `createSpatialSource()`: an HRTF `PannerNode`. It is positioned relative to the listener's heading in a 2D top view.
+
+**Portrait screens.** A scene can change its design size and camera in `onResize()`. Tug of War, Paper Airplane and Haari Bhanga use a narrower view in portrait with a camera that follows the action.
+
+## 4. How to add a new game
+
+1. Create `src/games/<id>/` with a default-export component. For a canvas game, return a `<GameShell>` with a `createScene` and a `pads` list (see section 3a).
+2. In `src/platform/registry.ts`, add the game to the `BUILT` map (`modes` and `load: () => import('../games/<id>/<Game>')`). The registry then marks it playable.
 3. Add a doodle in `src/components/Doodles.tsx` (the `DOODLES` map).
 4. Put the rules in a pure module and add unit tests in `tests/`.
 5. Add a browser test in `e2e/` that plays to a result.
@@ -89,7 +117,7 @@ No other file needs a change.
   - **Tug of War:** a 1-D model, `a = K·(s_right − s_left) − c·v`. Pull "surges" decay with τ = 0.25 s. There is one judged pull per beat.
   - **Biscuit Race:** a damped pendulum with semi-implicit Euler, plus wind. The bite test uses circle overlap with a centring tolerance.
   - **Balloon Burst:** kinematic rise with sway, elliptical hit areas, and a seeded spawner.
-- **Why not Phaser or Matter.js now?** Phase 1 needs simple 2D drawing and tiny physics. A small canvas host keeps the bundle small (about 86 KB gzipped for the shell, and each game is a separate chunk). It also keeps one strategy for all real-time games. Matter.js (MIT) will come in Phase 2 for rigid bodies (Pen Fight, Rubber Band Shooting, Pillow Fight), behind `src/engine/physics.ts`. Phaser stays an option if a later game needs sprite atlases and tilemaps.
+- **Why not Phaser?** All 17 games need simple 2D drawing. A small canvas host keeps the bundle small (about 90 KB gzipped for the shell; each game is a separate chunk of 5–25 KB gzipped, except Pakhir Ure at about 50 KB because of its pictures). It also keeps one strategy for all real-time games. Matter.js is used only where rigid bodies are necessary (Pen Fight, Rubber Band Shooting). It is planned for Pillow Fight too. Phaser stays an option if a later game needs sprite atlases and tilemaps.
 
 ## 6. Fairness rules in the code
 

@@ -35,7 +35,7 @@ test('phone: every Phase 2 game opens and starts without errors', async ({ page,
 
 test.describe('desktop full plays', () => {
   test.skip(({ isMobile }) => isMobile);
-  test.setTimeout(180_000);
+  test.setTimeout(200_000);
 
   test('Pen Fight: keyboard flicks until someone wins', async ({ page }) => {
     const errors = trackErrors(page);
@@ -121,13 +121,14 @@ test.describe('desktop full plays', () => {
   test('Paper Airplane: three throws with nose-up control', async ({ page }) => {
     const errors = trackErrors(page);
     await open(page, 'paper-plane');
-    for (let i = 0; i < 12 && !(await result(page).isVisible()); i++) {
+    // Space throws when the plane is on the roof and raises the nose in flight.
+    // Keep pressing until all three throws are done (flight length varies).
+    const until = Date.now() + 150_000;
+    while (Date.now() < until && !(await result(page).isVisible())) {
       await page.keyboard.down('Space'); await page.waitForTimeout(900); await page.keyboard.up('Space');
-      await page.waitForTimeout(1500);
-      await page.keyboard.down('Space'); await page.waitForTimeout(300); await page.keyboard.up('Space');
-      await page.waitForTimeout(5000);
+      await page.waitForTimeout(1600);
     }
-    await expect(result(page)).toBeVisible({ timeout: 60_000 });
+    await expect(result(page)).toBeVisible({ timeout: 20_000 });
     expect(errors).toEqual([]);
   });
 });

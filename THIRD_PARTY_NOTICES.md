@@ -5,6 +5,10 @@ This app ships these third-party parts. Each is used under its licence.
 ## React and React DOM — MIT
 Copyright (c) Meta Platforms, Inc. and affiliates. https://github.com/facebook/react
 
+## Matter.js — MIT
+Copyright (c) Liam Brummitt and contributors. https://github.com/liabru/matter-js
+Used by Pen Fight and Rubber Band Shooting.
+
 ## Workbox (workbox-window, service worker runtime) — MIT
 Copyright Google LLC. https://github.com/GoogleChrome/workbox
 

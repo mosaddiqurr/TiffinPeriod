@@ -33,7 +33,16 @@ class PlaneScene implements Scene, ShellScene {
   designW = 1000;
   designH = 760;
   originX = 0;
+  originY = 0;
   onOver?: (r: ShellResult) => void;
+
+  /** Portrait phones see a narrower, taller slice of the sky; the camera follows the plane. */
+  onResize(w: number, h: number) {
+    const portrait = h > w;
+    this.designW = portrait ? 520 : 1000;
+    this.designH = portrait ? 640 : 760;
+    this.originY = portrait ? 120 : 0;
+  }
   private course: Course;
   private plane: Plane | null = null;
   private throwers: Thrower[] = [];
@@ -134,7 +143,8 @@ class PlaneScene implements Scene, ShellScene {
       if (r.ring) { this.texts.add(p.x, p.y - 30, this.tx('ring'), '#ffe27a', 30); sfx('good', { pitch: 1.3 }); }
       if (r.hit) this.endFlight(r.hit);
     }
-    if (p) this.camX += (clamp(p.x - 330, 0, WORLD.len - 600) - this.camX) * Math.min(1, dt * 5);
+    const lead = this.designW * 0.33;
+    if (p) this.camX += (clamp(p.x - lead, 0, WORLD.len - 600) - this.camX) * Math.min(1, dt * 5);
     else this.camX += (0 - this.camX) * Math.min(1, dt * 4);
     if (this.phase === 'after' && this.phaseT > 2) this.nextTurn();
   }

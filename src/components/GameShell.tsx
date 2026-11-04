@@ -81,6 +81,8 @@ export interface GameShellProps {
   pads: (cfg: ShellConfig) => PadDef[];
   hint?: string;
   rootClass?: string;
+  /** Show a "turn the phone sideways" hint on portrait screens. */
+  preferLandscape?: boolean;
 }
 
 export function GameShell(p: GameShellProps) {
@@ -187,6 +189,7 @@ export function GameShell(p: GameShellProps) {
   return (
     <div className={`shell-root playing ${p.rootClass ?? ''}`}>
       {scene && <GameCanvas scene={scene} paused={paused || phase !== 'play'} onHidden={onHidden} label={p.title} />}
+      {p.preferLandscape && <div className="shell-rotate" role="note">⟳ {u('landscapeHint')}</div>}
       <div className="shell-pads" data-mode={mode}>
         {(['bl', 'bc', 'br', 'tl', 'tc', 'tr'] as const).map((area) => {
           const list = pads.filter((pd) => pd.area === area && !pd.hidden);

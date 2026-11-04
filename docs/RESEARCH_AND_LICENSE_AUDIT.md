@@ -33,6 +33,8 @@ Date of audit: 2026-11-04.
 | assishmoncs/battlebox | MIT | Reuse allowed with notice. |
 | mahjerion/Capsule-Badminton | Not verified (clone did not finish) | UNVERIFIED. |
 
+**Phase 2 decision.** The 11 Phase 2 games use **no code** from any reference in the table above. The study-only and GPL repositories (Pen Fight, Updraft, classGame, Drift, Musical-Chairs-3D) were used for gameplay ideas only. The glider model of Paper Airplane, the flow field of Paper Boat and the Pen Fight flick model were written from physics principles. The only new third-party part is Matter.js (MIT).
+
 **GPL rule.** This project does not contain GPL code. If a later phase wants GPL code, the owner must first decide if the whole app can be distributed under GPL-3.0. The default is: write the mechanic again from the idea, not from the code.
 
 ## 3. Third-party parts in this build
@@ -40,6 +42,7 @@ Date of audit: 2026-11-04.
 | Part | Version | Licence | Where | Attribution |
 |---|---|---|---|---|
 | React, React DOM | 19.3.1 | MIT | runtime | `THIRD_PARTY_NOTICES.md` |
+| Matter.js (matter-js) | 0.20.0 | MIT | runtime (Pen Fight, Rubber Band Shooting only) | `THIRD_PARTY_NOTICES.md` |
 | workbox-window (via vite-plugin-pwa) | 7.4.1 | MIT | runtime (service worker) | `THIRD_PARTY_NOTICES.md` |
 | Baloo Da 2 font (@fontsource) | 5.3.0 | SIL OFL 1.1 | runtime | `THIRD_PARTY_NOTICES.md` |
 | Hind Siliguri font (@fontsource) | 5.3.0 | SIL OFL 1.1 | runtime | `THIRD_PARTY_NOTICES.md` |

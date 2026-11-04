@@ -410,3 +410,7 @@ a { color: var(--pen); }
   .shell-pad.size-wide { height: 70px; }
   .pad-area.area-bl, .pad-area.area-br, .pad-area.area-bc { bottom: 34px; }
 }
+.shell-rotate { display: none; }
+@media (orientation: portrait) and (max-width: 700px) {
+  .shell-rotate { display: block; position: absolute; left: 50%; bottom: 14px; translate: -50% 0; z-index: 4; background: rgba(255,253,246,0.95); color: var(--ink); padding: 6px 14px; border-radius: 16px; font-weight: 700; font-size: 14px; white-space: nowrap; box-shadow: var(--shadow); pointer-events: none; }
+}

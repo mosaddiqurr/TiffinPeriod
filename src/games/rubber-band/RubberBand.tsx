@@ -247,6 +247,7 @@ export default function RubberBand({ onExit }: GameProps) {
       options={[{ key: 'guide', label: t('guide'), def: 'on', choices: [{ v: 'on', label: t('on') }, { v: 'off', label: t('off') }] }]}
       createScene={(cfg: ShellConfig) => new BandScene(cfg, t, createRng(), cfg.opts.guide !== 'off')}
       pads={pads}
+      preferLandscape
     />
   );
 }

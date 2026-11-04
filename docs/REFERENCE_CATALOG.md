@@ -95,7 +95,9 @@ This catalog lists every reference for the 24 games, with an accurate label.
 
 ---
 
-## Phase 2 — references (planned games)
+## Phase 2 — references (games now built)
+
+All 11 Phase 2 games are built. No code from these references was copied. See `RESEARCH_AND_LICENSE_AUDIT.md`, "Phase 2 decision".
 
 | Game | Reference | Label | Licence (from files) | Stack | Notes |
 |---|---|---|---|---|---|

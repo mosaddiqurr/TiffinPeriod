@@ -300,6 +300,7 @@ export default function PenFight({ onExit }: GameProps) {
       hint={t('keys')}
       createScene={(cfg: ShellConfig) => new PenScene(cfg, t, createRng())}
       pads={pads}
+      preferLandscape
     />
   );
 }

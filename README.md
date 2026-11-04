@@ -2,7 +2,11 @@
 
 Bangladeshi childhood games from the class bench, the school sports day and the para rooftop. It runs as a website and as an installable app (PWA). There is no account, no ads and no server.
 
-**Phase 1 is playable:** Hand Cricket, Book Cricket, Pakhir Ure, Tug of War, Balloon Burst and Biscuit Race. Phases 2 and 3 (18 more games) are planned. They are shown as "Coming soon" and are not playable. See `docs/MASTER_GAME_ROADMAP.md`.
+**17 games are playable (Phase 1 and Phase 2):**
+- **Phase 1:** Hand Cricket, Book Cricket, Pakhir Ure, Tug of War, Balloon Burst, Biscuit Race.
+- **Phase 2:** Pen Fight, Rubber Band Shooting, Notebook Drawing Battle, Elonti Belonti, Spoon & Marble Race, Haari Bhanga, Paper Airplane, Paper Boat, Musical Chairs, Sack Race, Three-Legged Race.
+
+Phase 3 (7 games: the four street-cricket games, Pillow Fight, Ha-du-du and Rooftop Badminton) is planned. It is shown as "Coming soon" and is not playable. See `docs/MASTER_GAME_ROADMAP.md`.
 
 ## Requirements
 
@@ -43,8 +47,8 @@ npm test
 npm run build && npm run test:e2e
 ```
 
-- Unit tests (Vitest): 65 tests for the rules, physics, AI and platform logic.
-- Browser tests (Playwright): 9 flows × 2 screen profiles (phone and desktop). Each game is played to a real result.
+- Unit tests (Vitest): 96 tests for the rules, physics, computer opponents and platform logic.
+- Browser tests (Playwright): Phase 1 has 9 flows × 2 screen profiles (phone and desktop). Phase 2 has 12 full plays on desktop and 1 phone smoke test. Each full play reaches a real result.
 - Results and limits: `docs/TEST_PLAN.md`.
 
 ## Project structure
@@ -71,6 +75,16 @@ To add a game, see `docs/ARCHITECTURE.md`, section 4.
 | Tug of War | tap the pad on the beat | P1 `A`/`Space`, P2 `L`/`Enter` |
 | Balloon Burst | tap balloons | arrows + `Space` |
 | Biscuit Race | ◀ ▶ and Jump | P1 `A` `D` `W`, P2 arrows |
+| Pen Fight | touch your pen, pull back, let go | ← → aim, ↑ ↓ grab point, hold `Space` |
+| Rubber Band Shooting | pull back from the hand, let go | mouse drag |
+| Notebook Drawing Battle | draw with a finger; tap buttons | mouse |
+| Elonti Belonti, Spoon & Marble | hold WALK / RUN | hold `Space` (P2 `L`) |
+| Haari Bhanga | ◀ ▶ ▲ and HIT | arrows, `Space` |
+| Paper Airplane | pull back to throw; hold ▲ for nose up | ← → angle, hold `Space` |
+| Paper Boat | hold ◀ or ▶ | P1 `A` `D`, P2 ← → |
+| Musical Chairs | SIT! | `Space` (P2 `L`) |
+| Sack Race | HOP | `Space` (P2 `L`) |
+| Three-Legged Race | Outer and Tied | `A` and `D` (co-op: `A` and `L`) |
 
 `Esc` or `P` pauses a game.
 
@@ -80,7 +94,7 @@ Language (বাংলা / English), sound, volume, spoken announcements, vibra
 
 ## Licences and credits
 
-- The game code, the drawings and the sounds are original to this project. The owner chooses the project licence; `package.json` says `UNLICENSED` until then.
+- The game code, the drawings, the music and the sounds are original to this project. The animal pictures in Pakhir Ure are Microsoft Fluent Emoji (MIT). Pen Fight and Rubber Band Shooting use Matter.js (MIT). The owner chooses the project licence; `package.json` says `UNLICENSED` until then.
 - Third-party parts: see `THIRD_PARTY_NOTICES.md` and `docs/RESEARCH_AND_LICENSE_AUDIT.md`.
 
 ## Cost

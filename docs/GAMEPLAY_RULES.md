@@ -65,21 +65,89 @@
 5. With the biscuit in your mouth, run to the finish. First to finish wins. After the first finish, the other racer has 9 more seconds.
 - Keys: Player 1 `A`/`D` to move, `W`/`Space` to jump. Player 2 arrow keys. Against the computer, the arrow keys also control Player 1.
 
-## Phase 2 and Phase 3 (planned rules)
+## Phase 2 (implemented)
+
+### 07 Pen Fight (কলম যুদ্ধ)
+1. Two pens lie on a wooden bench. Players take turns.
+2. On your turn, touch your own pen, pull back and let go. The arrow shows the direction and the power. Keys: ← → aim, ↑ ↓ move the grab point, hold `Space` for power and release to flick.
+3. A flick near the end of the pen spins it. A flick at the middle pushes it straight.
+4. When the pens stop, a pen whose centre is off the bench has fallen.
+5. If the other pen fell, you win the point. If your own pen fell (even if both fell), the other player wins the point. If none fell, the turn passes.
+6. The first to 3 (or 5) points wins. The pens go back to the start after each point.
+
+### 08 Rubber Band Shooting (রাবার ব্যান্ড শুটিং)
+1. Touch the hand, pull back and let go. Pull further for more power. An optional aim guide shows the first part of the path.
+2. Knock targets off the desks (or knock a cup or a chalk stick over): cup 10, chalk 15, book 20, pencil box 30, paper bird 50.
+3. Five bands per level. If you clear the desk, each unused band gives +10.
+4. Level 1: a cup pyramid. Level 2: two desks. Level 3: a swinging paper bird, and the ceiling fan blows bands down.
+5. Solo: total score. Versus: each player shoots the same level in turn; the higher total wins.
+
+### 09 Notebook Drawing Battle (খাতায় আঁকাআঁকি)
+- **Party (2–4 players, one phone):** the drawer secretly picks one of three words and draws it in 60 s (pens in four colours, eraser, undo, clear). Friends shout guesses. The drawer taps the name of the friend who was right. Guesser: 50 + 2 × seconds left. Drawer: 40 + seconds left. No letters or numbers in the drawing. Each player draws 1 or 2 times.
+- **Computer draws:** 8 rounds. The computer draws a doodle stroke by stroke. Pick the answer from four choices. Points: 50 + up to 100, more for a faster answer.
+
+### 10 Elonti Belonti (এলন্টি বেলন্টি)
+1. The caller stands under a mango tree with their back to the players and chants "এলন্টি বেলন্টি, ঘড়ি বাজে টিং টিং, এক দুই তিন!".
+2. Hold WALK to move. Release to stop. Stopping takes about a quarter of a second.
+3. The chant speed changes each time. Sometimes there is a pause before "এক দুই তিন".
+4. On "তিন!" the caller turns (0.2 s) and watches for 1.2–2.4 s. Anyone still moving goes back to the start.
+5. The first player to reach the caller wins.
+
+### 11 Spoon & Marble Race (চামচ-মার্বেল দৌড়)
+1. Hold RUN to go; release to slow down. That is the only control.
+2. Speeding up rolls the marble back. Slowing down rolls it forward. The spoon bowl pulls it to the centre.
+3. Faster running makes bigger random bumps (they grow with the square of the speed).
+4. If the marble leaves the spoon, you stop to pick it up (1.8 s), or go back to the start (option).
+5. First to the finish wins. A bubble above your head shows the marble on the spoon.
+
+### 12 Haari Bhanga (হাঁড়িভাঙা)
+1. You are blindfolded and spun round. Turn with ◀ ▶, walk with ▲, swing with HIT.
+2. The pot makes a clay "tung" sound. It is directional with headphones (HRTF) and faster when you are close.
+3. Friends shout "বামে! (left)", "ডানে! (right)", "সোজা! (straight)", "পেছনে ঘোরো! (turn round)" or "এখনই মারো! (hit now)". With no peeking, one friend lies 20 % of the time.
+4. Peek setting: a lot (easy), a little, or none (hard).
+5. Three swings and 60 s. A swing hits if the stick end is within reach of the pot.
+6. Solo: break it as fast as you can. Versus: each player takes a turn; the faster break wins. The path is shown after each turn.
+
+### 13 Paper Airplane Racing (কাগজের উড়োজাহাজ)
+1. Choose a fold: glider (more lift, slower) or dart (faster, less lift).
+2. On the roof, pull back from the plane and let go (or hold `Space` for power). A dotted line shows the start of the path.
+3. In the air, hold ▲ to raise the nose. Above the stall angle, lift drops and the nose falls.
+4. Wind changes each throw (the flag shows it). Hot roofs give rising air.
+5. Rings +50 each. A soft landing on a roof, or reaching the end of the para, +100. Wires, water tanks, kites, walls and the street end the flight.
+6. Score = distance ÷ 10 + bonuses. Three throws each; the best counts.
+
+### 14 Paper Boat Racing (কাগজের নৌকা)
+1. The current carries the boats up the stream. Hold ◀ or ▶ to steer.
+2. The current is fastest in the middle of the channel.
+3. Bricks, sandals and leaves bump and slow your boat. Whirlpools near drains pull it in and spin it.
+4. The soak meter rises with rain, bumps and whirlpools. At 100 % the boat sinks.
+5. The first boat under the bamboo bridge wins. After the first finish, the others have 8 s.
+
+### 15 Musical Chairs (মিউজিক্যাল চেয়ার)
+1. Five kids walk round the chairs while the harmonium plays. There is one chair fewer than kids.
+2. The music stops after 4–10 s. Sometimes the music dips for a moment as a trick.
+3. When it stops, press SIT. Your kid runs to the nearest free chair. The first to arrive sits.
+4. Pressing SIT while the music plays is a foul: your kid trips for 1.3 s.
+5. The kid left standing is out. One chair is removed. The last kid wins.
+
+### 16 Sack Race (বস্তা দৌড়)
+1. Tap HOP to jump forward in the sack.
+2. The best hop is 0.06–0.30 s after landing (perfect). Up to 0.7 s is fine. A standing start is slow.
+3. A tap too soon after landing, or in the air, adds wobble. Wobble falls slowly over time.
+4. Full wobble = a fall: you lie down for 1.3 s.
+5. First across the finish line wins.
+
+### 17 Three-Legged Race (তিন পায়ে দৌড়)
+1. The pair has two moves: the outer legs and the tied legs (a red gamchha ties them).
+2. Alternate them at a steady pace (0.16–0.5 s between steps) for full speed.
+3. The same move twice, both moves within 0.07 s, or stepping faster than 0.16 s = a stumble.
+4. Too many stumbles: both kids fall for 1.5 s.
+5. Two players: one team. Player 1 has the outer legs (`A`), Player 2 has the tied legs (`L`).
+
+## Phase 3 (planned rules)
 
 | No. | Game | Planned rules |
 |---|---|---|
-| 07 | Pen Fight | Players take turns to flick their pen with a swipe. A pen that falls off the bench loses. Best of 3. |
-| 08 | Rubber Band Shooting | Pull back and release. Hit paper targets for points. Moving targets at higher levels. Limited bands. |
-| 09 | Notebook Drawing Battle | One player draws a secret word on a khata page for 60 s. The others guess. Points for fast guesses. Pass-and-play first. |
-| 10 | Elonti Belonti | The caller sings "Elonti Belonti, ghori baje ting ting, 1 2 3!" with their back turned. Players move. When the caller turns, any movement sends you back to the start. First to touch the caller wins. |
-| 11 | Spoon & Marble Race | Balance the marble while you run. If the marble falls, go back a set distance (or restart, by option). |
-| 12 | Haari Bhanga | Blindfolded. Turn and walk by sound cues. One swing of the stick per try. Break the pot to win. |
-| 13 | Paper Airplane Racing | Choose a fold, launch angle and power. Glide through rings over rooftops. Wind changes. |
-| 14 | Paper Boat Racing | Steer on flowing rainwater. Avoid drains, sandals and leaves. First past the line wins. |
-| 15 | Musical Chairs | Walk around the chairs while the music plays. When it stops, sit. The player without a chair is out. One chair is removed each round. |
-| 16 | Sack Race | Hop on the beat. A bad hop is a fall. First to the finish wins. |
-| 17 | Three-Legged Race | Two players step in sync (left-right). A mismatch is a stumble. |
 | 18 | Short-Pitch Cricket | 1, 2, 3 and 4 runs are allowed. **A six is OUT.** There is no conventional six-run score. Local boundaries are configurable. |
 | 19 | Tape Tennis Cricket | Street cricket with a taped tennis ball: fast bounce, swing. Configurable street boundaries. |
 | 20 | Rooftop Cricket | Water tanks and parapets. Option: ball off the roof = OUT. |

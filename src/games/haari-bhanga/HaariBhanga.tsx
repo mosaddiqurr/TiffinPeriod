@@ -37,6 +37,9 @@ interface Turn { player: number; name: string; ai: BlindAI | null; b: Blind; pot
 class HaariScene implements Scene, ShellScene {
   designW = HB.fieldW;
   designH = HB.fieldH;
+  originY = 0;
+  private portrait = false;
+  private camX = 0;
   onOver?: (r: ShellResult) => void;
   private turns: Turn[] = [];
   private cur = 0;
@@ -115,6 +118,8 @@ class HaariScene implements Scene, ShellScene {
 
   update(dt: number) {
     this.time += dt;
+    const camTarget = this.portrait ? Math.min(HB.fieldW - this.designW, Math.max(0, this.t.b.x - this.designW / 2)) : 0;
+    this.camX += (camTarget - this.camX) * Math.min(1, dt * 4);
     this.fx.update(dt);
     this.texts.update(dt);
     this.bubbles = this.bubbles.filter((b) => (b.life -= dt) > 0);
@@ -189,8 +194,13 @@ class HaariScene implements Scene, ShellScene {
     const tn = this.t;
     const b = tn.b;
     const blind = !tn.ai && (this.phase === 'play' || this.phase === 'spin');
+    // World layer, with a camera that follows the player on portrait screens.
+    const cam = this.camX;
+    ctx.save();
+    ctx.translate(-cam, 0);
+    const wv = { left: v.left + cam, right: v.right + cam, top: v.top, bottom: v.bottom };
     // Field (school ground with chalk lines) and the pot on a bamboo stand
-    ctx.fillStyle = '#7fb145'; ctx.fillRect(v.left, v.top, v.right - v.left, v.bottom - v.top);
+    ctx.fillStyle = '#7fb145'; ctx.fillRect(wv.left, wv.top, wv.right - wv.left, wv.bottom - wv.top);
     ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 3;
     ctx.strokeRect(30, 30, HB.fieldW - 60, HB.fieldH - 60);
     ctx.beginPath(); ctx.arc(120, HB.fieldH / 2, 40, 0, 6.283); ctx.stroke();
@@ -209,14 +219,16 @@ class HaariScene implements Scene, ShellScene {
       g.addColorStop(0, 'rgba(40, 8, 8, 0)');
       g.addColorStop(1, 'rgba(40, 8, 8, 1)');
       ctx.fillStyle = this.peekR > 0 ? g : 'rgba(40, 8, 8, 1)';
-      ctx.fillRect(v.left, v.top, v.right - v.left, v.bottom - v.top);
+      ctx.fillRect(wv.left, wv.top, wv.right - wv.left, wv.bottom - wv.top);
       // Gamchha checks on the cloth
       ctx.globalAlpha = 0.08; ctx.fillStyle = '#ffffff';
-      for (let x = Math.floor(v.left / 60) * 60; x < v.right; x += 60) ctx.fillRect(x, v.top, 6, v.bottom - v.top);
-      for (let y = Math.floor(v.top / 60) * 60; y < v.bottom; y += 60) ctx.fillRect(v.left, y, v.right - v.left, 6);
+      for (let x = Math.floor(wv.left / 60) * 60; x < wv.right; x += 60) ctx.fillRect(x, wv.top, 6, wv.bottom - wv.top);
+      for (let y = Math.floor(wv.top / 60) * 60; y < wv.bottom; y += 60) ctx.fillRect(wv.left, y, wv.right - wv.left, 6);
       ctx.restore();
       if (this.peekR > 0) this.drawPlayer(ctx, b);
     }
+    this.texts.draw(ctx, FONT);
+    ctx.restore();
     // HUD
     ctx.font = `800 24px ${FONT}`; ctx.textBaseline = 'middle';
     ctx.textAlign = 'left'; ctx.fillStyle = '#fff';
@@ -237,14 +249,22 @@ class HaariScene implements Scene, ShellScene {
       ctx.fillText(label, cx, cy + 1);
       ctx.globalAlpha = 1;
     }
-    this.texts.draw(ctx, FONT);
     if (this.phase === 'ready' && !tn.ai) {
+      const mx = (v.left + v.right) / 2, my = (v.top + v.bottom) / 2;
       ctx.fillStyle = 'rgba(20,10,5,0.55)'; ctx.fillRect(v.left, v.top, v.right - v.left, v.bottom - v.top);
       ctx.fillStyle = '#fff'; ctx.font = `800 40px ${FONT}`; ctx.textAlign = 'center';
-      ctx.fillText(this.tx('turnOf', { name: tn.name }), 500, 300);
+      ctx.fillText(this.tx('turnOf', { name: tn.name }), mx, my - 30);
       ctx.font = `700 26px ${FONT}`;
-      ctx.fillText(this.tx('tapToGo'), 500, 360);
+      ctx.fillText(this.tx('tapToGo'), mx, my + 30);
     }
+  }
+
+  /** Portrait phones: a taller, narrower view with a camera that follows the player. */
+  onResize(w: number, h: number) {
+    this.portrait = h > w;
+    this.designW = this.portrait ? 560 : HB.fieldW;
+    this.designH = this.portrait ? 860 : HB.fieldH;
+    this.originY = this.portrait ? -80 : 0;
   }
 
   private drawPot(ctx: CanvasRenderingContext2D, x: number, y: number) {

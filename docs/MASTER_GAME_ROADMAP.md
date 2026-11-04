@@ -4,8 +4,9 @@
 
 The platform has **24 confirmed games and modes** in three phases.
 
-- **Phase 1** (this release): 6 games. They are built, tested and playable.
-- **Phase 2** and **Phase 3**: 18 games. They are researched and planned. They are **not** playable. The hub shows them as "Coming soon" (শীঘ্রই).
+- **Phase 1** (done): 6 games. They are built, tested and playable.
+- **Phase 2** (done): 11 games. They are built, tested and playable.
+- **Phase 3** (planned): 7 games. They are researched and planned. They are **not** playable. The hub shows them as "Coming soon" (শীঘ্রই).
 
 ## Status legend
 
@@ -25,21 +26,21 @@ The platform has **24 confirmed games and modes** in three phases.
 | 05 | Balloon Burst | বেলুন ফাটানো | Sports day / mela | solo, vs computer, 2 players (split screen) | Aimed pops, target colour, combos, avoid the rain cloud | Canvas 2D + seeded spawner |
 | 06 | Biscuit Race | বিস্কুট দৌড় | Sports day | vs computer, 2 players | Swinging biscuit (damped pendulum + wind), timed jump, mouth bite | Canvas 2D + pendulum physics |
 
-## Phase 2 — medium games (PLANNED)
+## Phase 2 — medium games (PLAYABLE)
 
-| No. | Game | Bangla | Where | Planned core mechanic | Planned tech | Reuses |
+| No. | Game | Bangla | Where | Modes | Core mechanic (as built) | Tech |
 |---|---|---|---|---|---|---|
-| 07 | Pen Fight | কলম যুদ্ধ | Class bench | Swipe-to-flick a pen; push the other pen off the bench | Matter.js or Planck.js rigid bodies | input/flick helper, physics helper |
-| 08 | Rubber Band Shooting | রাবার ব্যান্ড শুটিং | Class bench | Pull back, release, projectile to targets | Matter.js (slingshot pattern) | flick helper, particles |
-| 09 | Notebook Drawing Battle | খাতায় আঁকাআঁকি | Class bench | One draws on a khata page, others guess | Canvas strokes; local pass-and-play first, online later | multiplayer interface |
-| 10 | Elonti Belonti | এলন্টি বেলন্টি | Para | Move while the caller sings "Elonti Belonti, ghori baje ting ting, 1 2 3!", freeze when the caller turns | Canvas 2D; input-hold movement; no camera | timing helpers |
-| 11 | Spoon & Marble Race | চামচ-মার্বেল দৌড় | Sports day | Run while you balance a marble on a spoon | Simple tilt model or Matter.js | kid character, race system |
-| 12 | Haari Bhanga | হাঁড়িভাঙা | Sports day / fair | Blindfolded; find the hanging pot by sound | Web Audio API PannerNode (HRTF) | audio manager |
-| 13 | Paper Airplane Racing | কাগজের উড়োজাহাজ | Rooftop | Launch angle, lift, drag, wind, glide | Custom 2D glider model (no GPL code) | physics helper |
-| 14 | Paper Boat Racing | কাগজের নৌকা | Monsoon street | Steer a paper boat on flowing rain water | Flow-field water (cheap), 2D | race system |
-| 15 | Musical Chairs | মিউজিক্যাল চেয়ার | Sports day | Circle the chairs; grab one when the music stops | Canvas 2D; music timing; AI seeking | audio, kid character, elimination rounds |
-| 16 | Sack Race | বস্তা দৌড় | Sports day | Timed hops; bad timing makes you fall | Canvas 2D; rhythm hop | timing helpers, kid character |
-| 17 | Three-Legged Race | তিন পায়ে দৌড় | Sports day | Two players step in sync; mismatch = stumble | Canvas 2D; coupled walkers | timing helpers, race system |
+| 07 | Pen Fight | কলম যুদ্ধ | Class bench | vs computer, 2 players | Pull back and flick your pen; an off-centre flick spins it; push the other pen off the bench; first to 3 or 5 points | Matter.js rigid bodies; the computer simulates 75 candidate flicks |
+| 08 | Rubber Band Shooting | রাবার ব্যান্ড শুটিং | Class bench | solo, vs computer, 2 players | Stretch and release; knock cups, chalk, books, a pencil box and a swinging paper bird off the desks; ceiling fan wind in level 3 | Matter.js bodies and constraints |
+| 09 | Notebook Drawing Battle | খাতায় আঁকাআঁকি | Class bench | party (2–4, pass the phone), computer draws | Secret word, 60-second drawing on a khata page, tap the friend who guessed; or guess the computer's doodle | Canvas strokes, SVG path sampling |
+| 10 | Elonti Belonti | এলন্টি বেলন্টি | Para | vs computer, 2 players | Walk while the caller chants (speed changes, trick pauses); stop before "tin!"; moving when watched = back to the start | Race base + caller state machine |
+| 11 | Spoon & Marble Race | চামচ-মার্বেল দৌড় | Sports day | vs computer, 2 players | One button: your speed changes move the marble; bumps grow with speed; a drop costs time | Race base + spring-damper marble model |
+| 12 | Haari Bhanga | হাঁড়িভাঙা | Sports day / fair | solo, vs computer, 2 players | Blindfolded and spun; find the pot by HRTF sound and friends' shouts (one may lie); three swings | Web Audio PannerNode (HRTF), top view |
+| 13 | Paper Airplane Racing | কাগজের উড়োজাহাজ | Rooftop | solo, vs computer, 2 players | Throw from the roof; lift, drag, stall; thermals over hot roofs; rings, wires, water tanks, kites; three throws, best counts | Custom glider model (no GPL code) |
+| 14 | Paper Boat Racing | কাগজের নৌকা | Monsoon street | vs computer, 2 players | Steer in a meandering current; bricks, sandals, leaves, drain whirlpools; soak meter; first under the bamboo bridge wins | Flow field + circle collisions |
+| 15 | Musical Chairs | মিউজিক্যাল চেয়ার | Sports day | vs computer, 2 players | Harmonium tune; press SIT when it stops; fake dips; early press = trip; one chair fewer each round | Lookahead-scheduled Web Audio music |
+| 16 | Sack Race | বস্তা দৌড় | Sports day | vs computer, 2 players | Tap to hop; best just after landing; too soon or in the air = wobble; too much = fall | Race base + hop model |
+| 17 | Three-Legged Race | তিন পায়ে দৌড় | Sports day | vs computer, 2 players (co-op) | Alternate the outer and the tied legs at a steady pace; in co-op, one player per leg | Race base + step model |
 
 ## Phase 3 — hard games (PLANNED)
 
@@ -47,19 +48,18 @@ The platform has **24 confirmed games and modes** in three phases.
 |---|---|---|---|---|---|---|
 | 18 | Short-Pitch Cricket | শর্ট-পিচ ক্রিকেট | Para | Batting timing. Runs 1–4 only. **A six is OUT.** | Shared cricket engine (2.5D) | `src/shared/cricket.ts` scoring |
 | 19 | Tape Tennis Cricket | টেপ-টেনিস ক্রিকেট | Street | Fast, bouncy taped ball; swing | Shared cricket engine | same |
-| 20 | Rooftop Cricket | ছাদ ক্রিকেট | Rooftop | Roof edges, water tanks; ball off the roof = OUT (option) | Shared cricket engine + boundary rules | same |
+| 20 | Rooftop Cricket | ছাদ ক্রিকেট | Rooftop | Roof edges, water tanks; ball off the roof = OUT (option) | Shared cricket engine + boundary rules | same, plus Paper Airplane rooftop scenery |
 | 21 | Goli Cricket | গলি ক্রিকেট | Alley | Narrow alley, wall rebounds, brick stumps | Shared cricket engine + wall colliders | same |
-| 22 | Pillow Fight | বালিশ যুদ্ধ | Sports day / home | Knock the other player off a bamboo beam | Matter.js constraints, controlled balance | physics helper |
-| 23 | Kabaddi / Ha-du-du | হা-ডু-ডু | Village / para | Raider tags defenders on one breath and returns | Canvas 2D top view, team AI | team scoring, tournament system |
-| 24 | Rooftop Badminton | ছাদে ব্যাডমিন্টন | Rooftop | Shuttle with high drag; clears, drops, smashes; wind | 2D side view, quadratic drag model | physics helper |
+| 22 | Pillow Fight | বালিশ যুদ্ধ | Sports day / home | Knock the other player off a bamboo beam | Matter.js constraints, controlled balance | Matter.js setup from Pen Fight |
+| 23 | Kabaddi / Ha-du-du | হা-ডু-ডু | Village / para | Raider tags defenders on one breath and returns | Canvas 2D top view, team AI | GameShell, top-view kids from Musical Chairs |
+| 24 | Rooftop Badminton | ছাদে ব্যাডমিন্টন | Rooftop | Shuttle with high drag; clears, drops, smashes; wind | 2D side view, quadratic drag model | glider and wind code ideas from Paper Airplane |
 
-## Shared systems and the order to build them
+## Shared systems
 
 1. **Phase 1 (done):** hub, registry, routing, language, settings, local records, achievements, audio, canvas host, fixed-step loop, particles, pendulum physics, beat and reaction timing, kid character, sports-day scenery, cricket scoring.
-2. **Start of Phase 2:** add a rigid-body physics module (Matter.js, MIT) behind `src/engine/physics.ts`. Add a flick and drag input helper. Add a generic race system (lanes, start, finish, times) from Biscuit Race.
-3. **During Phase 2:** add a tournament and points system for sports-day games (houses, medals).
-4. **Start of Phase 3:** build one cricket engine with configurable rule sets (`sixIsOut`, `offRoofIsOut`, `wallRuns`). Extend `src/shared/cricket.ts`.
-5. **Online multiplayer (later, optional):** add it behind an interface. Each game keeps local play. See `ARCHITECTURE.md`.
+2. **Phase 2 (done):** `GameShell` (setup, pads, keys, pause, results, records for any canvas game), `RaceScene` (lanes, countdown, cameras, standings), Matter.js integration, music loop, HRTF spatial sound, portrait cameras, the "turn your phone" hint.
+3. **Start of Phase 3:** one cricket engine with configurable rule sets (`sixIsOut`, `offRoofIsOut`, `wallRuns`), extending `src/shared/cricket.ts`.
+4. **Later (optional):** a tournament and house-points system for sports-day games; online multiplayer behind an interface (see `ARCHITECTURE.md`).
 
 ## Release path
 
