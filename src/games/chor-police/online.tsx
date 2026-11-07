@@ -10,7 +10,7 @@ import { MoveClock, Who, useRealUnmount } from '../../components/online/OnlineLo
 import { useTx } from '../../components/sport/SportKit';
 import { ROLE_POINTS, type Role } from './model';
 import { GUESS_SECONDS, type CPAction, type CPView } from './table';
-import { hostTable } from './host';
+import { hostTable, uniqueNames } from './host';
 import '../../components/online/online.css';
 import './online.css';
 
@@ -186,6 +186,7 @@ function PartyRoom({ party, quick, onLeave }: { party: Party; quick: boolean; on
   };
   const copyCode = async () => { try { await navigator.clipboard.writeText(party.code); setCopied('code'); } catch { setCopied('fail'); } };
   const seats = Array.from({ length: PARTY_MAX }, (_, i) => members[i] ?? null);
+  const seatNames = uniqueNames(members.map((m) => m.profile.name));
   return (
     <div className="sport-page ol-page cp-room" data-testid="party-room">
       {hostGone ? <HostGone name={hostName} onLeave={onLeave} /> : null}
@@ -204,7 +205,7 @@ function PartyRoom({ party, quick, onLeave }: { party: Party; quick: boolean; on
       <ol className="cp-seats" data-testid="seats">
         {seats.map((m, i) => (
           <li key={i} className={m ? '' : 'empty'} data-testid={`seat-${i}`}>
-            {m ? <><Who team="" name={m.profile.name} size={30} /><b>{m.profile.name}</b>
+            {m ? <><Who team="" name={seatNames[i]} size={30} /><b>{seatNames[i]}</b>
               <small>{[m.id === party.hostId ? t('host', 'হোস্ট') : '', m.id === party.me ? t('you', 'তুমি') : ''].filter(Boolean).join(' · ')}</small></>
               : <><span className="cp-seat-empty" aria-hidden="true">?</span><span>{t('Empty seat', 'খালি আসন')}</span></>}
           </li>

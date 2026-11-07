@@ -225,3 +225,10 @@ describe('Chor Police over a party: host, two friends and a stand-in', () => {
     for (const s of seats.slice(1)) { expect(s.human).toBe(false); expect(s.name).not.toMatch(/bot|computer|cpu/i); }
   });
 });
+
+describe('Chor Police online: names', () => {
+  it('numbers players who share a name, with Bangla digits for Bangla names', async () => {
+    const { uniqueNames } = await import('../src/games/chor-police/host');
+    expect(uniqueNames(['খেলোয়াড় ১', 'খেলোয়াড় ১', 'Rafi', 'rafi'])).toEqual(['খেলোয়াড় ১', 'খেলোয়াড় ১ ২', 'Rafi', 'rafi 2']);
+  });
+});

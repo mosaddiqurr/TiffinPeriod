@@ -6,9 +6,26 @@ import { ChorTable, type CPAction, type CPView, type TableSeat } from './table';
 // The host's side of an online Chor Police game: the table (table.ts) wired to the party.
 // Seat 0 is the host, then the guests in the order they joined, then stand-ins.
 
+/**
+ * Players with the same name (often the default "Player 1") get a number after it, so everyone at
+ * the table can tell them apart: "Rafi", "Rafi 2". Bangla names get Bangla digits.
+ */
+export function uniqueNames(names: string[]): string[] {
+  const seen = new Map<string, number>();
+  return names.map((nm) => {
+    const key = nm.trim().toLowerCase();
+    const k = (seen.get(key) ?? 0) + 1;
+    seen.set(key, k);
+    if (k === 1) return nm;
+    const digits = /[ঀ-৿]/.test(nm) ? String(k).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[+d]) : String(k);
+    return `${nm} ${digits}`;
+  });
+}
+
 /** The four seats for a game: everyone in the room (host first), then stand-ins with ordinary names. */
 export function seatsFor(members: PartyMember[], seed: number): { seats: TableSeat[]; ids: Array<string | null> } {
-  const seats: TableSeat[] = members.slice(0, PARTY_MAX).map((m) => ({ name: m.profile.name, human: true }));
+  const names = uniqueNames(members.slice(0, PARTY_MAX).map((m) => m.profile.name));
+  const seats: TableSeat[] = names.map((name) => ({ name, human: true }));
   const ids: Array<string | null> = members.slice(0, PARTY_MAX).map((m) => m.id);
   const rng = createRng((seed ^ 0x7f4a7c15) >>> 0);
   const used = new Set(seats.map((s) => s.name.toLowerCase()));
