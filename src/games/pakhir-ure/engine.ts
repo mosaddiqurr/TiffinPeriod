@@ -114,7 +114,7 @@ export class PakhirEngine {
       case 'ready':
         if (this.allReady()) {
           this.phase = 'gap';
-          const base = this.cfg.aiDifficulty === 'hard' ? 650 : 800;
+          const base = (this.cfg.aiDifficulty === 'hard' ? 650 : 800) + Math.min(300, this.cfg.extraMs ?? 0);
           this.gapEnd = now + base + this.rng.int(0, 700);
           this.players.forEach((p) => { p.early = false; p.feedback = null; p.judged = false; });
           this.bump();
@@ -237,7 +237,9 @@ export class PakhirEngine {
     }
     this.callIndex++;
     this.phase = 'reveal';
-    this.revealEnd = now + (this.item.tricky ? 1700 : 950);
+    // A touch screen also gets a longer look at the answer before the next call.
+    const extra = Math.min(500, this.cfg.extraMs ?? 0);
+    this.revealEnd = now + (this.item.tricky ? 1700 : 950) + extra;
     this.bump();
   }
 

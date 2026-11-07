@@ -31,8 +31,6 @@ function PakhirUreLocal({ onExit, onOnline }: GameProps & { onOnline: () => void
   const [input, setInput] = useState<InputStyle>('lift');
   const [phase, setPhase] = useState<'setup' | 'play' | 'result'>('setup');
   const [paused, setPaused] = useState(false);
-  const pausedRef = useRef(paused);
-  pausedRef.current = paused;
   const [, setVersion] = useState(0);
   const [flashKey, setFlashKey] = useState(0);
   const [result, setResult] = useState<{ newBest: boolean } | null>(null);
@@ -227,8 +225,9 @@ function PakhirUreLocal({ onExit, onOnline }: GameProps & { onOnline: () => void
               <HoldPad
                 className={`pu-pad ${input} ${p.holding ? 'down' : 'up'}`}
                 testid={`pad-${i}`}
-                onDown={() => { if (!pausedRef.current) engine.current?.press(i, now()); }}
-                onUp={() => { if (!pausedRef.current) engine.current?.release(i, now()); }}
+                disabled={paused}
+                onDown={() => engine.current?.press(i, now())}
+                onUp={() => engine.current?.release(i, now())}
               >
                 <Finger up={input === 'lift' ? !p.holding : false} />
                 <span className="pu-pad-label">{input === 'lift' ? t('padLift') : t('padTap')}</span>
