@@ -12,7 +12,7 @@ import { FORMATIONS, FORMATION_IDS, type FormationId, type Mentality, type TeamS
 import { FlikkScene, type FlikkConfig, type FlikkEnd, type FlikkHud, type Say } from './scene';
 import { CHALLENGES, achieved, loadChStars, saveChStars, starsOf, type FChallenge } from './challenges';
 import type { Side } from './physics';
-import type { Style } from './fixed';
+import { FLICKS_PER_TURN, type Style } from './fixed';
 import './flikk.css';
 
 const GAME = 'flikk-football';
@@ -66,10 +66,12 @@ function Tactics({ value, onChange, kit, label }: { value: TeamSetup; onChange: 
 
 function rulesList(t: (en: string, bn: string) => string, style: Style = 'free') {
   if (style === 'fixed') return [
-    t('Fixed players: everyone stays on their spot, like table football. Only the ball moves.', 'স্থির খেলোয়াড়: টেবিল ফুটবলের মতো সবাই নিজের জায়গায় থাকে। শুধু বল চলে।'),
+    t('Fixed players: everyone stays on their spot, like table football. Only the ball moves. The player with the ball glows.', 'স্থির খেলোয়াড়: টেবিল ফুটবলের মতো সবাই নিজের জায়গায় থাকে। শুধু বল চলে। যার কাছে বল, সে জ্বলজ্বল করে।'),
     t('Press anywhere, pull back and let go: the ball flies the other way. Pull further for more power; hook the pull to curl it.', 'যেকোনো জায়গায় চেপে পেছনে টানো, ছেড়ে দাও: বল উল্টো দিকে যাবে। বেশি টানলে বেশি জোর; বাঁকা করে টানলে বল বাঁক খাবে।'),
-    t('Wherever the ball stops, the nearest player gets it. Green ring: your team-mate will get it. Red ring: the other team will.', 'বল যেখানে থামে, সবচেয়ে কাছের খেলোয়াড় বল পায়। সবুজ দাগ: তোমার দলের কেউ পাবে। লাল দাগ: অন্য দল পাবে।'),
-    t('Keep passing while the ball stays with your team. Lose it and it is their turn.', 'বল তোমার দলে থাকলে পাস দিয়ে যাও। হারালে ওদের পালা।'),
+    t('The first player the ball touches collects it. Your team-mate: a pass. Theirs: their ball. The keeper: a save.', 'বল প্রথম যে খেলোয়াড়ের গায়ে লাগে, সে বল ধরে ফেলে। নিজের দলের কেউ: পাস। ওদের কেউ: ওদের বল। গোলকিপার: সেভ।'),
+    t('Over a side line: throw-in to the other team. Over the end line: goal kick. Stops in open space: the nearest player gets it.', 'পাশের দাগ পার হলে: অন্য দলের থ্রো-ইন। শেষ দাগ পার হলে: গোল কিক। ফাঁকা জায়গায় থামলে: সবচেয়ে কাছের খেলোয়াড় পায়।'),
+    t(`Up to ${FLICKS_PER_TURN} flicks a turn: pass, pass, shoot. Still on the ball after the last one and their nearest player tackles you.`, `এক পালায় সর্বোচ্চ ${FLICKS_PER_TURN}টা টোকা: পাস, পাস, শট। শেষ টোকার পরও বল তোমার কাছে থাকলে ওদের কাছের খেলোয়াড় ট্যাকল করে নেবে।`),
+    t('The guide shows the path. Green ring: yours will get it. Red ring: theirs will. Red cross: it goes out.', 'দাগ দেখায় বল কোথায় যাবে। সবুজ বৃত্ত: তোমার দলের কেউ পাবে। লাল বৃত্ত: ওরা পাবে। লাল ক্রস: বাইরে যাবে।'),
     t('Keepers slide along their lines by themselves. Every flick moves the clock on.', 'গোলকিপার নিজে নিজে গোললাইনে সরে। প্রতিটা টোকায় ঘড়ি এগোয়।'),
     t('Keys: arrows aim and set power, Space flicks.', 'কী-বোর্ড: তীর দিয়ে দিক আর জোর, স্পেসে টোকা।'),
   ];
@@ -355,6 +357,10 @@ function FlikkMatch({ p, onDone, onQuit, onRestart }: { p: Pending; onDone: (e: 
     switch (k) {
       case 'goal': return t(`GOAL! ${nm}`, `গোল! ${nm}`);
       case 'pass': return t(`Pass! Flick again (${v?.n})`, `পাস! আবার টোকা (${n(v?.n ?? '')})`);
+      case 'throw': return t('Out! Throw-in to them', 'বাইরে! ওদের থ্রো-ইন');
+      case 'goalkick': return t('Out! Goal kick', 'বাইরে! গোল কিক');
+      case 'tackle': return t(`${v?.n} flicks used: tackled!`, `${n(v?.n ?? '')} টোকা শেষ: ট্যাকল!`);
+      case 'lost': return t('Intercepted!', 'বল কেড়ে নিল!');
       case 'chain': return v?.n === '1' ? t('Pass!', 'পাস!') : t(`${v?.n} passes in a row!`, `টানা ${n(v?.n ?? '')}টা পাস!`);
       case 'turn': return t(`${nm}: your turn`, `${nm}-এর পালা`);
       case 'yourTurn': return t('Your turn', 'তোমার পালা');
@@ -404,7 +410,7 @@ function FlikkMatch({ p, onDone, onQuit, onRestart }: { p: Pending; onDone: (e: 
           {h?.thinking ? t('Computer is thinking…', 'কম্পিউটার ভাবছে…') : h?.phase === 'moving' ? t('…', '…') : `${p.names[h?.turnSide ?? 0]}`}
         </span>
         {p.cfg.style === 'fixed' ? <>
-          <span className="ff-chip" data-testid="chain" title={t('Passes in a row', 'টানা পাস')}>{t('Passes', 'পাস')} <b>{n(h?.chain ?? 0)}</b></span>
+          {!so && <span className="ff-flicks" data-testid="chain" aria-label={t(`Flick ${h?.flick ?? 1} of ${FLICKS_PER_TURN}`, `${n(FLICKS_PER_TURN)}-এর ${n(h?.flick ?? 1)} নম্বর টোকা`)} title={t('Flicks this turn', 'এই পালার টোকা')}>{Array.from({ length: FLICKS_PER_TURN }, (_, k) => k + 1).map((i) => <i key={i} className={(h?.flick ?? 1) > i ? 'used' : (h?.flick ?? 1) === i ? 'now' : ''} />)}</span>}
           {!so && <span className="ff-chip" data-testid="left" title={t('Flicks left in the match', 'ম্যাচে বাকি টোকা')}>⏱ <b>{n(h?.left ?? 0)}</b></span>}
         </> : <>
           <span className="ff-flicks" aria-label={t('Flicks this turn', 'এই পালার টোকা')}>{[1, 2, 3].map((i) => <i key={i} className={(h?.flick ?? 1) > i ? 'used' : (h?.flick ?? 1) === i ? 'now' : ''} />)}</span>

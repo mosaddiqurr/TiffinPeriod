@@ -3,15 +3,21 @@ import { MAX_SPEED, PITCH, R_BALL, R_DISC, R_KEEPER, ball, cloneWorld, flick, mo
 import { FORMATIONS, type TeamSetup } from './match';
 
 // Fixed mode ("table football" style): every player is pinned to a spot on the whole pitch,
-// in the team's formation. Only the ball moves. The side with the ball flicks the ball itself
-// from the player who has it; wherever it stops, the nearest player (keepers too) gets it.
-// - Stops nearest one of yours: a completed pass, flick again.
-// - Stops nearest one of theirs (or they block it): their ball.
-// - Each flick is one step of the clock.
+// in the team's formation. Only the ball moves. The side with the ball pulls back and flicks
+// the ball itself from the player who has it.
+// - The first player the ball touches collects it (keepers too: a save).
+// - One of yours: a completed pass, flick again. One of theirs: their ball.
+// - Over a side line: throw-in to the other team. Over an end line: goal kick.
+// - Stops in open space: the nearest player gets it.
+// - At most FLICKS_PER_TURN flicks a turn; still on the ball after the last one, the
+//   nearest opponent tackles and takes it. Each flick is one step of the clock.
 // Pure and deterministic like the free mode, so an online 1v1 only has to send
 // { angle, power, spin } for each flick and both devices see the same result.
 
 export type Style = 'free' | 'fixed';
+
+/** Flicks a side may take in one turn before the other team tackles. */
+export const FLICKS_PER_TURN = 3;
 
 /** The ball flicked straight leaves a little slower than a disc hit at full power would send it. */
 export const BALL_POWER = 0.92;
@@ -101,27 +107,51 @@ export function placeBall(w: World, holderId: number) {
   bl.vx = 0; bl.vy = 0; bl.spin = 0;
 }
 
-/** Who reaches the ball where it stopped: the nearest player or keeper. */
-export function receiver(w: World): Body {
+/** Who reaches the ball where it stopped: the nearest player or keeper (optionally of one side). */
+export function receiver(w: World, onlySide?: Side, kinds: Array<Body['kind']> = ['disc', 'keeper']): Body {
   const bl = ball(w);
   let best: Body | null = null, bd = Infinity;
   for (const b of w.bodies) {
-    if (b.kind === 'ball') continue;
+    if (!kinds.includes(b.kind) || (onlySide !== undefined && b.side !== onlySide)) continue;
     const d = Math.hypot(b.x - bl.x, b.y - bl.y) - b.r;
     if (d < bd) { bd = d; best = b; }
   }
   return best!;
 }
 
-export interface FixedResult { goal: Side | null; holder: number; keep: boolean; pass: boolean }
+export type FixedEvent = 'goal' | 'collect' | 'save' | 'loose' | 'throw' | 'goalkick';
+export interface FixedResult { goal: Side | null; holder: number; keep: boolean; pass: boolean; event: FixedEvent }
 
+/** Who has the ball after a flick by `side`, once it has stopped. */
 export function judgeFixed(w: World, side: Side, prevHolder: number): FixedResult {
-  const r = receiver(w);
-  const keep = w.goal === null && r.side === side;
-  return { goal: w.goal, holder: r.id, keep, pass: keep && r.id !== prevHolder };
+  const other: Side = side === 0 ? 1 : 0;
+  if (w.goal !== null) return { goal: w.goal, holder: -1, keep: false, pass: false, event: 'goal' };
+  let h: Body;
+  let event: FixedEvent;
+  if (w.outAt) {
+    // Out: the other team restarts. Throw-in by their player nearest the spot; goal kick by their keeper.
+    const oa = w.outAt;
+    h = oa.kind === 'throw' ? receiver(w, other, ['disc']) : w.bodies.find((b) => b.kind === 'keeper' && b.side === oa.side)!;
+    event = oa.kind;
+  } else if (w.collected != null) {
+    h = w.bodies.find((b) => b.id === w.collected)!;
+    event = h.kind === 'keeper' && h.side !== side ? 'save' : 'collect';
+  } else {
+    h = receiver(w);
+    event = 'loose';
+  }
+  const keep = h.side === side;
+  return { goal: null, holder: h.id, keep, pass: keep && h.id !== prevHolder, event };
 }
 
-export function flickBall(w: World, angle: number, power: number, spin = 0) {
+/** The opponent who tackles when a side has used all its flicks: their nearest outfield player. */
+export function tackler(w: World, side: Side): Body {
+  return receiver(w, side === 0 ? 1 : 0, ['disc']);
+}
+
+/** Flick the ball from `holder` (the ball bounces off the holder rather than being collected by them). */
+export function flickBall(w: World, angle: number, power: number, spin = 0, holder?: number) {
+  w.ignore = holder;
   flick(w, ball(w).id, angle, Math.max(0, Math.min(1, power)) * BALL_POWER, spin);
 }
 
@@ -144,28 +174,29 @@ export function powerFor(dist: number): number {
 export interface Preview {
   /** Ball positions along the way (pitch units). */
   path: Array<[number, number]>;
-  /** 'touch': it meets a player first; 'rest': it stops in space; 'goal': it goes in. */
-  end: 'touch' | 'rest' | 'goal';
-  /** The player it meets ('touch') or who reaches it ('rest'). */
+  /** 'touch': a player collects it; 'rest': it stops in space; 'out': over a line; 'goal': it goes in. */
+  end: 'touch' | 'rest' | 'out' | 'goal';
+  /** Who gets the ball. */
   who: Body | null;
 }
 
 /** The guide: run the real physics on a copy (only the ball moves, so it is cheap) up to the first player it meets. */
 export function previewFixed(w: World, holder: number, angle: number, power: number, spin = 0): Preview {
   const sim = cloneWorld(w);
-  flickBall(sim, angle, power, spin);
+  flickBall(sim, angle, power, spin, holder);
   const bl = ball(sim);
   const path: Array<[number, number]> = [[bl.x, bl.y]];
   for (let i = 0; i < 720; i++) {
     step(sim);
     if (i % 3 === 0) path.push([bl.x, bl.y]);
-    if (sim.goal !== null) { path.push([bl.x, bl.y]); return { path, end: 'goal', who: null }; }
-    const hit = sim.touches.find((id) => id !== holder);
-    if (hit !== undefined) { path.push([bl.x, bl.y]); return { path, end: 'touch', who: sim.bodies.find((b) => b.id === hit) ?? null }; }
-    if (!moving(sim)) break;
+    if (sim.goal !== null || sim.collected != null || sim.outAt || !moving(sim)) break;
   }
   path.push([bl.x, bl.y]);
-  return { path, end: 'rest', who: receiver(sim) };
+  const side = (sim.bodies.find((b) => b.id === holder)?.side ?? 0) as Side;
+  const r = judgeFixed(sim, side, holder);
+  const who = r.event === 'goal' ? null : sim.bodies.find((b) => b.id === r.holder) ?? null;
+  const end: Preview['end'] = r.event === 'goal' ? 'goal' : r.event === 'throw' || r.event === 'goalkick' ? 'out' : r.event === 'loose' ? 'rest' : 'touch';
+  return { path, end, who };
 }
 
 // ---------- Computer opponent ----------
@@ -173,7 +204,7 @@ export function previewFixed(w: World, holder: number, angle: number, power: num
 export interface FixedMove { angle: number; power: number; score: number }
 
 /** Try passes to every team-mate, shots at the goal and a fan of other flicks; keep the best. */
-export function aiChooseFixed(w: World, side: Side, holder: number, skill: number, rng: Rng): FixedMove {
+export function aiChooseFixed(w: World, side: Side, holder: number, skill: number, rng: Rng, flicksLeft = FLICKS_PER_TURN): FixedMove {
   const bl = ball(w);
   const goalY = side === 0 ? PITCH.top - 12 : PITCH.bottom + 12;
   const cands: FixedMove[] = [];
@@ -196,9 +227,9 @@ export function aiChooseFixed(w: World, side: Side, holder: number, skill: numbe
   }
   for (const c of cands) {
     const sim = cloneWorld(w);
-    flickBall(sim, c.angle, c.power);
+    flickBall(sim, c.angle, c.power, 0, holder);
     settle(sim, 4.5);
-    c.score = evaluateFixed(sim, side, holder);
+    c.score = evaluateFixed(sim, side, holder, flicksLeft);
   }
   cands.sort((a, b) => b.score - a.score);
   const pickIdx = skill > 0.85 ? 0 : rng.int(0, Math.min(cands.length - 1, skill > 0.55 ? 1 : 3));
@@ -207,11 +238,14 @@ export function aiChooseFixed(w: World, side: Side, holder: number, skill: numbe
   return { ...best, angle: best.angle + rng.gauss() * err, power: Math.max(0.12, Math.min(1, best.power + rng.gauss() * err * 0.8)) };
 }
 
-function evaluateFixed(w: World, side: Side, holder: number): number {
+function evaluateFixed(w: World, side: Side, holder: number, flicksLeft: number): number {
   if (w.goal === side) return 10000;
   if (w.goal !== null) return -20000;
-  // The ball goes to whoever reaches it, so judge by where that player stands.
-  const r = receiver(w);
+  // Judge by where the player who gets the ball stands.
+  const j = judgeFixed(w, side, holder);
+  let r = w.bodies.find((b) => b.id === j.holder)!;
+  // On the last flick of a turn, keeping it means a tackle: the nearest opponent takes it there.
+  if (j.keep && flicksLeft <= 1) r = tackler(w, side);
   const progress = side === 1 ? r.y - PITCH.top : PITCH.bottom - r.y; // 0 = own goal line
   const ownGoalDist = Math.hypot(r.x - 300, r.y - (side === 1 ? PITCH.top : PITCH.bottom));
   if (r.side === side) {

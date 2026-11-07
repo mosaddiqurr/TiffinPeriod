@@ -30,6 +30,12 @@ export interface World {
   t: number;
   /** Fixed mode: the players are pinned to their spots and only the ball moves. */
   pinned?: boolean;
+  /** Fixed mode: the first player the ball touched collects it (it stops there). */
+  collected?: number | null;
+  /** Fixed mode: the ball went out over a side line (throw-in) or an end line (goal kick for `side`). */
+  outAt?: { kind: 'throw' | 'goalkick'; x: number; y: number; side: Side } | null;
+  /** Fixed mode: the player flicking the ball (the ball bounces off them instead of being collected). */
+  ignore?: number;
 }
 
 export const ball = (w: World) => w.bodies.find((b) => b.kind === 'ball')!;
@@ -41,7 +47,7 @@ export const ownLine = (s: Side) => (s === 0 ? PITCH.bottom : PITCH.top);
 const keeperY = (s: Side) => (s === 0 ? PITCH.bottom - 24 : PITCH.top + 24);
 
 export function cloneWorld(w: World): World {
-  return { bodies: w.bodies.map((b) => ({ ...b })), keeperSpeed: [...w.keeperSpeed] as [number, number], touches: [...w.touches], goal: w.goal, t: w.t, pinned: w.pinned };
+  return { bodies: w.bodies.map((b) => ({ ...b })), keeperSpeed: [...w.keeperSpeed] as [number, number], touches: [...w.touches], goal: w.goal, t: w.t, pinned: w.pinned, collected: w.collected, outAt: w.outAt ? { ...w.outAt } : w.outAt, ignore: w.ignore };
 }
 
 export function moving(w: World): boolean {
@@ -57,6 +63,8 @@ export function flick(w: World, id: number, angle: number, power: number, spin =
   b.spin = Math.max(-1, Math.min(1, spin));
   w.touches = [];
   w.goal = null;
+  w.collected = null;
+  w.outAt = null;
 }
 
 function friction(b: Body, dt: number) {
@@ -124,6 +132,7 @@ function collide(w: World, a: Body, b: Body) {
   const d2 = dx * dx + dy * dy;
   if (d2 >= min * min || d2 === 0) return;
   const d = Math.sqrt(d2), nx = dx / d, ny = dy / d;
+  if (w.pinned && w.collected != null) return;
   const fixed = (x: Body) => x.kind === 'keeper' || (!!w.pinned && x.kind === 'disc');
   const ka = fixed(a) ? 0 : 1 / a.m;
   const kb = fixed(b) ? 0 : 1 / b.m;
@@ -132,6 +141,17 @@ function collide(w: World, a: Body, b: Body) {
   const over = min - d;
   a.x -= nx * over * (ka / (ka + kb)); a.y -= ny * over * (ka / (ka + kb));
   b.x += nx * over * (kb / (ka + kb)); b.y += ny * over * (kb / (ka + kb));
+  if (w.pinned) {
+    // Fixed mode: the first player the ball touches collects it, except the one who flicked it.
+    const bl = a.kind === 'ball' ? a : b.kind === 'ball' ? b : null;
+    const other = bl === a ? b : a;
+    if (bl && other.id !== w.ignore) {
+      w.touches.push(other.id);
+      w.collected = other.id;
+      bl.vx = 0; bl.vy = 0; bl.spin = 0;
+      return;
+    }
+  }
   const rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
   if (rv < 0) {
     const e = a.kind === 'ball' || b.kind === 'ball' ? 0.86 : 0.7;
@@ -165,6 +185,24 @@ function moveKeeper(w: World, k: Body, dt: number) {
   k.x += step; k.y = ky;
 }
 
+/** Fixed mode: over a side line is a throw-in, over an end line (not into the goal) a goal kick. */
+function outOfPlay(w: World, b: Body): boolean {
+  if (w.outAt) { b.vx = 0; b.vy = 0; return true; }
+  const P = PITCH;
+  let out: World['outAt'] = null;
+  const nearPost = b.x > P.mouthL - b.r * 1.2 && b.x < P.mouthR + b.r * 1.2;
+  if ((b.x < P.left + b.r || b.x > P.right - b.r) && b.y > P.top && b.y < P.bottom) {
+    out = { kind: 'throw', x: Math.max(P.left + b.r, Math.min(P.right - b.r, b.x)), y: b.y, side: 0 };
+  } else if (!nearPost && (b.y < P.top + b.r || b.y > P.bottom - b.r)) {
+    const top = b.y < P.midY;
+    out = { kind: 'goalkick', x: b.x, y: top ? P.top + b.r : P.bottom - b.r, side: top ? 1 : 0 };
+  }
+  if (!out) return false;
+  w.outAt = out;
+  b.x = out.x; b.y = out.y; b.vx = 0; b.vy = 0; b.spin = 0;
+  return true;
+}
+
 /** One fixed step (dt = 1/120 s), split into two collision sub-steps. */
 export function step(w: World, dt = 1 / 120) {
   const sub = 2, h = dt / sub;
@@ -185,7 +223,11 @@ export function step(w: World, dt = 1 / 120) {
     } else {
       for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) collide(w, w.bodies[i], w.bodies[j]);
     }
-    for (const b of w.bodies) if (b.kind !== 'keeper' && !(w.pinned && b.kind === 'disc')) walls(b);
+    for (const b of w.bodies) {
+      if (b.kind === 'keeper' || (w.pinned && b.kind === 'disc')) continue;
+      if (w.pinned && b.kind === 'ball' && outOfPlay(w, b)) continue;
+      walls(b);
+    }
   }
   w.t += dt;
   const bl = ball(w);
