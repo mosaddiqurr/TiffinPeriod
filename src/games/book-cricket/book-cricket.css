@@ -63,7 +63,7 @@
 .bc-stamp.out { color: #c62f2f; }
 .bc-stamp.six { color: #a36b00; }
 .bc-stamp.runs { color: #0b5d43; }
-@keyframes bc-stamp { from { scale: 2.2; opacity: 0; } }
+@keyframes bc-stamp { from { scale: 2.2; } }
 .bc-explain { position: absolute; left: 50%; bottom: -6px; translate: -50% 0; background: #fffdf6; padding: 2px 12px; border-radius: 14px; font-size: 14px; font-weight: 600; box-shadow: var(--shadow); white-space: nowrap; }
 
 .bc-controls { grid-area: controls; display: flex; justify-content: center; width: 100%; min-height: 62px; }

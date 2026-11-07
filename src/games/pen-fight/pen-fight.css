@@ -43,7 +43,7 @@
   animation: pf-pop .3s cubic-bezier(.2,1.4,.4,1);
 }
 .pf-turn.ai { background: rgba(20, 14, 8, 0.75); }
-@keyframes pf-pop { from { transform: scale(0.85); opacity: 0; } }
+@keyframes pf-pop { from { transform: scale(0.85); } }
 .pf-touch {
   position: absolute; left: 50%; bottom: 18px; translate: -50% 0; display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px;
   background: rgba(255, 246, 214, 0.95); color: #3a2516; font: 800 16px var(--font-display); pointer-events: none; white-space: nowrap;

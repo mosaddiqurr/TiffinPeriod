@@ -93,8 +93,10 @@ export function touchExtraMs(): number {
 //
 // Two looks: "held" (green, a tick, `downLabel`) while a finger is on it, and "free" (wood, a
 // pulsing outline, `upLabel`) otherwise.
-export function HoldPad({ onDown, onUp, className, testid, disabled, upLabel, downLabel, children }: {
+export function HoldPad({ onDown, onUp, className, testid, disabled, active, upLabel, downLabel, children }: {
   onDown: () => void; onUp: (agoMs: number) => void; className: string; testid?: string; disabled?: boolean;
+  /** Held by other means (the keyboard): show the held look too. */
+  active?: boolean;
   upLabel: string; downLabel?: string; children?: ReactNode;
 }) {
   const off = useRef(!!disabled);
@@ -104,9 +106,10 @@ export function HoldPad({ onDown, onUp, className, testid, disabled, upLabel, do
   const { ref, held, heldUI } = useHoldPad<HTMLButtonElement>(() => { if (!off.current) onDown(); }, (ago) => { if (!off.current) onUp(ago); });
   // Switching on: tell the game where the finger really is (put down or lifted while it was off).
   useEffect(() => { if (!disabled) { if (held.current) fns.current.onDown(); else fns.current.onUp(0); } }, [disabled, held]);
-  const showHeld = heldUI && !!downLabel;
+  const isHeld = heldUI || !!active;
+  const showHeld = isHeld && !!downLabel;
   return (
-    <button ref={ref} type="button" className={`${className}${disabled ? ' off' : ''}${heldUI ? ' held' : ''}`} data-testid={testid} aria-disabled={disabled || undefined} aria-pressed={heldUI}>
+    <button ref={ref} type="button" className={`${className}${disabled ? ' off' : ''}${isHeld ? ' held' : ''}`} data-testid={testid} aria-disabled={disabled || undefined} aria-pressed={isHeld}>
       {children}
       <span className={`pu-pad-label${showHeld ? ' on' : ''}`}>{showHeld ? <><i aria-hidden="true">✓</i> {downLabel}</> : upLabel}</span>
     </button>

@@ -4,7 +4,7 @@
 .pu-call { flex: 1; display: grid; place-items: center; text-align: center; gap: 8px; }
 .pu-bubble { display: flex; align-items: center; gap: 16px; background: #fffdf6; color: var(--ink); border-radius: 22px; padding: 10px 22px 10px 12px; box-shadow: 0 8px 20px -8px rgba(0,0,0,0.5); animation: pu-in 0.16s cubic-bezier(0.2, 1.5, 0.4, 1); position: relative; }
 .pu-bubble::after { content: ''; position: absolute; left: 40px; bottom: -12px; border: 12px solid transparent; border-top-color: #fffdf6; border-bottom: 0; }
-@keyframes pu-in { from { scale: 0.6; opacity: 0; } }
+@keyframes pu-in { from { scale: 0.6; } }
 .pu-art { width: 96px; height: 96px; }
 .pu-name { font-family: var(--font-display); font-weight: 800; font-size: clamp(30px, 7vw, 48px); line-height: 1.05; color: var(--pen); }
 .pu-name-sub { font-size: 15px; color: var(--ink-soft); }

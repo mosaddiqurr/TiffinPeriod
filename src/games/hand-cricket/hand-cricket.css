@@ -31,7 +31,7 @@
 .hc-flash.out { color: #fff; background: #c62f2f; transform: rotate(-6deg); border: 3px solid #fff; }
 .hc-flash.six { color: #3a2a00; background: #f3b61f; }
 .hc-flash.runs { color: #fff; background: rgba(11, 93, 67, 0.92); }
-@keyframes hc-pop { from { scale: 0.3; opacity: 0; } }
+@keyframes hc-pop { from { scale: 0.3; } }
 
 .hc-pad { background: rgba(255, 250, 235, 0.95); padding: 8px 10px 10px; box-shadow: 0 -4px 14px -6px rgba(0,0,0,0.4); }
 .hc-pad.top { box-shadow: 0 4px 14px -6px rgba(0,0,0,0.4); }

@@ -78,3 +78,20 @@ const ART = import.meta.glob('./art/*.svg', { eager: true, query: '?url', import
 export function artFor(id: string): string | undefined {
   return ART[`./art/${id}.svg`];
 }
+
+/**
+ * Fetch and decode every picture once, when the game opens. Each picture otherwise loads only
+ * when its call happens, and on a phone it would pop in after the words. The images are kept
+ * here so the browser keeps them decoded.
+ */
+const kept: HTMLImageElement[] = [];
+export function preloadArt() {
+  if (kept.length || typeof Image === 'undefined') return;
+  for (const url of Object.values(ART)) {
+    const im = new Image();
+    im.decoding = 'async';
+    im.src = url;
+    im.decode?.().catch(() => { /* still cached */ });
+    kept.push(im);
+  }
+}

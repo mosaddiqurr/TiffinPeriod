@@ -2,7 +2,7 @@
 .hm-board { padding: 10px; display: grid; justify-items: center; }
 .hm-gallows { width: 100%; max-width: 240px; height: auto; }
 .hm-gallows path, .hm-gallows circle { animation: hm-draw .35s ease-out; }
-@keyframes hm-draw { from { opacity: 0; } }
+@keyframes hm-draw { from { opacity: 0.35; } }
 .hm-gallows.saved .hm-person { animation: hm-hop .6s ease-in-out 3; transform-origin: 140px 200px; }
 @keyframes hm-hop { 50% { transform: translateY(-14px); } }
 .hm-lives { color: #e9efe6; font-family: var(--font-body); }
@@ -14,7 +14,7 @@
 .hm-word.en .hm-slot { min-width: 32px; }
 .hm-slot.on { animation: hm-pop .3s cubic-bezier(0.2, 1.6, 0.4, 1); }
 .hm-slot.miss { color: var(--pen-red); }
-@keyframes hm-pop { from { transform: translateY(-10px); opacity: 0; } }
+@keyframes hm-pop { from { transform: translateY(-10px); } }
 .hm-gap { width: 18px; font: 800 32px var(--font-display); color: var(--ink-soft); display: grid; place-items: end center; }
 .hm-keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 6px; }
 .hm-key { min-height: 48px; border-radius: 9px; border: 2px solid var(--khaki); background: #fffdf6; font: 700 21px var(--font-display); color: var(--ink); box-shadow: 0 2px 0 #d4c69f; }

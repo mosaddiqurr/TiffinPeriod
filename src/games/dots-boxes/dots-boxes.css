@@ -10,4 +10,4 @@
 .db-new { animation: db-draw .25s ease-out; }
 @keyframes db-draw { from { opacity: 0.2; } }
 .db-box text { animation: db-pop .3s cubic-bezier(0.2, 1.6, 0.4, 1); transform-box: fill-box; transform-origin: center; }
-@keyframes db-pop { from { opacity: 0; } }
+@keyframes db-pop { from { scale: 0.6; } }

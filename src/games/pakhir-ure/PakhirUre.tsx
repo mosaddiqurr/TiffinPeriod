@@ -7,7 +7,9 @@ import { recordResult } from '../../platform/scores';
 import { createRng } from '../../engine/rng';
 import { HoldPad, LIFT_GRACE_MS, touchExtraMs } from './pad';
 import { DifficultySeg, ModeSeg, Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames, type Difficulty, type Mode } from '../../components/ui';
-import { ITEMS, artFor } from './items';
+import { ITEMS, artFor, preloadArt } from './items';
+
+preloadArt();
 import { PakhirEngine, type InputStyle } from './engine';
 import { Finger, Rules, S } from './parts';
 import { OnlinePakhirUre } from './online';
@@ -227,6 +229,7 @@ function PakhirUreLocal({ onExit, onOnline }: GameProps & { onOnline: () => void
                 className={`pu-pad ${input} ${p.holding ? 'down' : 'up'}`}
                 testid={`pad-${i}`}
                 disabled={paused}
+                active={input === 'lift' && p.holding}
                 onDown={() => engine.current?.press(i, now())}
                 onUp={(ago) => engine.current?.release(i, now() - ago)}
                 upLabel={input === 'lift' ? (p.holding ? t('padLift') : t('putDown')) : t('padTap')}

@@ -47,7 +47,7 @@
 .ol-player { display: grid; justify-items: center; gap: 6px; }
 .ol-player b { font: 800 18px var(--font-display); max-width: 9em; overflow-wrap: anywhere; }
 .ol-vs { font: 900 26px var(--font-display); color: #c62f2f; }
-@keyframes ol-pop { from { transform: scale(0.8); opacity: 0; } }
+@keyframes ol-pop { from { transform: scale(0.8); } }
 
 .ol-match .ol-opp .hc-pad-head { margin-bottom: 0; }
 .ol-dot { width: 10px; height: 10px; border-radius: 50%; background: #2ecc71; box-shadow: 0 0 6px #2ecc71; }

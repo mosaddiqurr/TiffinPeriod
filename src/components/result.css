@@ -2,8 +2,8 @@
 .rh { position: relative; display: grid; justify-items: center; text-align: center; gap: 4px; padding: 6px 0 4px; }
 .rh-medal { width: 84px; height: 84px; filter: drop-shadow(0 6px 8px rgba(60, 40, 0, 0.25)); animation: rh-drop .55s cubic-bezier(.2, 1.5, .4, 1) both; }
 .rh-medal.tall { width: 80px; height: 94px; transform-origin: 50% 0; animation: rh-swing 1.1s cubic-bezier(.3, 1.6, .5, 1) both; }
-@keyframes rh-drop { from { transform: translateY(-14px) scale(.6); opacity: 0; } }
-@keyframes rh-swing { 0% { transform: translateY(-24px) rotate(-14deg); opacity: 0; } 60% { transform: rotate(6deg); opacity: 1; } 100% { transform: rotate(0); } }
+@keyframes rh-drop { from { transform: translateY(-14px) scale(.6); } }
+@keyframes rh-swing { 0% { transform: translateY(-24px) rotate(-14deg); } 60% { transform: rotate(6deg); } 100% { transform: rotate(0); } }
 .rh-tag {
   font: 800 13px/1 var(--font-body); letter-spacing: .12em; text-transform: uppercase; padding: 5px 12px; border-radius: 999px; margin-top: 2px;
   background: #e6f4ee; color: #0b5d43;

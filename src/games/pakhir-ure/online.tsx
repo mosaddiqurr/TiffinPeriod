@@ -7,7 +7,9 @@ import { HoldPad, LIFT_GRACE_MS, touchExtraMs } from './pad';
 import { Seg, useGameBar } from '../../components/ui';
 import { MoveClock, OnlineEnd, OnlineLobby, OppBar, useMoveClock, useOppGone, useRealUnmount, useRematch, type MatchProps } from '../../components/online/OnlineLobby';
 import { useTx } from '../../components/sport/SportKit';
-import { artFor } from './items';
+import { artFor, preloadArt } from './items';
+
+preloadArt();
 import { PakhirEngine } from './engine';
 import { Finger, Rules, S } from './parts';
 import { CALL_CHOICES, GAME, QUICK, makePakhirBot, progressOf, raceEngine, shownCall, type PUSettings } from './duel';
@@ -235,6 +237,7 @@ function PUMatch({ peer, settings, seed, onLeave }: MatchProps<PUSettings>) {
             className={`pu-pad ${settings.input} ${me.holding ? 'down' : 'up'}`}
             testid="pad-0"
             disabled={!started || myDone || gone}
+            active={settings.input === 'lift' && me.holding}
             onDown={() => engine.current.press(0, now())}
             onUp={(ago) => engine.current.release(0, now() - ago)}
             upLabel={settings.input === 'lift' ? (me.holding ? t('padLift') : t('putDown')) : t('padTap')}
