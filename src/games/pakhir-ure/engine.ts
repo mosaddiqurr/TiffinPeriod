@@ -43,6 +43,8 @@ export interface EngineConfig {
   lives: number | null;
   calls: number | null;
   aiDifficulty: Difficulty;
+  /** Extra answer time (ms) for this device, e.g. a touch screen. */
+  extraMs?: number;
 }
 
 /** How the computer player answers at each level (also used by the online stand-in). */
@@ -145,7 +147,7 @@ export class PakhirEngine {
 
   private startCall(now: number) {
     this.item = this.nextItem();
-    this.windowMs = PakhirEngine.windowFor(this.callIndex);
+    this.windowMs = PakhirEngine.windowFor(this.callIndex) + (this.cfg.extraMs ?? 0);
     this.callAt = now;
     this.phase = 'call';
     const prof = AI_PROFILE[this.cfg.aiDifficulty];

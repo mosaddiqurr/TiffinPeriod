@@ -23,8 +23,8 @@ export function gameSeed(seed: number, g: number): number {
 }
 
 /** One player's engine for an online game. Same settings + seed + g → the same calls. */
-export function raceEngine(s: PUSettings, seed: number, g: number): PakhirEngine {
-  return new PakhirEngine({ players: [{ ai: false }], input: s.input, lives: null, calls: s.calls, aiDifficulty: 'medium' }, ITEMS, createRng(gameSeed(seed, g)));
+export function raceEngine(s: PUSettings, seed: number, g: number, extraMs = 0): PakhirEngine {
+  return new PakhirEngine({ players: [{ ai: false }], input: s.input, lives: null, calls: s.calls, aiDifficulty: 'medium', extraMs }, ITEMS, createRng(gameSeed(seed, g)));
 }
 
 /** The call number to show: the call in progress, or the last one finished. */

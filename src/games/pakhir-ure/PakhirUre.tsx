@@ -5,7 +5,7 @@ import { UI } from '../../platform/strings';
 import { sfx, speak, vibrate } from '../../platform/audio';
 import { recordResult } from '../../platform/scores';
 import { createRng } from '../../engine/rng';
-import { capturePointer } from '../../engine/timing';
+import { HoldPad, touchExtraMs } from './pad';
 import { DifficultySeg, ModeSeg, Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames, type Difficulty, type Mode } from '../../components/ui';
 import { ITEMS, artFor } from './items';
 import { PakhirEngine, type InputStyle } from './engine';
@@ -31,6 +31,8 @@ function PakhirUreLocal({ onExit, onOnline }: GameProps & { onOnline: () => void
   const [input, setInput] = useState<InputStyle>('lift');
   const [phase, setPhase] = useState<'setup' | 'play' | 'result'>('setup');
   const [paused, setPaused] = useState(false);
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
   const [, setVersion] = useState(0);
   const [flashKey, setFlashKey] = useState(0);
   const [result, setResult] = useState<{ newBest: boolean } | null>(null);
@@ -49,6 +51,7 @@ function PakhirUreLocal({ onExit, onOnline }: GameProps & { onOnline: () => void
       lives: mode === 'solo' ? 3 : null,
       calls: mode === 'solo' ? null : 20,
       aiDifficulty: diff,
+      extraMs: touchExtraMs(),
     }, ITEMS, rng);
     setResult(null);
     setPaused(false);
@@ -221,18 +224,16 @@ function PakhirUreLocal({ onExit, onOnline }: GameProps & { onOnline: () => void
             {p.ai ? (
               <div className={`pu-pad ai ${p.holding ? 'down' : 'up'}`}><Finger up={!p.holding} /></div>
             ) : (
-              <button
+              <HoldPad
                 className={`pu-pad ${input} ${p.holding ? 'down' : 'up'}`}
-                data-testid={`pad-${i}`}
-                onPointerDown={(ev) => { ev.preventDefault(); capturePointer(ev); if (!paused) e.press(i, now()); }}
-                onPointerUp={() => { if (!paused) e.release(i, now()); }}
-                onPointerCancel={() => { if (!paused) e.release(i, now()); }}
-                onContextMenu={(ev) => ev.preventDefault()}
+                testid={`pad-${i}`}
+                onDown={() => { if (!pausedRef.current) engine.current?.press(i, now()); }}
+                onUp={() => { if (!pausedRef.current) engine.current?.release(i, now()); }}
               >
                 <Finger up={input === 'lift' ? !p.holding : false} />
                 <span className="pu-pad-label">{input === 'lift' ? t('padLift') : t('padTap')}</span>
                 <span className="key-hint hide-touch">{mode === 'local2p' ? (i === 0 ? 'A' : 'L') : 'Space'}</span>
-              </button>
+              </HoldPad>
             )}
           </div>
         ))}

@@ -52,3 +52,8 @@
 .pu-wait-row { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
 .pu-done { font-size: clamp(20px, 4.4vw, 28px); max-width: 90%; }
 .pu-pad:disabled { opacity: 0.7; }
+
+/* Phones: no long-press callout or selection on the finger pad, and the pad's insides
+   never become the touch target (so the touch stays on the pad). */
+.pu-pad { -webkit-touch-callout: none; }
+.pu-pad * { pointer-events: none; }

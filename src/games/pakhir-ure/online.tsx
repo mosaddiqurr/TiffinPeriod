@@ -3,7 +3,7 @@ import { useT } from '../../platform/i18n';
 import { sfx, speak, vibrate } from '../../platform/audio';
 import { recordResult } from '../../platform/scores';
 import { RaceLink, type RaceProgress } from '../../platform/net/race';
-import { capturePointer } from '../../engine/timing';
+import { HoldPad, touchExtraMs } from './pad';
 import { Seg, useGameBar } from '../../components/ui';
 import { MoveClock, OnlineEnd, OnlineLobby, OppBar, useMoveClock, useOppGone, useRealUnmount, useRematch, type MatchProps } from '../../components/online/OnlineLobby';
 import { useTx } from '../../components/sport/SportKit';
@@ -84,7 +84,7 @@ function PUMatch({ peer, settings, seed, onLeave }: MatchProps<PUSettings>) {
     const r = new RaceLink(peer);
     race.current = r;
     gameRef.current = g;
-    engine.current = raceEngine(settings, seed, g);
+    engine.current = raceEngine(settings, seed, g, touchExtraMs());
     setGame(g);
     setStarted(false);
     setOpp(ZERO);
@@ -231,19 +231,17 @@ function PUMatch({ peer, settings, seed, onLeave }: MatchProps<PUSettings>) {
           <div className="pu-fb-wrap">
             {fb && <span className={`pu-fb ${fb.ok ? 'ok' : 'bad'}`}>{fbLabel}{fb.rt !== undefined && fb.ok ? ` ${t('ms', { n: Math.round(fb.rt) })}` : ''}{fb.points ? ` +${t.n(fb.points)}` : ''}</span>}
           </div>
-          <button
+          <HoldPad
             className={`pu-pad ${settings.input} ${me.holding ? 'down' : 'up'}`}
-            data-testid="pad-0"
+            testid="pad-0"
             disabled={!started || myDone || gone}
-            onPointerDown={(ev) => { ev.preventDefault(); capturePointer(ev); engine.current.press(0, now()); }}
-            onPointerUp={() => engine.current.release(0, now())}
-            onPointerCancel={() => engine.current.release(0, now())}
-            onContextMenu={(ev) => ev.preventDefault()}
+            onDown={() => engine.current.press(0, now())}
+            onUp={() => engine.current.release(0, now())}
           >
             <Finger up={settings.input === 'lift' ? !me.holding : false} />
             <span className="pu-pad-label">{settings.input === 'lift' ? t('padLift') : t('padTap')}</span>
             <span className="key-hint hide-touch">Space</span>
-          </button>
+          </HoldPad>
         </div>
       </div>
 
