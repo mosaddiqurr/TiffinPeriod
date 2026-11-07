@@ -46,7 +46,7 @@ class ChairsScene implements Scene, ShellScene {
   private placeOf = new Map<number, number>();
 
   constructor(private cfg: ShellConfig, private tx: Txt) {
-    const ai = cfg.lang === 'bn' ? ['রাফি', 'মিতু', 'শুভ', 'রিয়া'] : ['Rafi', 'Mitu', 'Shuvo', 'Riya'];
+    const ai = cfg.lang === 'bn' ? ['রাফি', 'সাকিব', 'শুভ', 'তামিম'] : ['Rafi', 'Sakib', 'Shuvo', 'Tamim'];
     const kids: Array<Pick<Kid, 'player' | 'name' | 'color'>> = [{ player: 0, name: cfg.names[0], color: COLORS[0] }];
     if (cfg.mode === 'local2p') kids.push({ player: 1, name: cfg.names[1], color: COLORS[1] });
     while (kids.length < 5) kids.push({ player: -1, name: ai[kids.length - 1], color: COLORS[kids.length] });

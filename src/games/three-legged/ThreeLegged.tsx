@@ -32,7 +32,7 @@ class ThreeLeggedScene extends RaceScene<PairRacer> {
   constructor(cfg: ShellConfig, rt: RaceTexts, private tx: Txt, rng: Rng, teamName: string) {
     super(rt, cfg.reducedMotion);
     this.trackLen = 1200;
-    const ai = cfg.lang === 'bn' ? ['রাফি–মিতু', 'শুভ–রিয়া'] : ['Rafi–Mitu', 'Shuvo–Riya'];
+    const ai = cfg.lang === 'bn' ? ['রাফি–সাকিব', 'শুভ–তামিম'] : ['Rafi–Sakib', 'Shuvo–Tamim'];
     const mk = (player: number, name: string, color: string, looks: [number, number]): PairRacer => ({
       player, name, color, x: this.startX, finished: false, finishT: null, m: newPair(this.startX), looks,
       ai: player < 0 ? new PairAI(cfg.diff, rng) : null,

@@ -19,7 +19,7 @@ export default function ChorPolice({ onExit }: GameProps) {
   const [reader, setReader] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [last, setLast] = useState<ReturnType<typeof scoreChits> | null>(null);
-  const names = mode === 'ai' ? [g.u('you'), t('Rafi', 'রাফি'), t('Mitu', 'মিতু'), t('Shuvo', 'শুভ')]
+  const names = mode === 'ai' ? [g.u('you'), t('Rafi', 'রাফি'), t('Sakib', 'সাকিব'), t('Shuvo', 'শুভ')]
     : custom.map((s, i) => s.trim() || `${t('Player', 'খেলোয়াড়')} ${g.n(i + 1)}`);
   const roleName = (r: Role) => ({ babu: t('Babu', 'বাবু'), police: t('Police', 'পুলিশ'), dakat: t('Dakat', 'ডাকাত'), chor: t('Chor', 'চোর') })[r];
   const rules = [

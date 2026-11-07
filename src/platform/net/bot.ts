@@ -9,7 +9,7 @@ import type { Peer, Profile } from './rooms';
 // The stand-in is the "host": it sends the match settings first, exactly like a real host
 // (message "cfg", see OnlineLobby). A game supplies the `brain`, which plays the other end.
 
-const NAMES = ['Rafi', 'Tanvir', 'Nusrat', 'Sakib', 'Mim', 'Arif', 'Sumaiya', 'Rakib', 'Faria', 'Shuvo', 'Tamim', 'Jannat', 'Imran', 'Riya', 'Nayeem', 'Sadia', 'Hasib', 'Tasnim', 'Mahin', 'Anika', 'Fahim', 'Labiba', 'Zarif', 'Orpa'];
+const NAMES = ['Rafi', 'Tanvir', 'Nafis', 'Sakib', 'Mahir', 'Arif', 'Sabbir', 'Rakib', 'Farhan', 'Shuvo', 'Tamim', 'Jubayer', 'Imran', 'Rifat', 'Nayeem', 'Sajid', 'Hasib', 'Tahsin', 'Mahin', 'Ayan', 'Fahim', 'Labib', 'Zarif', 'Omi'];
 const TAGS = ['', '', '', '07', '_bd', '10', '99', '_ctg', '_dhk', '22', 'x'];
 const FAV: Record<'cricket' | 'football', string[]> = {
   cricket: ['ban', 'ban', 'ban', 'ind', 'pak', 'aus', 'eng', 'sl', 'afg', 'nz', 'sa', 'wi'],

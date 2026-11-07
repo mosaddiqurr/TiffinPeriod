@@ -161,11 +161,11 @@ export function expectedRunsPerBall(r: RuleSet): number {
 
 export const LINEUPS: Record<'bn' | 'en', [string[], string[]]> = {
   bn: [
-    ['রাফি', 'তানভীর', 'সুমি', 'নাদিয়া', 'জামিল', 'মিতু', 'শুভ', 'রিয়া', 'আরিফ', 'পলাশ'],
-    ['ইমরান', 'রুপা', 'সাজিদ', 'লিমা', 'ফাহিম', 'নুপুর', 'তুষার', 'বৃষ্টি', 'রাসেল', 'অভি'],
+    ['রাফি', 'তানভীর', 'সুমন', 'নাঈম', 'জামিল', 'মিরাজ', 'শুভ', 'রিয়াদ', 'আরিফ', 'পলাশ'],
+    ['ইমরান', 'রনি', 'সাজিদ', 'লিটন', 'ফাহিম', 'নাসির', 'তুষার', 'বিজয়', 'রাসেল', 'অভি'],
   ],
   en: [
-    ['Rafi', 'Tanvir', 'Sumi', 'Nadia', 'Jamil', 'Mitu', 'Shuvo', 'Riya', 'Arif', 'Palash'],
-    ['Imran', 'Rupa', 'Sajid', 'Lima', 'Fahim', 'Nupur', 'Tushar', 'Bristy', 'Rasel', 'Ovi'],
+    ['Rafi', 'Tanvir', 'Sumon', 'Nayeem', 'Jamil', 'Miraz', 'Shuvo', 'Riyad', 'Arif', 'Palash'],
+    ['Imran', 'Roni', 'Sajid', 'Liton', 'Fahim', 'Nasir', 'Tushar', 'Bijoy', 'Rasel', 'Ovi'],
   ],
 };

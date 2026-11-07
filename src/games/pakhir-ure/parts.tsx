@@ -20,7 +20,7 @@ export const S: StringTable<
     ok: 'Correct!', held: 'Well held!', missed: 'Too late!', fooled: 'Fooled you!', early: 'False start!', ms: '{n} ms',
     padLift: 'Finger here', padTap: 'Tap here', lives: 'Lives', level: 'Level {n}', calls: 'Call {n}/{m}',
     score: 'Score', correct: 'Correct answers', streak: 'Best streak', fastest: 'Fastest reaction', average: 'Average reaction',
-    over: 'Game over', won: '{name} wins!', draw: 'It is a draw!', aiName: 'Rina (computer)',
+    over: 'Game over', won: '{name} wins!', draw: 'It is a draw!', aiName: 'Rakib (computer)',
   },
   bn: {
     title: 'পাখি উড়ে', lede: 'ডাকা হবে একটা নাম। সে কি উড়ে? উত্তর দেবে তোমার আঙুল।',
@@ -34,7 +34,7 @@ export const S: StringTable<
     ok: 'ঠিক!', held: 'দারুণ, ধরে রেখেছ!', missed: 'দেরি হয়ে গেল!', fooled: 'ফাঁদে পড়েছ!', early: 'ফাউল! আগেই তুলেছ', ms: '{n} মি.সে.',
     padLift: 'এখানে আঙুল রাখো', padTap: 'এখানে ট্যাপ করো', lives: 'জীবন', level: 'লেভেল {n}', calls: 'ডাক {n}/{m}',
     score: 'পয়েন্ট', correct: 'ঠিক উত্তর', streak: 'টানা ঠিক', fastest: 'সবচেয়ে দ্রুত', average: 'গড় সময়',
-    over: 'খেলা শেষ', won: '{name} জিতেছে!', draw: 'সমান সমান!', aiName: 'রিনা (কম্পিউটার)',
+    over: 'খেলা শেষ', won: '{name} জিতেছে!', draw: 'সমান সমান!', aiName: 'রাকিব (কম্পিউটার)',
   },
 };
 

@@ -59,7 +59,7 @@ export class BoatScene implements Scene, ShellScene {
       return;
     }
     this.obs = makeObstacles(rng);
-    const ai = cfg.lang === 'bn' ? ['রাফি', 'মিতু'] : ['Rafi', 'Mitu'];
+    const ai = cfg.lang === 'bn' ? ['রাফি', 'সাকিব'] : ['Rafi', 'Sakib'];
     const skill = cfg.diff === 'easy' ? 0.6 : cfg.diff === 'medium' ? 0.8 : 0.95;
     const list: Array<[string, number]> = [[cfg.names[0], 0]];
     if (cfg.mode === 'local2p') list.push([cfg.names[1], 1]);

@@ -5,7 +5,7 @@ import { RACER_COLORS } from './race';
 
 // Helpers shared by the race games: texts in both languages and the lane roster.
 
-const AI_NAMES = { bn: ['রাফি', 'মিতু', 'শুভ'], en: ['Rafi', 'Mitu', 'Shuvo'] };
+const AI_NAMES = { bn: ['রাফি', 'সাকিব', 'শুভ'], en: ['Rafi', 'Sakib', 'Shuvo'] };
 
 export function raceTexts(lang: 'bn' | 'en'): RaceTexts {
   const bnPlace = ['১ম', '২য়', '৩য়', '৪র্থ', '৫ম', '৬ষ্ঠ'];
