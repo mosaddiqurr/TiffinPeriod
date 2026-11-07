@@ -18,6 +18,7 @@
   "dependencies": {
     "@fontsource/baloo-da-2": "^5.3.0",
     "@fontsource/hind-siliguri": "^5.3.0",
+    "@insforge/sdk": "^1.5.2",
     "matter-js": "^0.20.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

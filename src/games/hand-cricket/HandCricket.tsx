@@ -4,6 +4,7 @@ import { HandAI } from './ai';
 import { Hand } from './Hand';
 import { HAND_RULES } from './logic';
 import { PickMatch, type PickVariant } from './PickMatch';
+import { OnlineHandCricket } from './OnlineHC';
 
 // Hand Cricket: the original bench rules (1–6 on the fingers, same number = out),
 // now with national teams, Quick Match, Target Challenge, Tournament and the Daily Challenge.
@@ -50,6 +51,7 @@ export const HAND_ADAPTER: CricketAdapter = {
   cup: { overs: 2, wickets: 3 },
   rules: rulesList,
   icon: <Hand n={2} />,
+  Online: OnlineHandCricket,
   achievements: (o, spec, won) => {
     const ids: string[] = [];
     if (o.innings[0].runs >= 100 || o.innings[1].runs >= 100) ids.push('hc-century');

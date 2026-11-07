@@ -1,3 +1,4 @@
+import { hashQuery } from '../../platform/router';
 import { useMemo, useState, type ComponentType, type ReactNode } from 'react';
 import type { Bi } from '../../platform/i18n';
 import { getStats, recordResult } from '../../platform/scores';
@@ -71,9 +72,11 @@ export interface CricketAdapter {
   defaultExtra?: Record<string, string | number>;
   icon: ReactNode;
   achievements?: (o: CricketOutcome, spec: CricketSpec, won: boolean) => string[];
+  /** Online 1v1 (rooms, links, quick match), when the game has it. */
+  Online?: ComponentType<{ onBack: () => void; code?: string }>;
 }
 
-type Screen = 'menu' | 'quick' | 'local' | 'ladder' | 'cup' | 'daily' | 'match' | 'after' | 'champion';
+type Screen = 'menu' | 'quick' | 'local' | 'ladder' | 'cup' | 'daily' | 'match' | 'after' | 'champion' | 'online';
 
 interface After { spec: CricketSpec; o: CricketOutcome; stars?: number; dailyBest?: boolean; daily?: number; newBest?: boolean; cupNote?: string }
 
@@ -87,7 +90,9 @@ export function CricketHub({ game, onExit }: { game: CricketAdapter; onExit: () 
   const { t, n } = x;
   void onExit;
   const [p1, p2] = usePlayerNames();
-  const [screen, setScreen] = useState<Screen>('menu');
+  // An invite link (…?room=CODE) opens the online screen and joins that room.
+  const [linkCode] = useState(() => (game.Online ? hashQuery().get('room') ?? undefined : undefined));
+  const [screen, setScreen] = useState<Screen>(() => (linkCode ? 'online' : 'menu'));
   const [mine, setMine] = useState(() => favTeam('cricket'));
   const [opp, setOpp] = useState(() => defaultOpponent('cricket', favTeam('cricket')));
   const [opp2, setOpp2] = useState(() => defaultOpponent('cricket', favTeam('cricket')));
@@ -213,6 +218,15 @@ export function CricketHub({ game, onExit }: { game: CricketAdapter; onExit: () 
 
   // ---------- Screens ----------
 
+  if (screen === 'online' && game.Online) {
+    const O = game.Online;
+    return (
+      <div className="sport-root ruled" style={{ ['--accent' as string]: '#0b5d43' }}>
+        <O onBack={() => setScreen('menu')} code={linkCode} />
+      </div>
+    );
+  }
+
   if (screen === 'match' && spec) {
     const M = game.Match;
     return <M key={matchKey} spec={spec} onDone={done} onQuit={() => setScreen(spec.mode === 'tournament' ? 'cup' : 'menu')} onRestart={() => launch({ ...spec })} />;
@@ -242,6 +256,7 @@ export function CricketHub({ game, onExit }: { game: CricketAdapter; onExit: () 
         <p className="lede">{x.bi(game.lede)}</p>
         <details className="bench-rules"><summary>{t('How to play', 'কীভাবে খেলবে')}</summary>{help}</details>
         <div className="mode-grid">
+          {game.Online && <ModeCard testid="mode-online" icon="🌐" title={t('Play online · 1v1', 'অনলাইনে খেলো · ১ বনাম ১')} sub={t('Quick match, or a room with a code or link for a friend.', 'কুইক ম্যাচ, অথবা বন্ধুর জন্য কোড বা লিংকসহ রুম।')} badge={t('New', 'নতুন')} onClick={() => setScreen('online')} />}
           <ModeCard testid="mode-quick" icon={game.icon} title={t('Quick Match', 'কুইক ম্যাচ')} sub={t('Pick two countries. Bat first or chase.', 'দুই দেশ বাছো। আগে ব্যাট নাকি তাড়া।')} onClick={() => setScreen('quick')} />
           <ModeCard testid="mode-challenge" icon="🎯" title={t('Target Challenge', 'টার্গেট চ্যালেঞ্জ')} sub={t(`${levels.length} chases, each harder than the last.`, `${n(levels.length)}টা তাড়া, প্রতিটা আগেরটার চেয়ে কঠিন।`)} badge={nextLv < 0 ? t('All done!', 'সব শেষ!') : t(`Level ${nextLv + 1}`, `লেভেল ${n(nextLv + 1)}`)} onClick={() => setScreen('ladder')} />
           <ModeCard testid="mode-cup" icon="🏆" title={t('Tournament', 'টুর্নামেন্ট')} sub={t('Groups, semi-final and final. Lift the cup.', 'গ্রুপ, সেমিফাইনাল আর ফাইনাল। কাপ জেতো।')} badge={cupF ? t('Continue', 'চালিয়ে যাও') : undefined} onClick={() => setScreen('cup')} />

@@ -119,3 +119,7 @@ Language (বাংলা / English), sound, volume, spoken announcements, vibra
 ## Cost
 
 $0. It uses only free and open-source tools. There are no paid APIs, no cloud resources and no billing.
+
+## Online play
+
+Hand Cricket has online 1v1: quick match, rooms with a code, and invite links. It runs on InsForge Realtime, and players don't need accounts. Setup and deployment (two `VITE_INSFORGE_*` values for Netlify) are in [docs/ONLINE_PLAY.md](docs/ONLINE_PLAY.md).

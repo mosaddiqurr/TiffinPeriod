@@ -1,6 +1,7 @@
-// Contract for online play, ready for a later phase. Nothing here opens a
-// network connection today: every game runs locally against the computer or a
-// friend on the same device.
+// Contract for online play. Hand Cricket is online now (docs/ONLINE_PLAY.md): the connection is
+// src/platform/net/link.ts (InsForge Realtime), rooms, links and quick match are
+// src/platform/net/rooms.ts, and the match is src/games/hand-cricket/duel.ts. The notes below
+// are how the other games are prepared to follow.
 //
 // How the games are prepared for it:
 // - Rules live in pure modules (model.ts / logic.ts) as `apply(state, move)`

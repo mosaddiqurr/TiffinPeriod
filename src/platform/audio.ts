@@ -159,6 +159,9 @@ export function sfx(name: SfxName, opts: { pitch?: number; gain?: number } = {})
 
 export function vibrate(ms: number | number[]): void {
   if (!settingsStore.get().haptics) return;
+  // Browsers refuse (and log an error) before the first tap on the page.
+  const ua = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation;
+  if (ua && !ua.hasBeenActive) return;
   try {
     navigator.vibrate?.(ms);
   } catch {

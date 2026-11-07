@@ -176,6 +176,42 @@ test('Flikk Football (fixed players): pull back anywhere to flick the ball, play
   expect(errors).toEqual([]);
 });
 
+test('Hand Cricket online: quick match finds an opponent and a whole match is played', async ({ page }) => {
+  test.setTimeout(180_000);
+  const errors = trackErrors(page);
+  await open(page, 'hand-cricket');
+  await page.getByTestId('mode-online').click();
+  await page.getByTestId('online-name').fill('Tester');
+  await page.getByTestId('quick-match').click();
+  await expect(page.getByTestId('searching')).toBeVisible();
+  await expect(page.getByTestId('found')).toBeVisible({ timeout: 25_000 });
+  await expect(page.getByTestId('online-match')).toBeVisible({ timeout: 5_000 });
+  const result = page.getByTestId('result');
+  for (let i = 0; i < 150 && !(await result.isVisible()); i++) {
+    for (const id of ['call-odd', 'bat-first']) { const x = page.getByTestId(id); if (await x.isVisible().catch(() => false)) await x.click().catch(() => {}); }
+    const k = page.getByTestId(`p0-${(i % 6) + 1}`);
+    if (await k.isEnabled().catch(() => false)) await k.click().catch(() => {});
+    await page.waitForTimeout(500);
+  }
+  await expect(result).toBeVisible();
+  await expect(page.getByTestId('rematch')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('Hand Cricket online: a room has a 5-character code and a bad code is explained', async ({ page }) => {
+  const errors = trackErrors(page);
+  await open(page, 'hand-cricket');
+  await page.getByTestId('mode-online').click();
+  await page.getByTestId('create-room').click();
+  await expect(page.getByTestId('room-code')).toHaveAttribute('aria-label', /^[2-9A-HJKMNP-Z]{5}$/, { timeout: 15_000 });
+  await page.getByTestId('cancel').click();
+  await page.getByTestId('join-code').fill('zz zz2');
+  await expect(page.getByTestId('join-code')).toHaveValue('ZZZZ2');
+  await page.getByTestId('join-room').click();
+  await expect(page.getByTestId('online-error')).toBeVisible({ timeout: 15_000 });
+  expect(errors).toEqual([]);
+});
+
 test('Penalty Shootout: shoot and keep through a full shootout', async ({ page }) => {
   test.setTimeout(150_000);
   const errors = trackErrors(page);

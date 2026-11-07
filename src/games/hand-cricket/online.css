@@ -1,0 +1,64 @@
+/* Online 1v1: lobby, room and match */
+.ol-page h2 { margin: 4px 0 8px; }
+.ol-you { display: grid; gap: 8px; margin: 6px 0 12px; }
+.ol-name { display: grid; gap: 4px; font-weight: 700; font-size: 14px; }
+.ol-name input, .ol-join input {
+  font: 700 18px var(--font-body); padding: 10px 12px; border-radius: 12px; border: 2px solid #d4c69f; background: #fffdf6; color: inherit; min-width: 0;
+}
+.ol-name input:focus, .ol-join input:focus { outline: none; border-color: #1f3a93; box-shadow: 0 0 0 3px rgba(31, 58, 147, 0.18); }
+.ol-team { justify-self: start; display: inline-flex; align-items: center; gap: 8px; }
+.ol-team small { color: var(--ink-soft); font-weight: 600; }
+.ol-err { margin: 6px 0 10px; padding: 10px 12px; border-radius: 12px; background: #fde8e6; color: #8b1e1e; font-weight: 600; }
+.ol-ways { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.ol-way {
+  position: relative; display: grid; gap: 6px; align-content: start; text-align: left; padding: 14px; border: 0; border-radius: 16px; color: inherit;
+  background: #fffdf6; box-shadow: 0 0 0 1.5px #e4d8b8, 0 3px 0 #e4d8b8;
+}
+.ol-way b { font: 800 19px/1.15 var(--font-display); }
+.ol-way small { color: var(--ink-soft); font-size: 14px; line-height: 1.35; }
+.ol-way.main { cursor: pointer; background: linear-gradient(150deg, #0b5d43, #13805c); color: #fff; box-shadow: 0 10px 22px -12px rgba(11, 93, 67, 0.9); transition: transform .12s; }
+.ol-way.main small { color: rgba(255,255,255,0.85); }
+.ol-way.main:hover { transform: translateY(-2px); }
+.ol-ico { font-size: 26px; }
+.ol-opts { display: grid; gap: 6px; margin: 4px 0; }
+.ol-opts .seg { flex-wrap: wrap; }
+.ol-join { display: flex; gap: 8px; }
+.ol-join input { flex: 1; text-transform: uppercase; letter-spacing: .18em; font-family: var(--font-display); }
+
+.ol-wait, .ol-found { display: grid; justify-items: center; text-align: center; gap: 12px; padding: 18px 0; }
+.ol-code { display: flex; gap: 8px; margin: 6px 0; }
+.ol-code span {
+  display: grid; place-items: center; width: 52px; height: 64px; border-radius: 12px; background: #1b2433; color: #ffe27a;
+  font: 900 36px var(--font-display); box-shadow: 0 6px 0 #0d131c, inset 0 0 0 2px rgba(255,255,255,0.08);
+}
+.ol-share { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.ol-note { margin: 0; color: #0b5d43; font-weight: 700; }
+.ol-meta { margin: 0; color: var(--ink-soft); }
+.ol-pulse { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-soft); font-weight: 600; }
+.ol-pulse i { width: 8px; height: 8px; border-radius: 50%; background: #0b5d43; animation: ol-bounce 1.2s infinite ease-in-out; }
+.ol-pulse i:nth-child(2) { animation-delay: .15s; }
+.ol-pulse i:nth-child(3) { animation-delay: .3s; }
+@keyframes ol-bounce { 0%, 80%, 100% { transform: scale(0.5); opacity: .4; } 40% { transform: scale(1); opacity: 1; } }
+.ol-radar { position: relative; width: 140px; height: 140px; display: grid; place-items: center; }
+.ol-radar span { position: absolute; inset: 0; border-radius: 50%; border: 3px solid rgba(11, 93, 67, 0.5); animation: ol-ring 2s infinite ease-out; }
+.ol-radar span:nth-child(2) { animation-delay: 1s; }
+@keyframes ol-ring { from { transform: scale(0.3); opacity: 1; } to { transform: scale(1); opacity: 0; } }
+.ol-found-row { display: flex; align-items: center; gap: 18px; animation: ol-pop .4s cubic-bezier(.2,1.4,.4,1); }
+.ol-player { display: grid; justify-items: center; gap: 6px; }
+.ol-player b { font: 800 18px var(--font-display); max-width: 9em; overflow-wrap: anywhere; }
+.ol-vs { font: 900 26px var(--font-display); color: #c62f2f; }
+@keyframes ol-pop { from { transform: scale(0.8); opacity: 0; } }
+
+.ol-match .ol-opp .hc-pad-head { margin-bottom: 0; }
+.ol-dot { width: 10px; height: 10px; border-radius: 50%; background: #2ecc71; box-shadow: 0 0 6px #2ecc71; }
+.ol-dot.off { background: #c0c0c0; box-shadow: none; }
+.ol-left { color: #fff; opacity: .85; font-size: 14px; }
+.hc-num.chosen { box-shadow: 0 0 0 3px #f3b61f; }
+.ol-break { background: #1b2433; color: #ffe27a; }
+.reduced-motion .ol-pulse i, .reduced-motion .ol-radar span, .reduced-motion .ol-found-row { animation: none; }
+@media (max-width: 480px) {
+  .ol-code span { width: 44px; height: 56px; font-size: 30px; }
+}
+
+/* Banners sit below the opponent's bar, never over their name */
+.ol-match .hc-banner { top: 64px; max-width: calc(100% - 24px); white-space: normal; text-align: center; }
