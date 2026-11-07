@@ -114,6 +114,7 @@ test('Balloon Burst: taps register and the 30-second round ends', async ({ page 
   const errors = trackErrors(page);
   await page.clock.install();
   await openGame(page, 'balloon-burst');
+  await page.getByTestId('style-pin').click();
   await page.getByRole('button', { name: /৩০/ }).click();
   await page.getByTestId('start').click();
   const canvas = page.locator('canvas');
@@ -129,6 +130,36 @@ test('Balloon Burst: taps register and the 30-second round ends', async ({ page 
   }
   await expect(page.getByTestId('result')).toBeVisible({ timeout: 45_000 });
   await expect(page.getByTestId('result')).toContainText('সময় শেষ');
+  expect(errors).toEqual([]);
+});
+
+test('Balloon Burst, mela gun: drag moves the sight, letting go fires one pellet, the round ends when pellets run out', async ({ page }) => {
+  const errors = trackErrors(page);
+  await openGame(page, 'balloon-burst');
+  await expect(page.getByTestId('style-gun')).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('button', { name: /৩০/ }).click();
+  await page.getByTestId('start').click();
+  await page.waitForTimeout(3600);
+  const canvas = page.locator('canvas');
+  const box = (await canvas.boundingBox())!;
+  type G = { sx: number; sy: number; ammo: number };
+  const gun = () => page.evaluate(() => { const g = (window as unknown as { __balloon: { lanes: Array<{ gun: G }> } }).__balloon.lanes[0].gun; return { sx: g.sx, sy: g.sy, ammo: g.ammo }; });
+  const before = await gun();
+  await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.8);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.45, box.y + box.height * 0.6, { steps: 8 });
+  const moved = await gun();
+  expect(moved.ammo).toBe(before.ammo);
+  expect(moved.sy).toBeLessThan(before.sy - 40);
+  await page.mouse.up();
+  await expect.poll(async () => (await gun()).ammo).toBe(before.ammo - 1);
+  // Fire the rest of the pellets: the round ends before the 30 seconds are up.
+  for (let i = 0; i < 80 && !await page.getByTestId('result').isVisible(); i++) {
+    await page.evaluate(() => (window as unknown as { __balloon?: { fireCross(): void } }).__balloon?.fireCross());
+    await page.waitForTimeout(340);
+  }
+  await expect(page.getByTestId('result')).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByTestId('result')).toContainText('গুলি শেষ');
   expect(errors).toEqual([]);
 });
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PARAMS, TugAI, TugModel } from '../src/games/tug-of-war/model';
 import { BalloonAI, Field, comboMultiplier } from '../src/games/balloon-burst/field';
+import { AirGun, RECOCK, pelletsFor } from '../src/games/balloon-burst/gun';
 import { BiscuitAI, BiscuitRaceModel, COURSE, timeToHeight } from '../src/games/biscuit-race/model';
 import { pendulumEnergy, stepPendulum, type Pendulum } from '../src/engine/physics';
 import { judgeBeat, RateLimiter } from '../src/engine/timing';
@@ -181,4 +182,32 @@ describe('Biscuit Race physics', () => {
       expect(finished).toBeGreaterThanOrEqual(5);
     });
   }
+});
+
+describe('Balloon Burst mela gun', () => {
+  it('drags the sight with the finger, fires once per cock, and runs out of pellets', () => {
+    const g = new AirGun(400, 800, pelletsFor(30));
+    expect(g.ammo).toBe(20);
+    const y0 = g.sy;
+    g.grab(1, 100, 500); g.move(1, 100, 400, 1);
+    expect(g.sy).toBeLessThan(y0 - 100);
+    g.move(2, 0, 0, 1); // another finger does nothing
+    expect(g.sy).toBeLessThan(y0 - 100);
+    const p = g.fire(0)!;
+    expect(p).not.toBeNull();
+    expect(p.dur).toBeGreaterThan(0);
+    expect(g.fire(0.05)).toBeNull(); // still re-cocking
+    g.update(RECOCK + 0.01);
+    expect(g.fire(1)).not.toBeNull();
+    while (g.ammo > 0) { g.update(1); g.fire(2); }
+    g.update(1);
+    expect(g.empty).toBe(true);
+    expect(g.fire(3)).toBeNull();
+  });
+  it('the sight stays above the counter and inside the stall', () => {
+    const g = new AirGun(400, 800, 10);
+    g.nudge(-999, 9999);
+    expect(g.sx).toBeGreaterThanOrEqual(16);
+    expect(g.sy).toBeLessThan(800 - g.barrel);
+  });
 });

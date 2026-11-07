@@ -49,6 +49,11 @@ The four additions (25–28), including exact regional and house-rule choices, a
 - Keys: Player 1 `A` or `Space`; Player 2 `L` or `Enter`.
 
 ### 05 Balloon Burst (বেলুন ফাটানো)
+
+Two ways to pop, chosen on the setup screen (remembered):
+
+- **Mela air gun (default).** Like the balloon stall at a village fair. Drag anywhere to move the sight (it moves with the finger, a little faster, so the finger never hides a balloon); let go to shoot. The sight sways slightly like a real hand, the pellet takes a moment to fly, and the gun needs about a third of a second to re-cock. A round has a fixed number of pellets (20, 30 or 40 for 30, 45 or 60 seconds); a gold balloon adds 2. The round ends when time or pellets run out. Against the computer, it gets the same number of pellets. Keys: arrows move the sight, Space shoots. Code: `src/games/balloon-burst/gun.ts`.
+- **Pin.** Tap a balloon to pop it, as below.
 1. Tap balloons to pop them. The round lasts 30, 45 or 60 s.
 2. Points: normal 10, gold (small, fast) 30, tough (ringed; 2 hits) 25, family 10 (it splits into three minis worth 8 each), clock 5 and +3 s (solo only).
 3. The banner calls a target colour every 8 s. That colour gives ×2.
