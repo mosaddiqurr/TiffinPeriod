@@ -13,9 +13,6 @@ import { PITCH, ball, cloneWorld, flick, settle, discsOf } from '../src/games/fl
 import { aiChoose, kickoff, judge as ffJudge } from '../src/games/flikk-football/match';
 import { FLICKS_PER_TURN, aiChooseFixed, fixedKickoff, flickBall, judgeFixed, placeBall, powerFor, ballReach, previewFixed, receiver, tackler } from '../src/games/flikk-football/fixed';
 import { decided, nextKicker, judge as pkJudge, type Shootout } from '../src/games/penalty/model';
-import { GROUPS, advance, backHandCatch, newProgress } from '../src/games/five-stones/model';
-import { flick as efFlick, newEraser, settle as efSettle, type World } from '../src/games/eraser-flip/model';
-import { LEVELS, flickScore } from '../src/games/eraser-flip/levels';
 import { TYPES, WORLD, launch, makeCourse, stepPlane, throwScore } from '../src/games/paper-plane/model';
 
 describe('teams and flags', () => {
@@ -23,7 +20,8 @@ describe('teams and flags', () => {
     expect(teamsFor('cricket').length).toBeGreaterThanOrEqual(12);
     expect(teamsFor('football').length).toBeGreaterThanOrEqual(16);
     for (const t of TEAMS) {
-      expect(flagSvg(t.id)).toMatch(/^<svg[^>]*viewBox="0 0 30 20"/);
+      expect(flagSvg(t.id)).toMatch(/^<svg[^>]*width="30" height="20"/);
+      expect(flagSvg(t.id)).toMatch(/viewBox="[\d. -]+"/);
       expect(lineup(t, 'en')).toHaveLength(11);
       expect(lineup(t, 'bn')).toHaveLength(11);
     }
@@ -362,66 +360,6 @@ describe('Penalty Shootout', () => {
     expect(decided(s([true, true, true, true, true, false], [true, true, true, true, true, true]))).toBe(1);
     expect(nextKicker(s([true], [], 0))).toBe(1);
     expect(nextKicker(s([true], [true], 0))).toBe(0);
-  });
-});
-
-describe('Five Stones', () => {
-  it('progress walks through the four stages', () => {
-    let p = newProgress();
-    const tosses = GROUPS.reduce((a, g) => a + g.length, 0);
-    for (let i = 0; i < tosses; i++) p = advance(p);
-    expect(p.stage).toBe(4);
-    expect(p.points).toBeGreaterThan(0);
-  });
-  it('the back of the hand rewards timing', () => {
-    expect(backHandCatch(0.01)).toBe(5);
-    expect(backHandCatch(0.15)).toBe(2);
-    expect(backHandCatch(0.5)).toBe(0);
-  });
-});
-
-describe('Eraser Flip', () => {
-  it('a flick lands, slides and stops; too hard falls off the desk', () => {
-    const w: World = { erasers: [newEraser(0, 300, 700, 0, ['#000', '#fff'])], boxes: [], t: 0, events: [] };
-    efFlick(w.erasers[0], -Math.PI / 2, 0.4);
-    efSettle(w);
-    expect(w.erasers[0].fallen).toBe(false);
-    expect(w.erasers[0].y).toBeLessThan(600);
-    const w2: World = { erasers: [newEraser(0, 300, 200, 0, ['#000', '#fff'])], boxes: [], t: 0, events: [] };
-    efFlick(w2.erasers[0], -Math.PI / 2, 1);
-    efSettle(w2);
-    expect(w2.erasers[0].fallen).toBe(true);
-  });
-  it('landing on the other eraser counts as on top', () => {
-    const me = newEraser(0, 300, 600, 0, ['#000', '#fff']);
-    const target = newEraser(1, 300, 600, 0, ['#000', '#fff']);
-    const w: World = { erasers: [me, target], boxes: [], t: 0, events: [] };
-    // Find a power that lands on the target placed ahead.
-    let found = false;
-    for (let p = 0.2; p <= 1 && !found; p += 0.02) {
-      const sim: World = { erasers: [{ ...me, y: 700 }, { ...target, y: 450 }], boxes: [], t: 0, events: [] };
-      efFlick(sim.erasers[0], -Math.PI / 2, p);
-      efSettle(sim);
-      if (sim.erasers[0].onTop === 1) found = true;
-    }
-    expect(found).toBe(true);
-    void w;
-  });
-  it('every challenge can score points', () => {
-    for (const L of LEVELS) {
-      let best = 0;
-      for (let p = 0.1; p <= 1; p += 0.03) {
-        const w: World = { erasers: [newEraser(0, L.start.x, L.start.y, L.start.a, ['#000', '#fff'])], boxes: L.boxes, t: 0, events: [] };
-        if (L.zone.kind === 'top') w.erasers.push(newEraser(9, L.zone.x, L.zone.y, L.zone.a, ['#000', '#fff'], true));
-        const z = L.zone;
-        const tx = 'x' in z ? z.x + ('w' in z ? z.w / 2 : 0) : 300;
-        const ty = 'y' in z ? z.y + ('h' in z ? z.h / 2 : 0) : 30;
-        efFlick(w.erasers[0], Math.atan2(ty - L.start.y, tx - L.start.x), p);
-        efSettle(w);
-        best = Math.max(best, flickScore(L, w.erasers[0], L.zone.kind === 'top' ? 9 : null));
-      }
-      expect(best, L.id).toBeGreaterThan(0);
-    }
   });
 });
 

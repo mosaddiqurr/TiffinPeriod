@@ -8,6 +8,10 @@ import '@fontsource/hind-siliguri/600.css';
 import '@fontsource/hind-siliguri/700.css';
 import './styles/global.css';
 import App from './App';
+import { startDebugPanel } from './platform/debug';
+
+// Phone diagnostics, only with debug=1 in the address.
+startDebugPanel();
 
 // After a new version goes live, a page that is still the old version can fail to fetch a
 // game's code or style file (the old files are gone). Vite reports that here: reload once

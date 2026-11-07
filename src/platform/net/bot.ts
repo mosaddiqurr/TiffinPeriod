@@ -16,8 +16,10 @@ const FAV: Record<'cricket' | 'football', string[]> = {
   football: ['ban', 'ban', 'arg', 'arg', 'bra', 'bra', 'por', 'esp', 'ger', 'fra', 'eng', 'ned'],
 };
 
-export function botProfile(rng: Rng, sport: 'cricket' | 'football' = 'cricket'): Profile {
+export function botProfile(rng: Rng, sport?: 'cricket' | 'football'): Profile {
   const name = rng.pick(NAMES) + rng.pick(TAGS);
+  // Flags only in the national-team games.
+  if (!sport) return { name, team: '' };
   const ids = new Set(teamsFor(sport).map((t) => t.id));
   const team = FAV[sport].filter((f) => ids.has(f));
   return { name, team: rng.pick(team.length ? team : [...ids]) };

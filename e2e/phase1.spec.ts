@@ -15,18 +15,18 @@ async function openGame(page: Page, id: string) {
   await expect(page.getByTestId('setup')).toBeVisible();
 }
 
-test('hub shows the playable games, the 6 coming in Phase 3, and the roadmap of 35', async ({ page }) => {
+test('hub shows the 17 games, with no coming-soon section after the archive', async ({ page }) => {
   const errors = trackErrors(page);
   await page.goto('./');
-  for (const id of ['hand-cricket', 'book-cricket', 'pakhir-ure', 'tug-of-war', 'balloon-burst', 'biscuit-race']) {
+  for (const id of ['hand-cricket', 'book-cricket', 'pakhir-ure', 'balloon-burst']) {
     await expect(page.getByTestId(`card-${id}`)).toBeVisible();
   }
-  await expect(page.locator('.card')).toHaveCount(29);
-  await expect(page.locator('.soon')).toHaveCount(6);
+  await expect(page.locator('.card')).toHaveCount(17);
+  await expect(page.locator('.soon')).toHaveCount(0);
   await page.getByRole('button', { name: /ভাষা|Language/ }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Tiffin period');
-  await page.getByRole('link', { name: /full list of 35/ }).click();
-  await expect(page.locator('.roadmap-table tbody tr')).toHaveCount(35);
+  await page.goto('./#/roadmap');
+  await expect(page.locator('.roadmap-table tbody tr')).toHaveCount(17);
   const width = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(width).toBeLessThanOrEqual(page.viewportSize()!.width);
   expect(errors).toEqual([]);
@@ -95,21 +95,6 @@ test('Pakhir Ure: solo game ends after three mistakes', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('Tug of War: pause works and the hard computer wins a one-round match', async ({ page }) => {
-  const errors = trackErrors(page);
-  await openGame(page, 'tug-of-war');
-  await page.getByRole('button', { name: 'কঠিন' }).click();
-  await page.getByRole('group', { name: 'ম্যাচ' }).getByRole('button').first().click();
-  await page.getByTestId('start').click();
-  await page.waitForTimeout(1500);
-  await page.getByTestId('pause').click();
-  await expect(page.getByRole('dialog', { name: 'খেলা থেমে আছে' })).toBeVisible();
-  await page.getByRole('button', { name: 'আবার চালাও' }).click();
-  await expect(page.getByTestId('result')).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByTestId('result')).toContainText('হার');
-  expect(errors).toEqual([]);
-});
-
 test('Balloon Burst: taps register and the 30-second round ends', async ({ page }) => {
   const errors = trackErrors(page);
   await page.clock.install();
@@ -163,23 +148,6 @@ test('Balloon Burst, mela gun: drag moves the sight, letting go fires one pellet
   expect(errors).toEqual([]);
 });
 
-test('Biscuit Race: the computer catches its biscuit and wins', async ({ page }) => {
-  const errors = trackErrors(page);
-  await openGame(page, 'biscuit-race');
-  await page.getByRole('button', { name: 'কঠিন' }).click();
-  await page.getByTestId('start').click();
-  await page.waitForTimeout(3500);
-  // Player 1 runs to the frame and jumps once (touch control).
-  const run = page.getByTestId('l1-right');
-  await run.dispatchEvent('pointerdown', { pointerId: 5 });
-  await page.waitForTimeout(1200);
-  await run.dispatchEvent('pointerup', { pointerId: 5 });
-  await page.getByTestId('l1-jump').dispatchEvent('pointerdown', { pointerId: 6 });
-  await page.getByTestId('l1-jump').dispatchEvent('pointerup', { pointerId: 6 });
-  await expect(page.getByTestId('result')).toBeVisible({ timeout: 70_000 });
-  expect(errors).toEqual([]);
-});
-
 test('scores and settings persist after a reload; sound can be muted', async ({ page }) => {
   await page.goto('./');
   await page.evaluate(() => localStorage.setItem('tp.v1.scores', JSON.stringify({ 'balloon-burst': { plays: 1, wins: 0, losses: 0, ties: 0, streak: 0, bestStreak: 0, best: 123, records: {} } })));
@@ -198,7 +166,7 @@ test('every game loads in English with no console errors', async ({ page }) => {
   const errors = trackErrors(page);
   await page.goto('./');
   await page.evaluate(() => localStorage.setItem('tp.v1.settings', JSON.stringify({ lang: 'en' })));
-  for (const id of ['hand-cricket', 'book-cricket', 'pakhir-ure', 'tug-of-war', 'balloon-burst', 'biscuit-race']) {
+  for (const id of ['hand-cricket', 'book-cricket', 'pakhir-ure', 'balloon-burst']) {
     await page.goto(`./#/play/${id}`);
     await expect(page.getByTestId('setup')).toBeVisible();
     if (id.endsWith('cricket')) await page.getByTestId('mode-quick').click();

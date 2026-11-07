@@ -1,3 +1,4 @@
+import { REAL_FLAGS } from './flags';
 import type { Bi } from '../platform/i18n';
 import { createRng } from '../engine/rng';
 
@@ -150,6 +151,9 @@ const FLAGS: Record<string, () => string> = {
 
 /** The flag as SVG markup with a 30 × 20 view box. */
 export function flagSvg(id: string): string {
+  // The real flag where the team is a country; a drawn emblem otherwise (West Indies).
+  const real = REAL_FLAGS[id];
+  if (real) return real.replace('<svg ', '<svg width="30" height="20" preserveAspectRatio="none" ');
   const body = (FLAGS[id] ?? FLAGS.ban)();
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" width="30" height="20">${body}</svg>`;
 }

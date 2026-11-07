@@ -1,6 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
 import { LETTERS } from '../src/games/naam-desh/model';
-import { applyMove, chooseMove, initialPosition, positionKey, verdict } from '../src/games/bagh-bandi/model';
 import { createRng } from '../src/engine/rng';
 
 async function openGame(page: Page, id: string, lang = 'en') {
@@ -21,7 +20,7 @@ test.beforeEach(async ({ page }) => {
 test.afterEach(async ({ page }) => { expect((page as Page & { gameErrors: string[] }).gameErrors).toEqual([]); });
 
 for (const lang of ['en', 'bn']) test(`four new game setups render in ${lang}`, async ({ page }) => {
-  for (const id of ['chor-police', 'naam-desh', 'jor-bejor', 'bagh-bandi']) {
+  for (const id of ['chor-police', 'naam-desh']) {
     await openGame(page, id, lang);
     await expect(page.getByTestId('start')).toBeEnabled();
     await expect(page.getByTestId('start')).toBeInViewport();
@@ -70,41 +69,6 @@ test('Chor Police: four local players keep roles private and police can catch th
     await page.getByTestId('guess').click();
     await expect(page.getByRole('status')).toContainText('Caught!');
     await noOverflow(page);
-    await page.getByTestId('next-round').click();
-  }
-  await expect(page.getByTestId('result')).toBeVisible();
-});
-
-test('Jor-Bejor: local hidden hands, zero is even, and a full match', async ({ page }) => {
-  await openGame(page, 'jor-bejor');
-  await page.getByRole('button', { name: '2 players', exact: true }).click();
-  await page.getByTestId('start').click();
-  for (let round = 0; round < 3; round++) {
-    await page.getByTestId('finger-0').click(); await page.getByTestId('lock-hand').click();
-    await expect(page.getByTestId('handoff')).toBeVisible();
-    await expect(page.locator('.finger-picks')).toHaveCount(0);
-    await page.getByTestId('ready').click();
-    await page.getByTestId('finger-0').click(); await page.getByTestId('lock-hand').click();
-    await expect(page.getByRole('status')).toContainText('0 + 0 = 0');
-    await noOverflow(page); await page.getByTestId('next-round').click();
-  }
-  await expect(page.getByTestId('result')).toBeVisible();
-});
-
-test('Jor-Bejor: a full computer match and pause/resume', async ({ page }) => {
-  await openGame(page, 'jor-bejor'); await page.getByTestId('start').click();
-  await page.getByTestId('pause').click();
-  await expect(page.getByRole('dialog', { name: 'Paused' })).toBeVisible();
-  await page.getByRole('button', { name: 'Resume', exact: true }).click();
-  await page.getByRole('button', { name: 'How to play', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'How to play' })).toBeVisible();
-  await page.getByRole('dialog', { name: 'How to play' }).getByRole('button', { name: 'Resume', exact: true }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.getByRole('button', { name: 'How to play', exact: true }).click();
-  await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  for (let i = 0; i < 5 && !await page.getByTestId('result').isVisible(); i++) {
-    await page.getByTestId(`finger-${i % 6}`).click(); await page.getByTestId('lock-hand').click();
     await page.getByTestId('next-round').click();
   }
   await expect(page.getByTestId('result')).toBeVisible();
@@ -170,46 +134,3 @@ test('Naam Desh: timer expiration submits once without extra user input', async 
   await expect(page.getByTestId('result')).toHaveCount(0);
 });
 
-test('Bagh Bandi: computer replies legally, take-back restores the opening and pause works', async ({ page }) => {
-  await openGame(page, 'bagh-bandi'); await page.getByTestId('start').click();
-  await page.getByTestId('node-1').click();
-  await expect(page.getByTestId('node-6')).toHaveClass(/legal/);
-  await page.getByTestId('node-6').click();
-  await expect(page.getByTestId('turn-status')).toContainText('Computer');
-  await expect(page.getByTestId('turn-status')).toContainText('You', { timeout: 10000 });
-  await page.getByTestId('undo').click();
-  await expect(page.getByTestId('node-1')).toHaveAttribute('aria-label', /Goats 5/);
-  await expect(page.getByTestId('node-6')).toHaveAttribute('aria-label', /Empty/);
-  await page.getByTestId('pause').click(); await page.getByRole('button', { name: 'Resume', exact: true }).click();
-  await noOverflow(page);
-});
-
-test('Bagh Bandi: a complete game via legal board clicks reaches a natural result', async ({ page }) => {
-  test.setTimeout(120000);
-  await openGame(page, 'bagh-bandi'); await page.getByRole('button', { name: '2 players', exact: true }).click(); await page.getByTestId('start').click();
-  let state = initialPosition(); const rng = createRng(44), seen = new Map<string, number>([[positionKey(state), 1]]);
-  for (let i = 0; i < 300 && !verdict(state); i++) {
-    const move = chooseMove(state, 1, () => rng.next())!;
-    await page.getByTestId(`node-${move.from}`).click();
-    await expect(page.getByTestId(`node-${move.to}`)).toHaveClass(/legal/);
-    await page.getByTestId(`node-${move.to}`).click();
-    state = applyMove(state, move);
-    const key = positionKey(state), count = (seen.get(key) ?? 0) + 1; seen.set(key, count);
-    if (count >= 3) break;
-  }
-  await expect(page.getByTestId('result')).toBeVisible();
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('tp.v1.scores')!)['bagh-bandi'].plays)).toBe(1);
-});
-
-test('Bagh Bandi: human tigers get a legal opening from the hard goat computer', async ({ page }) => {
-  await openGame(page, 'bagh-bandi');
-  await page.getByRole('group', { name: 'Your side', exact: true }).getByRole('button', { name: 'Tigers', exact: true }).click();
-  await page.getByRole('button', { name: 'Hard', exact: true }).click();
-  await page.getByTestId('start').click();
-  await expect(page.getByTestId('turn-status')).toContainText('You', { timeout: 15000 });
-  await expect(page.getByTestId('turn-status')).toContainText('Tigers');
-  await expect(page.locator('.bagh-node .piece.goat')).toHaveCount(5);
-  await page.getByRole('button', { name: 'Concede match', exact: true }).click();
-  await expect(page.getByTestId('result')).toBeVisible();
-  await expect(page.getByTestId('result')).toContainText('Computer');
-});

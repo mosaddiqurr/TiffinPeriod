@@ -96,3 +96,6 @@
 .ol-entry > .ol-ico { flex: none; }
 .ol-join input { width: 0; min-width: 0; flex: 1 1 auto; }
 .ol-join .btn { flex: none; }
+
+/* A player's badge outside the cricket and football games: a coloured initial */
+.ol-who { display: inline-grid; place-items: center; flex: none; border-radius: 50%; color: #fff; font-family: var(--font-display); font-weight: 800; box-shadow: 0 0 0 2px #fff, 0 3px 8px -3px rgba(0,0,0,0.5); line-height: 1; }

@@ -102,7 +102,7 @@ export function Home() {
         </section>
       ))}
 
-      <section>
+      {soon.length > 0 && <section>
         <div className="section-head">
           <h2>{t('comingSoon')}</h2>
           <span className="en">{t('comingSoonEn')}</span>
@@ -117,7 +117,7 @@ export function Home() {
           ))}
         </div>
         <div className="link-row"><a className="ink-link" href={href({ name: 'roadmap' })}>{t('fullRoadmap')} →</a></div>
-      </section>
+      </section>}
 
       <footer className="footer">
         <p style={{ margin: 0 }}>{t('footer')}</p>

@@ -31,7 +31,7 @@ export interface LobbyProps<S> {
   onBack: () => void;
   /** A code from an invite link (?room=CODE). */
   code?: string;
-  /** Which flags to choose from. */
+  /** Cricket and football games: players pick a country flag. Other games: no flags, a coloured initial. */
   sport?: 'cricket' | 'football';
   /** Settings for a room the player creates, and for quick match. */
   defaultSettings: S;
@@ -67,8 +67,10 @@ export function OnlineLobby<S>(p: LobbyProps<S>) {
   const { t, n } = x;
   const [p1] = usePlayerNames();
   const sport = p.sport ?? 'cricket';
+  const flags = !!p.sport;
   const [name, setNameState] = useState(() => readJSON<string>('online.name', '') || p1);
-  const [team, setTeam] = useState(() => favTeam(sport));
+  const [teamPick, setTeam] = useState(() => favTeam(sport));
+  const team = flags ? teamPick : '';
   const [pickTeam, setPickTeam] = useState(false);
   const [stage, setStage] = useState<Stage>('lobby');
   const [joinCode, setJoinCode] = useState(p.code ?? '');
@@ -196,7 +198,7 @@ export function OnlineLobby<S>(p: LobbyProps<S>) {
   } else if (stage === 'search' || stage === 'joining') {
     body = (
       <div className="ol-wait" data-testid="searching">
-        <div className="ol-radar" aria-hidden="true"><span /><span /><Flag id={team} size={40} /></div>
+        <div className="ol-radar" aria-hidden="true"><span /><span /><Who team={team} name={me.name} size={40} /></div>
         <h2>{stage === 'search' ? t('Finding a player…', 'খেলোয়াড় খোঁজা হচ্ছে…') : t('Joining the room…', 'রুমে ঢুকছি…')}</h2>
         {stage === 'search' && <p className="ol-meta">{t(`${waited}s`, `${n(waited)} সেকেন্ড`)}{p.describe ? ` · ${p.describe(p.quickSettings)}` : ''}</p>}
         <button className="btn secondary" onClick={cancel} data-testid="cancel">{t('Cancel', 'বাতিল')}</button>
@@ -206,9 +208,9 @@ export function OnlineLobby<S>(p: LobbyProps<S>) {
     body = (
       <div className="ol-found" data-testid="found">
         <div className="ol-found-row">
-          <div className="ol-player"><Flag id={me.team} size={64} /><b>{me.name}</b></div>
+          <div className="ol-player"><Who team={me.team} name={me.name} size={64} /><b>{me.name}</b></div>
           <span className="ol-vs">VS</span>
-          <div className="ol-player"><Flag id={peer.them.team} size={64} /><b data-testid="opp-name">{peer.them.name}</b></div>
+          <div className="ol-player"><Who team={peer.them.team} name={peer.them.name} size={64} /><b data-testid="opp-name">{peer.them.name}</b></div>
         </div>
         <h2>{t('Player found!', 'খেলোয়াড় পাওয়া গেছে!')}</h2>
       </div>
@@ -224,10 +226,10 @@ export function OnlineLobby<S>(p: LobbyProps<S>) {
             <span>{t('Your name', 'তোমার নাম')}</span>
             <input value={name} maxLength={16} onChange={(e) => setName(e.target.value)} placeholder={t('Name', 'নাম')} data-testid="online-name" autoComplete="nickname" />
           </label>
-          <button className="btn secondary ol-team" onClick={() => setPickTeam(!pickTeam)} aria-expanded={pickTeam} data-testid="online-team">
+          {flags && <button className="btn secondary ol-team" onClick={() => setPickTeam(!pickTeam)} aria-expanded={pickTeam} data-testid="online-team">
             <Flag id={team} size={26} /> {x.bi(getTeam(team).name)} <small>{t('change', 'বদলাও')}</small>
-          </button>
-          {pickTeam && <TeamGrid sport={sport} value={team} onChange={(id) => { setTeam(id); setFavTeam(sport, id); setPickTeam(false); }} label={t('Your country', 'তোমার দেশ')} />}
+          </button>}
+          {flags && pickTeam && <TeamGrid sport={sport} value={team} onChange={(id) => { setTeam(id); setFavTeam(sport, id); setPickTeam(false); }} label={t('Your country', 'তোমার দেশ')} />}
         </div>
         {err && <p className="ol-err" role="alert" data-testid="online-error">{err}</p>}
         <div className="ol-ways">
@@ -259,6 +261,21 @@ export function OnlineLobby<S>(p: LobbyProps<S>) {
   return <div className="sport-page ol-page" data-testid="online">{body}</div>;
 }
 
+/**
+ * A player's badge: their country flag in cricket and football games, otherwise a coloured
+ * circle with their initial (no flags outside the national-team games).
+ */
+export function Who({ team, name, size = 32 }: { team: string; name: string; size?: number }) {
+  if (team) return <Flag id={team} size={size} />;
+  const hues = [12, 140, 205, 265, 330, 40, 175, 290];
+  let h = 0;
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const initial = [...name.trim()][0]?.toUpperCase() ?? '?';
+  return (
+    <span className="ol-who" aria-hidden="true" style={{ width: size, height: size, fontSize: size * 0.48, background: `hsl(${hues[h % hues.length]} 55% 42%)` }}>{initial}</span>
+  );
+}
+
 // ---------- Pieces for a match screen ----------
 
 /** True once the other player has left (closed the page, went back, lost the connection). */
@@ -273,7 +290,7 @@ export function OppBar({ peer, gone, status, extra }: { peer: Peer; gone: boolea
   const { t } = useTx();
   return (
     <div className="ol-oppbar" data-testid="opp-bar">
-      <Flag id={peer.them.team} size={24} />
+      <Who team={peer.them.team} name={peer.them.name} size={24} />
       <b data-testid="opp">{peer.them.name}</b>
       <span className={`ol-dot ${gone ? 'off' : ''}`} aria-hidden="true" />
       {extra}

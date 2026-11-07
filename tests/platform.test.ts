@@ -21,9 +21,11 @@ describe('i18n', () => {
 });
 
 describe('registry', () => {
-  it('lists exactly 35 games with numbers 1..35', () => {
-    expect(GAMES).toHaveLength(35);
-    expect(GAMES.map((g) => g.no)).toEqual(Array.from({ length: 35 }, (_, i) => i + 1));
+  it('lists the 17 games on the website, each playable with its own number (the rest are in archive/)', () => {
+    expect(GAMES).toHaveLength(17);
+    expect(new Set(GAMES.map((g) => g.no)).size).toBe(17);
+    expect(new Set(GAMES.map((g) => g.id)).size).toBe(17);
+    expect(GAMES.every((g) => g.playable)).toBe(true);
   });
   it('Phase 1 and 2 are playable; every playable game has a loader and modes; planned games have none', () => {
     expect(GAMES.filter((g) => g.phase < 3).every((g) => g.playable)).toBe(true);

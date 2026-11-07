@@ -13,7 +13,7 @@ declare global {
   }
 }
 
-const NEW = ['number-cricket', 'flikk-football', 'penalty', 'five-stones', 'dots-boxes', 'hangman', 'eraser-flip'];
+const NEW = ['number-cricket', 'flikk-football', 'penalty', 'dots-boxes', 'hangman'];
 
 function trackErrors(page: Page) {
   const errors: string[] = [];
@@ -223,16 +223,6 @@ test('Penalty Shootout: shoot and keep through a full shootout', async ({ page }
   expect(errors).toEqual([]);
 });
 
-test('Five Stones: solo run through all five stages', async ({ page }) => {
-  const errors = trackErrors(page);
-  await open(page, 'five-stones');
-  await page.getByRole('group', { name: 'Mode' }).getByRole('button', { name: 'Solo' }).click();
-  await page.getByTestId('start').click();
-  await loop(page, async () => { await page.evaluate(() => window.__five?.testPerfect()); await page.waitForTimeout(500); });
-  await expect(page.getByTestId('result')).toContainText('All five stages');
-  expect(errors).toEqual([]);
-});
-
 test('Dots and Boxes: a full game against the computer', async ({ page }) => {
   const errors = trackErrors(page);
   await open(page, 'dots-boxes');
@@ -255,20 +245,6 @@ test('Hangman: Bangla keyboard and a five-word round', async ({ page }) => {
     const keys = await page.evaluate(() => [...document.querySelectorAll('[data-testid^=key-]:not([disabled])')].map((e) => e.getAttribute('data-testid')!));
     if (keys.length) await page.getByTestId(keys[Math.floor(Math.random() * keys.length)]).click({ timeout: 1500 }).catch(() => {});
   });
-  expect(errors).toEqual([]);
-});
-
-test('Eraser Flip: a challenge level and a duel', async ({ page }) => {
-  test.setTimeout(180_000);
-  const errors = trackErrors(page);
-  await open(page, 'eraser-flip');
-  await page.getByTestId('level-2').click();
-  await page.getByTestId('start').click();
-  await loop(page, async () => { await page.evaluate(() => window.__eraser?.testFlick(-Math.PI / 2, 0.5 + Math.random() * 0.15)); await page.waitForTimeout(400); });
-  await page.getByRole('button', { name: 'Change setup' }).click();
-  await page.getByRole('group', { name: 'Mode' }).getByRole('button', { name: 'vs Computer' }).click();
-  await page.getByTestId('start').click();
-  await loop(page, async () => { await page.evaluate(() => { const s = window.__eraser; if (!s) return; const [a, b] = s.w.erasers; s.testFlick(Math.atan2(b.y - a.y, b.x - a.x), 0.45 + Math.random() * 0.4); }); await page.waitForTimeout(400); }, 160_000);
   expect(errors).toEqual([]);
 });
 

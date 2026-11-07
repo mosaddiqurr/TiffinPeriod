@@ -78,21 +78,21 @@ export function PenArt({ id, cap, small }: { id: PenId; cap: string; small?: boo
   return (
     <svg viewBox="0 0 120 22" className={small ? 'pf-art small' : 'pf-art'} aria-hidden="true">
       <defs>
-        <linearGradient id={`pfw-${id}-${cap}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffffff" /><stop offset="0.55" stopColor="#ebebe4" /><stop offset="1" stopColor="#c8c8bf" /></linearGradient>
-        <linearGradient id={`pfc-${id}-${cap}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffffff" stopOpacity="0.5" /><stop offset="0.4" stopColor={cap} /><stop offset="1" stopColor={cap} /></linearGradient>
+        <linearGradient id={`pfw-${id}-${cap.replace(/[^a-z0-9]/gi, "")}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffffff" /><stop offset="0.55" stopColor="#ebebe4" /><stop offset="1" stopColor="#c8c8bf" /></linearGradient>
+        <linearGradient id={`pfc-${id}-${cap.replace(/[^a-z0-9]/gi, "")}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffffff" stopOpacity="0.5" /><stop offset="0.4" stopColor={cap} /><stop offset="1" stopColor={cap} /></linearGradient>
       </defs>
       {id === 'classic' ? <>
-        <rect x="4" y="6" width="80" height="10" rx="1.5" fill={`url(#pfw-${id}-${cap})`} stroke="#b9b9b0" strokeWidth="0.6" />
+        <rect x="4" y="6" width="80" height="10" rx="1.5" fill={`url(#pfw-${id}-${cap.replace(/[^a-z0-9]/gi, "")})`} stroke="#b9b9b0" strokeWidth="0.6" />
         <path d="M6 11 H82" stroke="#d2d2ca" strokeWidth="0.8" />
         <rect x="2" y="7" width="4" height="8" rx="1" fill={cap} />
-        <rect x="80" y="5" width="36" height="12" rx="5" fill={`url(#pfc-${id}-${cap})`} />
+        <rect x="80" y="5" width="36" height="12" rx="5" fill={`url(#pfc-${id}-${cap.replace(/[^a-z0-9]/gi, "")})`} />
         <rect x="84" y="2.5" width="26" height="3" rx="1.5" fill={cap} />
       </> : <>
         <rect x="4" y="5.5" width="70" height="11" rx="4" fill="#dfe6ee" fillOpacity="0.7" stroke="#9aa6b2" strokeWidth="0.6" />
         <rect x="8" y="9.5" width="70" height="3" rx="1.5" fill={cap} opacity="0.8" />
         <rect x="58" y="5" width="22" height="12" rx="3" fill="#1d1f23" />
         {[61, 64, 67, 70, 73, 76].map((x) => <path key={x} d={`M${x} 5 V17`} stroke="#3a3d43" strokeWidth="1" />)}
-        <rect x="80" y="4.5" width="36" height="13" rx="5.5" fill={`url(#pfc-${id}-${cap})`} />
+        <rect x="80" y="4.5" width="36" height="13" rx="5.5" fill={`url(#pfc-${id}-${cap.replace(/[^a-z0-9]/gi, "")})`} />
         <rect x="84" y="2" width="26" height="3" rx="1.5" fill="#dfe3e8" />
         <rect x="2" y="7" width="4" height="8" rx="1.5" fill={cap} />
       </>}

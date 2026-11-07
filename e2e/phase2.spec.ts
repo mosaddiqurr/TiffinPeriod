@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 // Phase 2 browser tests. On desktop each game is played to a real result.
 // On the phone profile every game is opened and started (smoke test).
 
-const PHASE2 = ['pen-fight', 'rubber-band', 'notebook-drawing', 'elonti-belonti', 'spoon-marble', 'haari-bhanga', 'paper-plane', 'paper-boat', 'musical-chairs', 'sack-race', 'three-legged'];
+const PHASE2 = ['pen-fight', 'rubber-band', 'notebook-drawing', 'elonti-belonti', 'paper-plane', 'paper-boat'];
 
 function trackErrors(page: Page) {
   const errors: string[] = [];
@@ -125,7 +125,7 @@ test.describe('desktop full plays', () => {
     expect(errors).toEqual([]);
   });
 
-  for (const [id, opt] of [['elonti-belonti', 'কঠিন'], ['spoon-marble', 'কঠিন'], ['sack-race', 'কঠিন'], ['three-legged', 'কঠিন'], ['paper-boat', 'কঠিন'], ['musical-chairs', 'কঠিন']] as const) {
+  for (const [id, opt] of [['elonti-belonti', 'কঠিন'], ['কঠিন'], ['কঠিন'], ['কঠিন'], ['paper-boat', 'কঠিন'], ['কঠিন']] as const) {
     test(`${id}: the computer finishes and a result appears`, async ({ page }) => {
       const errors = trackErrors(page);
       await open(page, id, opt);
@@ -133,18 +133,6 @@ test.describe('desktop full plays', () => {
       expect(errors).toEqual([]);
     });
   }
-
-  test('Haari Bhanga: three swings end the turn', async ({ page }) => {
-    const errors = trackErrors(page);
-    await page.clock.install();
-    await open(page, 'haari-bhanga');
-    await page.keyboard.press('Space'); // start: take off the spin
-    await page.clock.runFor(1800);
-    for (let i = 0; i < 3; i++) { await page.keyboard.press('Space'); await page.clock.runFor(700); }
-    await page.clock.runFor(3000);
-    await expect(result(page)).toBeVisible({ timeout: 15_000 });
-    expect(errors).toEqual([]);
-  });
 
   test('Paper Airplane: three throws with nose-up control', async ({ page }) => {
     const errors = trackErrors(page);
