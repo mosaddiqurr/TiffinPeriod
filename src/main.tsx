@@ -9,6 +9,18 @@ import '@fontsource/hind-siliguri/700.css';
 import './styles/global.css';
 import App from './App';
 
+// After a new version goes live, a page that is still the old version can fail to fetch a
+// game's code or style file (the old files are gone). Vite reports that here: reload once
+// to get the new version, instead of showing a broken or blank game.
+addEventListener('vite:preloadError', (e) => {
+  let last = 0;
+  try { last = Number(sessionStorage.getItem('tp.reloaded') ?? 0); } catch { /* private mode */ }
+  if (Date.now() - last < 30000) return;
+  try { sessionStorage.setItem('tp.reloaded', String(Date.now())); } catch { /* private mode */ }
+  e.preventDefault();
+  location.reload();
+});
+
 // Canvas games draw text with these fonts, so ask the browser to load them early.
 try {
   void document.fonts?.load('800 32px "Baloo Da 2"', 'অআ12');

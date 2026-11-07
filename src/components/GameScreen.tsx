@@ -14,14 +14,14 @@ import { IconBack, IconHelp, IconPause, IconSoundOff, IconSoundOn } from './Dood
 /** A game's code file could not be fetched (usually: a new version was deployed and this page is older). */
 export function isChunkError(err: unknown): boolean {
   const m = String((err as { message?: string })?.message ?? err);
-  return /dynamically imported module|Importing a module script failed|error loading dynamically imported|Failed to fetch|ChunkLoadError|Outdated Optimize Dep/i.test(m);
+  return /dynamically imported module|Importing a module script failed|error loading dynamically imported|Failed to fetch|ChunkLoadError|Outdated Optimize Dep|preload CSS|Unable to preload/i.test(m);
 }
 
 /** Load a game's code; if its file is missing because the site was updated, reload the page once to get the new version. */
 function loadWithReload(id: string, load: () => Promise<{ default: React.ComponentType<any> }>) { // eslint-disable-line @typescript-eslint/no-explicit-any
   return () => load().catch((err) => {
     if (isChunkError(err)) {
-      const key = `tp.reloaded.${id}`;
+      const key = 'tp.reloaded'; void id;
       let last = 0;
       try { last = Number(sessionStorage.getItem(key) ?? 0); } catch { /* private mode */ }
       if (Date.now() - last > 30000) {

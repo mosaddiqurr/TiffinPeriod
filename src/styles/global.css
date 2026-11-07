@@ -250,7 +250,9 @@ a { color: var(--pen); }
   background: rgba(35, 30, 20, 0.45); padding: 16px; overflow-y: auto;
   animation: fade 0.18s ease;
 }
-@keyframes fade { from { opacity: 0; } }
+/* Overlays slide in rather than fade from invisible: if a browser holds an animation at its
+   start (iPhone Safari can, for a page loaded while not on screen), the sheet still shows. */
+@keyframes fade { from { transform: translateY(6px); } }
 .sheet {
   width: min(560px, 100%); max-height: 100%; overflow-y: auto;
   background: var(--paper); border-radius: 6px 6px 14px 14px; box-shadow: 0 20px 50px -20px rgba(0,0,0,0.6);
