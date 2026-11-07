@@ -11,16 +11,39 @@ import { IconBack, IconHelp, IconPause, IconSoundOff, IconSoundOn } from './Dood
 // Each game loads as its own code chunk inside its own error boundary.
 // A crash or a load failure in one game does not affect the hub or other games.
 
-class GameBoundary extends Component<{ children: ReactNode; fallback: (retry: () => void) => ReactNode }, { failed: boolean }> {
-  state = { failed: false };
-  static getDerivedStateFromError() {
-    return { failed: true };
+/** A game's code file could not be fetched (usually: a new version was deployed and this page is older). */
+export function isChunkError(err: unknown): boolean {
+  const m = String((err as { message?: string })?.message ?? err);
+  return /dynamically imported module|Importing a module script failed|error loading dynamically imported|Failed to fetch|ChunkLoadError|Outdated Optimize Dep/i.test(m);
+}
+
+/** Load a game's code; if its file is missing because the site was updated, reload the page once to get the new version. */
+function loadWithReload(id: string, load: () => Promise<{ default: React.ComponentType<any> }>) { // eslint-disable-line @typescript-eslint/no-explicit-any
+  return () => load().catch((err) => {
+    if (isChunkError(err)) {
+      const key = `tp.reloaded.${id}`;
+      let last = 0;
+      try { last = Number(sessionStorage.getItem(key) ?? 0); } catch { /* private mode */ }
+      if (Date.now() - last > 30000) {
+        try { sessionStorage.setItem(key, String(Date.now())); } catch { /* private mode */ }
+        location.reload();
+        return new Promise<never>(() => {});
+      }
+    }
+    throw err;
+  });
+}
+
+class GameBoundary extends Component<{ children: ReactNode; fallback: (retry: () => void, chunk: boolean) => ReactNode }, { failed: boolean; chunk: boolean }> {
+  state = { failed: false, chunk: false };
+  static getDerivedStateFromError(err: unknown) {
+    return { failed: true, chunk: isChunkError(err) };
   }
   componentDidCatch(err: unknown) {
     console.error('[game crashed]', err);
   }
   render() {
-    return this.state.failed ? this.props.fallback(() => this.setState({ failed: false })) : this.props.children;
+    return this.state.failed ? this.props.fallback(() => this.setState({ failed: false, chunk: false }), this.state.chunk) : this.props.children;
   }
 }
 
@@ -31,7 +54,7 @@ export function GameScreen({ id }: { id: string }) {
   const [bar, setBar] = useState<BarConfig>({});
   const [showHelp, setShowHelp] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const Game = useMemo(() => (entry?.load ? lazy(entry.load) : null), [entry, attempt]);
+  const Game = useMemo(() => (entry?.load ? lazy(loadWithReload(id, entry.load)) : null), [entry, attempt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -74,12 +97,12 @@ export function GameScreen({ id }: { id: string }) {
         <BarContext.Provider value={setBar}>
           <GameBoundary
             key={attempt}
-            fallback={(retry) => (
+            fallback={(retry, chunk) => (
               <Overlay label={t('loadFail')}>
                 <div className="sheet ruled">
                   <h2>{t('loadFail')}</h2>
                   <div className="actions">
-                    <button className="btn" onClick={() => { setAttempt((a) => a + 1); retry(); }}>{t('tryAgain')}</button>
+                    <button className="btn" onClick={() => { if (chunk) { location.reload(); return; } setAttempt((a) => a + 1); retry(); }}>{t('tryAgain')}</button>
                     <button className="btn secondary" onClick={exit}>{t('quit')}</button>
                   </div>
                 </div>
