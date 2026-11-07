@@ -16,9 +16,9 @@ export interface GameEntry {
   category: Category;
   title: Bi;
   blurb: Bi;
-  /** Only Phase 1 games are playable in this release. */
+  /** Built games have a lazy loader; planned games stay visible in the roadmap. */
   playable: boolean;
-  modes: Array<'solo' | 'ai' | 'local2p'>;
+  modes: Array<'solo' | 'ai' | 'local2p' | 'local4p'>;
   accent: string;
   load?: () => Promise<{ default: ComponentType<GameProps> }>;
 }
@@ -79,7 +79,7 @@ export const GAMES: GameEntry[] = [
   p(10, 'elonti-belonti', 2, 'para', '#117a65', 'এলন্টি বেলন্টি', 'Elonti Belonti', 'ঘড়ি বাজে টিং টিং — তারপর থামো!', '“Ghori baje ting ting” — then freeze!'),
   p(11, 'spoon-marble', 2, 'sports', '#5d6d7e', 'চামচ-মার্বেল দৌড়', 'Spoon & Marble Race', 'মুখে চামচ, চামচে মার্বেল।', 'Spoon in mouth, marble on spoon.'),
   p(12, 'haari-bhanga', 2, 'sports', '#a04000', 'হাঁড়িভাঙা', 'Haari Bhanga', 'চোখ বাঁধা, শব্দ শুনে হাঁড়ি ভাঙো।', 'Blindfolded. Follow the sound and break the pot.'),
-  p(13, 'paper-plane', 2, 'para', '#2e86c1', 'কাগজের উড়োজাহাজ', 'Paper Airplane Racing', 'ছাদ থেকে উড়াও, বাতাস বুঝে।', 'Launch from the rooftop. Read the wind.'),
+  p(13, 'paper-plane', 2, 'para', '#2e86c1', 'কাগজের উড়োজাহাজ', 'Paper Airplane Challenge', 'ভাঁজ করো, ছাদ থেকে উড়াও: দূরত্ব, নিশানা আর বাধা।', 'Fold it, launch it: distance, accuracy and obstacle challenges.'),
   p(14, 'paper-boat', 2, 'para', '#148f77', 'কাগজের নৌকা', 'Paper Boat Racing', 'বর্ষার পানিতে নৌকা ভাসাও।', 'Race paper boats in the monsoon water.'),
   p(15, 'musical-chairs', 2, 'sports', '#cb4335', 'মিউজিক্যাল চেয়ার', 'Musical Chairs', 'গান থামলেই চেয়ার দখল।', 'When the music stops, grab a chair.'),
   p(16, 'sack-race', 2, 'sports', '#9a7d0a', 'বস্তা দৌড়', 'Sack Race', 'বস্তায় পা, লাফিয়ে লাফিয়ে।', 'Feet in the sack. Hop to the finish.'),
@@ -92,6 +92,40 @@ export const GAMES: GameEntry[] = [
   p(22, 'pillow-fight', 3, 'sports', '#af601a', 'বালিশ যুদ্ধ', 'Pillow Fight', 'বাঁশের উপর বসে বালিশ পেটা।', 'Sit on the bamboo pole. Swing the pillow.'),
   p(23, 'kabaddi', 3, 'para', '#0e6655', 'হা-ডু-ডু', 'Kabaddi / Ha-du-du', 'এক দমে ঢুকে ছুঁয়ে ফিরে এসো।', 'One breath. Go in, touch, come back.'),
   p(24, 'rooftop-badminton', 3, 'para', '#1b4f72', 'ছাদে ব্যাডমিন্টন', 'Rooftop Badminton', 'শীতের সন্ধ্যায় ছাদে শাটল।', 'Winter evening shuttle on the roof.'),
+  { id: 'chor-police', no: 25, phase: 3, category: 'bench', playable: true, accent: '#1f3a93',
+    title: { bn: 'চোর-পুলিশ', en: 'Chor Police' }, blurb: { bn: 'চার কাগজে গোপন পরিচয়। পুলিশ চোরকে ধরবে।', en: 'Four secret chits. Can the police find the thief?' },
+    modes: ['ai', 'local4p'], load: () => import('../games/chor-police/ChorPolice') },
+  { id: 'naam-desh', no: 26, phase: 3, category: 'bench', playable: true, accent: '#117a65',
+    title: { bn: 'নাম দেশ ফুল ফল', en: 'Naam Desh Ful Fol' }, blurb: { bn: 'এক অক্ষরে নাম, দেশ, ফুল, ফল — ঘণ্টার আগে লেখো।', en: 'One Bangla letter. Name, country, flower, fruit. Beat the bell.' },
+    modes: ['solo', 'local2p'], load: () => import('../games/naam-desh/NaamDesh') },
+  { id: 'jor-bejor', no: 27, phase: 3, category: 'bench', playable: true, accent: '#a0522d',
+    title: { bn: 'জোড়-বিজোড়', en: 'Jor-Bejor' }, blurb: { bn: 'হাত মেলাও, আঙুল গোনো। জোড় নাকি বিজোড়?', en: 'Hands out, fingers counted. Jor or Bejor?' },
+    modes: ['ai', 'local2p'], load: () => import('../games/jor-bejor/JorBejor') },
+  { id: 'bagh-bandi', no: 28, phase: 3, category: 'bench', playable: true, accent: '#0b5d43',
+    title: { bn: 'বাঘবন্দী', en: 'Bagh Bandi' }, blurb: { bn: 'দুই বাঘ, কুড়ি ছাগল। ছক কষে বাঘকে আটকাও।', en: 'Two tigers. Twenty goats. Plan the perfect trap.' },
+    modes: ['ai', 'local2p'], load: () => import('../games/bagh-bandi/BaghBandi') },
+  // ---- Phase 4: national teams, desk games and the football pair ----
+  { id: 'number-cricket', no: 29, phase: 3, category: 'bench', playable: true, accent: '#1f4e9c',
+    title: { bn: 'নম্বর ক্রিকেট', en: 'Number Cricket' }, blurb: { bn: 'চিরকুটে গোপন সংখ্যা। মিললেই আউট, শূন্যে চুরি।', en: 'Secret numbers on chits. Match = out. Zero steals.' },
+    modes: ['ai', 'local2p'], load: () => import('../games/number-cricket/NumberCricket') },
+  { id: 'flikk-football', no: 30, phase: 3, category: 'bench', playable: true, accent: '#11804a',
+    title: { bn: 'ফ্লিক ফুটবল', en: 'Flikk Football' }, blurb: { bn: 'দেশ বাছো, ফরমেশন সাজাও, টোকা দিয়ে পাস আর গোল।', en: 'Pick a country and a formation. Flick to pass and score.' },
+    modes: ['ai', 'local2p'], load: () => import('../games/flikk-football/FlikkFootball') },
+  { id: 'penalty', no: 31, phase: 3, category: 'sports', playable: true, accent: '#7a1f9a',
+    title: { bn: 'পেনাল্টি শুটআউট', en: 'Penalty Shootout' }, blurb: { bn: 'শট নাও, ঝাঁপিয়ে বাঁচাও, কাপ জেতো।', en: 'Take the kick, dive for the save, win the cup.' },
+    modes: ['ai', 'local2p'], load: () => import('../games/penalty/Penalty') },
+  { id: 'five-stones', no: 32, phase: 3, category: 'para', playable: true, accent: '#8a6d3b',
+    title: { bn: 'পাঁচ গুটি', en: 'Five Stones' }, blurb: { bn: 'গুটি ছোড়ো, মেঝে থেকে তোলো, পড়ার আগেই ধরো।', en: 'Toss, scoop and catch before it lands.' },
+    modes: ['solo', 'ai', 'local2p'], load: () => import('../games/five-stones/FiveStones') },
+  { id: 'dots-boxes', no: 33, phase: 3, category: 'bench', playable: true, accent: '#c0392b',
+    title: { bn: 'ঘর কাটা', en: 'Dots and Boxes' }, blurb: { bn: 'দাগ টানো, ঘর বন্ধ করো, নিজের নাম লেখো।', en: 'Draw lines, close boxes, sign your initial.' },
+    modes: ['ai', 'local2p'], load: () => import('../games/dots-boxes/DotsBoxes') },
+  { id: 'hangman', no: 34, phase: 3, category: 'bench', playable: true, accent: '#34495e',
+    title: { bn: 'হ্যাংম্যান', en: 'Hangman' }, blurb: { bn: 'অক্ষর ধরো, শব্দ বাঁচাও। বাংলা আর ইংরেজি।', en: 'Guess the letters, save the word. Bangla and English.' },
+    modes: ['solo', 'local2p'], load: () => import('../games/hangman/Hangman') },
+  { id: 'eraser-flip', no: 35, phase: 3, category: 'bench', playable: true, accent: '#d35400',
+    title: { bn: 'রাবার টোকা', en: 'Eraser Flip' }, blurb: { bn: 'টোকা দিয়ে রাবার উল্টাও, বন্ধুর রাবারের উপর বসাও।', en: 'Flick and flip your eraser. Land on your friend’s.' },
+    modes: ['solo', 'ai', 'local2p'], load: () => import('../games/eraser-flip/EraserFlip') },
 ];
 
 function p(no: number, id: string, phase: Phase, category: Category, accent: string, bn: string, en: string, bbn: string, ben: string): GameEntry {

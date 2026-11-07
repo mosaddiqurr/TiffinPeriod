@@ -1,0 +1,13 @@
+.ef-canvas { position: relative; height: min(68vh, 680px); min-height: 380px; border-radius: 10px; overflow: hidden; box-shadow: var(--shadow); }
+.ef-head { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; background: #fffdf6; border: 2px solid var(--khaki); border-radius: 8px; padding: 6px 12px; margin-bottom: 10px; }
+.ef-head > b { font: 800 19px var(--font-display); color: var(--pen); flex: 1; }
+.ef-head .stars span { font-size: 20px; }
+.ef-head .stars .on { color: #e0a100; }
+.ef-head .stars .off { color: #d8cba8; }
+.ef-levels { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.ef-levels button { text-align: left; display: grid; gap: 2px; padding: 8px 10px; border-radius: 10px; border: 2px solid #d4c69f; background: #fffdf6; }
+.ef-levels button[aria-pressed='true'] { border-color: var(--pen); background: #e8edfb; }
+.ef-levels small { color: var(--ink-soft); line-height: 1.3; }
+.ef-levels .stars { color: #e0a100; }
+.ef-levels .stars .off { color: #d8cba8; }
+@media (max-width: 640px) { .ef-canvas { height: 60vh; min-height: 340px; } }

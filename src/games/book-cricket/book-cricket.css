@@ -91,3 +91,11 @@
   .bc-layout { grid-template-columns: minmax(0, 640px) 320px; grid-template-areas: 'board card' 'book card' 'controls card'; justify-content: center; align-items: start; }
   .bc-card { align-self: start; }
 }
+
+/* Chase display (Target Challenge, Daily Challenge, second innings) */
+.bc-layout { grid-template-areas: 'board' 'chase' 'book' 'controls' 'card'; }
+.bc-chase { grid-area: chase; width: min(620px, 100%); }
+.bc-layout .break-target, .break-target { font: 800 22px var(--font-display); color: var(--pen-red); margin: 4px 0; }
+@media (min-width: 980px) {
+  .bc-layout { grid-template-areas: 'board card' 'chase card' 'book card' 'controls card'; }
+}

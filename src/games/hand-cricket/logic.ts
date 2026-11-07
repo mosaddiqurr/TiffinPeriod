@@ -13,6 +13,8 @@ export interface HCConfig {
   wickets: number;
   /** null = classic: no over limit. */
   overs: number | null;
+  /** A ball limit that is not whole overs (Target Challenge). Overrides overs. */
+  balls?: number;
 }
 
 export interface BallRecord {
@@ -32,10 +34,17 @@ export interface HCState {
   result: (MatchResult & { winnerSide: Side | null }) | null;
 }
 
-export const limitsOf = (c: HCConfig): Limits => ({ wickets: c.wickets, balls: c.overs === null ? null : c.overs * 6 });
+export const limitsOf = (c: HCConfig): Limits => ({ wickets: c.wickets, balls: c.balls ?? (c.overs === null ? null : c.overs * 6) });
 
 export function newMatch(config: HCConfig, battingFirst: Side): HCState {
   return { config, battingFirst, innings: [newInnings(), newInnings()], current: 0, done: false, last: null, result: null };
+}
+
+/** Start straight in the chase: side 0 needs `target` runs. The first innings is a set total. */
+export function newChase(config: HCConfig, target: number): HCState {
+  const m = newMatch(config, 1);
+  const first: Innings = { ...newInnings(), runs: target - 1, balls: config.balls ?? 0 };
+  return { ...m, innings: [first, newInnings()], current: 1 };
 }
 
 export const other = (s: Side): Side => (s === 0 ? 1 : 0);
@@ -52,11 +61,18 @@ export function judgeBall(bat: number, bowl: number): BallRecord {
   return { bat, bowl, out, runs: out ? 0 : bat };
 }
 
+/** How one ball is judged. Hand Cricket uses 1–6; Number Cricket brings its own rules. */
+export interface PickRules {
+  valid: (n: number) => boolean;
+  judge: (bat: number, bowl: number) => BallRecord;
+}
+export const HAND_RULES: PickRules = { valid: isValidPick, judge: judgeBall };
+
 /** Play one ball. Returns a new state. The input state is not changed. */
-export function playBall(st: HCState, bat: number, bowl: number): HCState {
+export function playBall(st: HCState, bat: number, bowl: number, rules: PickRules = HAND_RULES): HCState {
   if (st.done) return st;
-  if (!isValidPick(bat) || !isValidPick(bowl)) throw new Error('Pick must be 1..6');
-  const rec = judgeBall(bat, bowl);
+  if (!rules.valid(bat) || !rules.valid(bowl)) throw new Error('Invalid pick');
+  const rec = rules.judge(bat, bowl);
   const lim = limitsOf(st.config);
   const innings: [Innings, Innings] = [st.innings[0], st.innings[1]];
   innings[st.current] = addBall(innings[st.current], { runs: rec.runs, out: rec.out, legal: true });

@@ -1,0 +1,20 @@
+.fs-wrap { display: grid; gap: 8px; }
+.fs-players { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.fs-player { flex: 1; min-width: 200px; display: flex; align-items: center; gap: 10px; background: #fffdf6; border: 2px solid var(--khaki); border-radius: 10px; padding: 6px 10px; }
+.fs-player.active { border-color: var(--pen); box-shadow: inset 0 -3px var(--pen); }
+.fs-player b { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fs-stages { display: inline-flex; gap: 3px; }
+.fs-stages i { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #c9b98f; display: grid; place-items: center; font: 700 12px var(--font-display); font-style: normal; color: var(--ink-soft); }
+.fs-stages i.done { background: var(--green); border-color: var(--green); color: #fff; }
+.fs-stages i.now { border-color: var(--pen); color: var(--pen); }
+.fs-pts { font: 800 20px var(--font-display); color: var(--pen); min-width: 34px; text-align: right; }
+.fs-lives { color: var(--pen-red); font-weight: 700; }
+.fs-lives .off { color: #d8cba8; }
+.fs-canvas { position: relative; height: min(64vh, 620px); min-height: 360px; border-radius: 10px; overflow: hidden; box-shadow: var(--shadow); }
+.fs-instr { text-align: center; font: 800 21px var(--font-display); color: var(--pen); min-height: 32px; }
+.fs-instr.hot { color: var(--green); animation: fs-blink .5s steps(2) infinite; }
+@keyframes fs-blink { 50% { opacity: .4; } }
+@media (max-width: 640px) {
+  .fs-canvas { height: 56vh; min-height: 320px; }
+  .fs-player { min-width: 150px; }
+}

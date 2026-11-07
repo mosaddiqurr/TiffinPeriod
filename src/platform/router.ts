@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 // without server rewrites. Routes:
 //   #/                 hub
 //   #/play/<gameId>    a game
-//   #/roadmap          all 24 games
+//   #/roadmap          all 28 games
 //   #/settings         settings and players
 //   #/records          local scores and achievements
 

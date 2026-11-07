@@ -21,9 +21,9 @@ describe('i18n', () => {
 });
 
 describe('registry', () => {
-  it('lists exactly 24 games with numbers 1..24', () => {
-    expect(GAMES).toHaveLength(24);
-    expect(GAMES.map((g) => g.no)).toEqual(Array.from({ length: 24 }, (_, i) => i + 1));
+  it('lists exactly 35 games with numbers 1..35', () => {
+    expect(GAMES).toHaveLength(35);
+    expect(GAMES.map((g) => g.no)).toEqual(Array.from({ length: 35 }, (_, i) => i + 1));
   });
   it('Phase 1 and 2 are playable; every playable game has a loader and modes; planned games have none', () => {
     expect(GAMES.filter((g) => g.phase < 3).every((g) => g.playable)).toBe(true);

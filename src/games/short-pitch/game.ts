@@ -7,7 +7,7 @@ import {
   type DType, type Delivery, type Diff, type Planned, type Shot, type Timing,
 } from './sim';
 import {
-  buildWorld, makePlayer, paintRig, poseArmsUp, poseBat, poseBowl, poseCarryBat, poseKeeper, poseReady, poseRun, poseThrow, toV,
+  buildWorld, makePlayer, paintRig, poseArmsUp, poseBat, poseBowl, poseCarryBat, poseKeeper, poseReady, poseRun, poseThrow, setTrail, toV,
   type BatKind, type Rig, type World,
 } from './world';
 
@@ -30,6 +30,19 @@ export type Phase = 'pick' | 'windup' | 'delivery' | 'play' | 'result' | 'break'
 export type BannerKey = 'four' | 'sixOut' | 'caught' | 'bowled' | 'runOut' | 'runs' | 'dot' | 'wide' | 'dropped' | 'break' | 'won' | 'tied';
 export interface Banner { key: BannerKey; n?: number; side?: 0 | 1; kind: 'good' | 'out' | 'plain'; id: number; small?: boolean }
 export interface BatterLine { no: number; runs: number; balls: number }
+export type ShotName = 'straightDrive' | 'coverDrive' | 'onDrive' | 'squareCut' | 'pull' | 'lateCut' | 'glance' | 'edged' | 'defended' | 'lofted';
+
+/** A cricket name for a stroke from its direction (radians, + = off side). */
+export function shotNameFor(shot: Shot, dir: number, edged: boolean): ShotName {
+  if (edged) return 'edged';
+  if (shot === 'defend') return 'defended';
+  if (shot === 'loft') return 'lofted';
+  const a = Math.abs(dir);
+  if (a < 0.35) return 'straightDrive';
+  if (a < 1.2) return dir > 0 ? 'coverDrive' : 'onDrive';
+  if (a < 1.95) return dir > 0 ? 'squareCut' : 'pull';
+  return dir > 0 ? 'lateCut' : 'glance';
+}
 
 export interface HudState {
   phase: Phase;
@@ -41,6 +54,10 @@ export interface HudState {
   over: string[];
   banner: Banner | null;
   timing: { t: Timing; dt: number; id: number } | null;
+  /** The name of the stroke just played (for the caption), or null. */
+  shotName: ShotName | null;
+  /** Show the "tap Hit when the ball reaches the bat" hint (first balls only). */
+  tip: boolean;
   dtype: DType;
   current: DType | null;
   humanBats: boolean;
@@ -87,6 +104,8 @@ const LANE_X = [-1.05, -0.45];
 const BOWLER = { x: 0.34, y: FIELD.pitch - 0.3 };
 const HAND_X = 0.24;
 const KEEPER_SPOT = { x: 0, y: -3.2 };
+// Three.js (x, z) spots for the watching children: behind the keeper (seen in the batting view) and at the sides.
+const SPECTATORS: Array<[number, number]> = [[-7.2, 28.2], [0.9, 28.6], [2.6, 28.3], [5.8, 27.9], [-20.5, 17.5], [22, 15.5], [-24, -12], [23.5, -14]];
 const NON_STRIKER = { x: -2.0, y: FIELD.pitch - 0.4 };
 // The broadcast camera: high behind the bowler, so the off side is on the left.
 const BROADCAST = { pos: [-0.35, 7.4, -33] as [number, number, number], look: [-0.3, 0.85, -0.6] as [number, number, number], dist: 32.5 };
@@ -100,6 +119,11 @@ const OWN_CATCH: Record<Diff, number> = { easy: 0.85, medium: 0.76, hard: 0.68 }
 const AI_RUN_MARGIN: Record<Diff, number> = { easy: 0.45, medium: 0.28, hard: 0.15 };
 
 interface Press { shot: Shot; aim: number | null; t: number }
+
+/** Stroke progress for poseBat(): a fast downswing (50 ms to contact), then the follow-through. */
+function strokeS(t: number) {
+  return t < 0.05 ? 0.35 + t * 4 : Math.min(1, 0.55 + (t - 0.05) * 1.6);
+}
 interface Swing { kind: BatKind; side: number; t: number }
 interface Bail { m: Mesh; vx: number; vy: number; vz: number; spin: number; home: [number, number, number] }
 
@@ -141,6 +165,9 @@ export class ShortPitchGame {
   private keys = new Set<string>();
   private banner: Banner | null = null;
   private timing: HudState['timing'] = null;
+  private shotName: ShotName | null = null;
+  private ballsFaced = 0;
+  private trailPts: Array<[number, number, number]> = [];
   private ids = 0;
   private fours: [number, number] = [0, 0];
   private runSafe: boolean | null = null;
@@ -157,6 +184,7 @@ export class ShortPitchGame {
   private stats: Array<Map<number, BatterLine>> = [new Map(), new Map()];
   private swing: Swing | null = null;
   private fielders: Rig[];
+  private kids: Rig[] = [];
   private throwAnim = new Map<number, number>();
   private faceY: number[] = [];
   private runPhase: number[] = [];
@@ -196,6 +224,16 @@ export class ShortPitchGame {
       this.faceY.push(0);
       this.runPhase.push(0);
     }
+    // Para children watch from behind the rope (black "cap" = hair)
+    const kidShirts = ['#f2c14e', '#e85d75', '#ffffff', '#5bc0eb', '#9bc53d', '#f08a4b', '#c3a6ff'];
+    SPECTATORS.forEach(([x, z], i) => {
+      const r = makePlayer(kidShirts[i % kidShirts.length], { cap: '#1b1b1b' });
+      r.root.position.set(x, 0, z);
+      r.root.rotation.y = Math.atan2(-x, -z);
+      r.root.scale.setScalar(0.82 + (i % 3) * 0.06);
+      this.w.scene.add(r.root);
+      this.kids.push(r);
+    });
     for (const b of [...this.w.stumps.nearBails, ...this.w.stumps.farBails]) this.bails.push({ m: b, vx: 0, vy: 0, vz: 0, spin: 0, home: [b.position.x, b.position.y, b.position.z] });
     this.paintTeams();
     this.resize();
@@ -299,7 +337,8 @@ export class ShortPitchGame {
   private startBall() {
     this.p = null; this.press = null; this.aiPress = null;
     this.resolved = false; this.missed = false; this.bounced = false; this.stumpsDone = false;
-    this.play = null; this.swing = null; this.banner = null; this.runSafe = null;
+    this.play = null; this.swing = null; this.banner = null; this.runSafe = null; this.shotName = null;
+    this.trailPts = [];
     this.lastOut = null; this.lastFour = false;
     this.phase = 'pick'; this.phaseT = 0; this.t = 0;
     this.throwAnim.clear();
@@ -371,6 +410,8 @@ export class ShortPitchGame {
     this.timing = { t: j.timing, dt, id: ++this.ids };
     if (j.timing === 'miss') { this.missed = true; this.emit(); return; }
     const l = launch(pr.shot, pr.aim, dt, j, p, this.rng);
+    this.shotName = shotNameFor(pr.shot, l.dir, j.timing === 'edge');
+    this.trailPts = [];
     const at = ballOnPath(p, this.t);
     const catchSkill = this.cfg.mode === 'local2p' ? 0.72 : this.humanBats ? AI_CATCH[this.cfg.diff] : OWN_CATCH[this.cfg.diff];
     this.play = new Play(l, this.rng, catchSkill, { x: at.x, y: Math.max(0.3, at.y), h: Math.max(0.2, at.h) });
@@ -427,6 +468,7 @@ export class ShortPitchGame {
     if (this.phase === 'result') return;
     const c = this.cur;
     const strikerNo = this.batNo[0];
+    if (this.humanBats) this.ballsFaced++;
     this.innings[c] = addBall(this.innings[c], { ...ev, batter: strikerNo });
     const line = this.line(strikerNo);
     if (ev.extra !== 'wd') { line.runs += ev.runs; if (ev.legal) line.balls++; }
@@ -640,6 +682,15 @@ export class ShortPitchGame {
     } else ballPos.copy(this.lastBall);
     this.lastBall.copy(ballPos);
     this.w.ball.position.copy(ballPos);
+    // The trail: only while the ball flies off the bat or is thrown
+    if (pl && (pl.ball.state === 'free' || pl.ball.state === 'thrown') && ph === 'play' && !this.cfg.reducedMotion) {
+      const last = this.trailPts[0];
+      if (!last || Math.hypot(last[0] - ballPos.x, last[1] - ballPos.y, last[2] - ballPos.z) > 0.25) {
+        this.trailPts.unshift([ballPos.x, ballPos.y, ballPos.z]);
+        if (this.trailPts.length > 14) this.trailPts.pop();
+      }
+    } else if (this.trailPts.length) this.trailPts.pop();
+    setTrail(this.w.trail, this.trailPts);
     this.w.shadow.position.set(ballPos.x, 0.016, ballPos.z);
     const sh = Math.max(0, ballPos.y - 0.11);
     this.w.shadow.scale.setScalar(1 + sh * 0.15);
@@ -672,6 +723,8 @@ export class ShortPitchGame {
 
     this.updateBatters(dt);
     this.updateFielders(dt, ballPos);
+    const cheer = ph === 'result' && (this.lastFour || this.lastOut !== null);
+    this.kids.forEach((r, i) => { if (cheer) poseArmsUp(r, this.clock * 1.1 + i); else poseReady(r, 0.05, this.clock + i * 1.7); });
     this.updateCamera(dt, ballPos, k);
     if (pl && ph === 'play') this.drawMinimap();
   }
@@ -698,7 +751,7 @@ export class ShortPitchGame {
           this.runPhase[9 + i] = (this.runPhase[9 + i] ?? 0) + dt * 13;
           poseCarryBat(rig, this.runPhase[9 + i]);
         } else if (i === 0 && this.swing && this.swing.t < 0.9 && pl.runs === 0 && !pl.running) {
-          poseBat(rig, Math.min(1, 0.55 + this.swing.t * 1.4), this.swing.kind, this.swing.side);
+          poseBat(rig, strokeS(this.swing.t), this.swing.kind, this.swing.side);
         } else {
           rig.root.rotation.y = r.end === 0 ? Math.PI : 0;
           poseRun(rig, 0, 0);
@@ -714,7 +767,7 @@ export class ShortPitchGame {
     let s = 0;
     if (ph === 'windup') s = (this.phaseT / WINDUP) * 0.15;
     else if (ph === 'delivery' || ph === 'result') {
-      if (this.swing) s = Math.min(1, 0.35 + this.swing.t * 2.2);
+      if (this.swing) s = strokeS(this.swing.t);
       else s = Math.min(0.35, 0.15 + this.t * 0.9);
     }
     if (ph === 'result' && this.lastOut === 'bowled') s = this.swing ? 1 : 0.3;
@@ -911,6 +964,8 @@ export class ShortPitchGame {
       over: currentOver(inn.events).map(sym),
       banner: this.banner,
       timing: this.timing,
+      shotName: this.phase === 'play' || this.phase === 'result' ? this.shotName : null,
+      tip: this.humanBats && this.ballsFaced < 2 && (this.phase === 'pick' || this.phase === 'windup' || this.phase === 'delivery'),
       dtype: this.dtype,
       current: this.p && (this.phase === 'windup' || this.phase === 'delivery' || this.phase === 'play' || this.phase === 'result') ? this.p.d.type : null,
       humanBats: this.humanBats,

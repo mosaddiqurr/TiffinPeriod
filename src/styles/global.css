@@ -443,6 +443,9 @@ a { color: var(--pen); }
 }
 .sp-dtype { top: 8px; }
 .sp-turn { top: 38px; background: rgba(31, 58, 147, 0.88); color: #fff; }
+.sp-turn.shot { background: rgba(24, 38, 30, 0.86); color: #ffe68a; font-size: 16px; animation: sp-pop 0.3s ease-out; }
+.sp-tip { position: absolute; left: 50%; bottom: 190px; translate: -50% 0; z-index: 3; pointer-events: none; width: min(86vw, 420px); text-align: center; background: rgba(255,253,246,0.94); color: var(--ink); border-radius: 14px; padding: 6px 12px; font: 700 14.5px var(--font-display); box-shadow: var(--shadow); }
+@media (max-height: 480px) { .sp-tip { bottom: auto; top: 70px; } }
 .sp-banner {
   position: absolute; left: 50%; top: 28%; translate: -50% -50%; z-index: 3; pointer-events: none; white-space: nowrap;
   font: 800 clamp(30px, 7.5vw, 64px) var(--font-display); padding: 6px 28px; border-radius: 22px;

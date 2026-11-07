@@ -35,13 +35,21 @@ export function GameScreen({ id }: { id: string }) {
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
+      if (showHelp && e.key === 'Escape') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        setShowHelp(false);
+        bar.onResume?.();
+        return;
+      }
+      if (e.key !== 'Escape' && e.target instanceof HTMLElement && (e.target.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName))) return;
       if ((e.key === 'Escape' || e.key === 'p' || e.key === 'P') && bar.onPause && !showHelp) {
         e.preventDefault();
         bar.onPause();
       }
     };
-    addEventListener('keydown', k);
-    return () => removeEventListener('keydown', k);
+    addEventListener('keydown', k, true);
+    return () => removeEventListener('keydown', k, true);
   }, [bar, showHelp]);
 
   if (!entry || !entry.playable || !Game) {
@@ -88,7 +96,7 @@ export function GameScreen({ id }: { id: string }) {
             <div className="sheet ruled">
               <h2>{t('help')}</h2>
               {bar.help}
-              <div className="actions"><button className="btn" onClick={() => setShowHelp(false)} autoFocus>{t('resume')}</button></div>
+              <div className="actions"><button className="btn" onClick={() => { setShowHelp(false); bar.onResume?.(); }} autoFocus>{t('resume')}</button></div>
             </div>
           </Overlay>
         )}

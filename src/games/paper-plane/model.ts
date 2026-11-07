@@ -8,10 +8,16 @@ import type { Rng } from '../../engine/rng';
 export const WORLD = { len: 4600, ground: 700, g: 260, startX: 210, startY: 392 };
 
 export interface PlaneType { kL: number; cd0: number; k: number; trim: number; cla: number; stall: number }
-export const TYPES: Record<'glider' | 'dart', PlaneType> = {
+export type Fold = 'glider' | 'dart' | 'hawk';
+export const TYPES: Record<Fold, PlaneType> = {
   glider: { kL: 0.0052, cd0: 0.06, k: 0.08, trim: 0.12, cla: 5, stall: 0.28 },
   dart: { kL: 0.0042, cd0: 0.032, k: 0.1, trim: 0.08, cla: 5, stall: 0.24 },
+  /** Wide, floaty wings: slow and steady, easy to land where you want. */
+  hawk: { kL: 0.0058, cd0: 0.078, k: 0.07, trim: 0.14, cla: 5, stall: 0.32 },
 };
+
+/** Distance: fly as far as you can. Accuracy: land on the marked roof. Obstacles: a crowded sky. */
+export type Challenge = 'distance' | 'accuracy' | 'obstacle';
 
 export interface Plane { x: number; y: number; vx: number; vy: number; pitch: number; up: boolean; stalled: boolean; alive: boolean; landed: boolean; rings: number; t: number }
 
@@ -21,11 +27,35 @@ export interface Ring { x: number; y: number; taken: boolean }
 export interface Thermal { x: number; w: number; lift: number }
 export interface Kite { x: number; y: number; phase: number; color: string }
 
-export interface Course { buildings: Building[]; wires: Wire[]; rings: Ring[]; thermals: Thermal[]; kites: Kite[] }
+export interface Target { x1: number; x2: number; top: number; cx: number }
+export interface Course { buildings: Building[]; wires: Wire[]; rings: Ring[]; thermals: Thermal[]; kites: Kite[]; target?: Target }
 
 const FACADES = ['#f2c6a0', '#e8d7a6', '#c9dfc1', '#f0b8b8', '#bcd3e8', '#e6c9e8', '#f3e1b5'];
 
-export function makeCourse(rng: Rng): Course {
+export function makeCourse(rng: Rng, challenge: Challenge = 'distance'): Course {
+  const c = baseCourse(rng);
+  if (challenge === 'accuracy') {
+    // One roof, a few houses away, carries a chalk target. Fewer distractions.
+    const cand = c.buildings.filter((b) => b.x > 900 && b.x < 2300 && b.w > 170);
+    const b = cand.length ? rng.pick(cand) : c.buildings[4];
+    b.tank = undefined;
+    c.target = { x1: b.x, x2: b.x + b.w, top: b.top, cx: b.x + b.w / 2 };
+    c.wires = c.wires.filter((w) => w.x2 < b.x - 40 || w.x1 > b.x + b.w + 40);
+    c.kites = c.kites.slice(0, 1);
+  }
+  if (challenge === 'obstacle') {
+    // A busy sky: wires between most houses, more kites and more rings.
+    for (let i = 1; i < c.buildings.length - 1; i += 2) {
+      const a = c.buildings[i], b = c.buildings[i + 1];
+      if (!c.wires.some((w) => w.x1 === a.x + a.w)) c.wires.push({ x1: a.x + a.w, y1: a.top - 40 - rng.range(0, 60), x2: b.x, y2: b.top - 40 - rng.range(0, 60) });
+    }
+    for (let i = 0; i < 4; i++) c.kites.push({ x: 900 + i * 900 + rng.range(-150, 150), y: rng.range(200, 330), phase: rng.range(0, 6), color: rng.pick(['#e3127d', '#ffc20e', '#009e96', '#e0333f']) });
+    for (let rx = 950; rx < WORLD.len - 300; rx += rng.range(500, 800)) c.rings.push({ x: rx, y: rng.range(250, 420), taken: false });
+  }
+  return c;
+}
+
+function baseCourse(rng: Rng): Course {
   const buildings: Building[] = [{ x: 0, w: 260, top: 420, tank: 60, color: '#e8d7a6' }];
   let x = 420;
   while (x < WORLD.len - 200) {
@@ -113,9 +143,21 @@ function collide(p: Plane, c: Course): HitKind {
   return null;
 }
 
-export function throwScore(p: Plane): number {
-  return Math.round((Math.min(p.x, WORLD.len) - WORLD.startX) / 10) + p.rings * 50 + (p.landed ? 100 : 0);
+export function throwScore(p: Plane, challenge: Challenge = 'distance', c?: Course): number {
+  if (challenge === 'accuracy' && c?.target) {
+    const t = c.target;
+    const onTarget = p.landed && p.x >= t.x1 && p.x <= t.x2;
+    if (onTarget) return Math.max(150, Math.round(400 - Math.abs(p.x - t.cx) * 2.2)) + p.rings * 25;
+    // Near misses still count a little.
+    const d = Math.abs(p.x - t.cx);
+    return Math.max(0, Math.round(120 - d / 6)) + (p.landed ? 30 : 0) + p.rings * 25;
+  }
+  const base = Math.round((Math.min(p.x, WORLD.len) - WORLD.startX) / 10) + p.rings * 50 + (p.landed ? 100 : 0);
+  return challenge === 'obstacle' && p.x >= WORLD.len ? base + 200 : base;
 }
+
+/** Bullseye rings on the target roof, for drawing: radius in px from the centre. */
+export const TARGET_RINGS = [18, 50, 90];
 
 /** Computer pilot: keeps a good angle of attack, climbs for rings, avoids roofs ahead. */
 export class PlaneAI {
@@ -129,6 +171,12 @@ export class PlaneAI {
     let wantUp = false;
     if (ahead && p.y > ahead.top - 40) wantUp = true;
     if (ring && p.y > ring.y + 10) wantUp = true;
+    if (c.target) {
+      // Accuracy: glide down onto the marked roof.
+      const t = c.target;
+      if (p.x > t.x1 - 260 && p.x < t.cx) wantUp = p.y > t.top - 20;
+      else if (p.x >= t.cx - 30) wantUp = true; // flare to land softly
+    }
     if (Math.hypot(p.vx, p.vy) < 170) wantUp = false; // do not stall
     p.up = this.rng.chance(this.skill) ? wantUp : this.rng.chance(0.5);
   }

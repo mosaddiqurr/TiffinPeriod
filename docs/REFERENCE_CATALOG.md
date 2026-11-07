@@ -1,6 +1,6 @@
-# Reference Catalog — all 24 games
+# Reference Catalog — all 28 games
 
-This catalog lists every reference for the 24 games, with an accurate label.
+This catalog lists references for the original 24 games, with an accurate label. The four additions and their regional and house-rule decisions are covered in [BENCH_GAMES.md](BENCH_GAMES.md).
 
 | Label | Meaning |
 |---|---|
@@ -137,6 +137,11 @@ All 11 Phase 2 games are built. No code from these references was copied. See `R
 | 24 Badminton | https://github.com/mahjerion/Capsule-Badminton | MECHANIC | UNVERIFIED (the clone did not finish; the user reports MIT) | Unity (C#) | Verify licence and files before study. |
 | All 3D | Three.js (https://threejs.org) | ENGINE | MIT | JavaScript | Used by Short-Pitch Cricket 3D. Other games stay 2D for low-end phones. |
 | All 2D | Phaser (https://phaser.io) | ENGINE | MIT | JavaScript | Alternative to our canvas host. See `ARCHITECTURE.md`. |
+
+## Phase 4 — references
+
+- Last Bench Games, Flikk Football, Dekk Cricket and School Games pages (lastbench.games). Read for gameplay ideas only: swipe passing with curl, timed matches, an adaptive keeper, five-round cups, 30-ball chases. No code, art or text was used. Notes: `docs/PHASE4_SPORTS_AND_DESK_GAMES.md`, section 6.
+- National flags are drawn in code from the public flag designs. No federation crests, logos or player names are used.
 
 ## References that we must research again
 

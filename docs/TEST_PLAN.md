@@ -1,5 +1,25 @@
 # Test Plan and Results
 
+## Phase 4 — 7 November 2026
+
+- Unit tests: 168 pass (`npm test`), including 29 new ones in `tests/phase4.test.ts` (teams and flags, tournaments, ladders, daily seed, Number Cricket rules and computer, Dots and Boxes levels, Bangla Hangman, Flikk physics and computer, shootout rules, Five Stones, Eraser Flip landings and every challenge, plane challenges).
+- Browser tests: the whole suite (`npm run build && npx playwright test`) gave 84 passed, 14 skipped, 0 failed on the phone and desktop profiles. `e2e/phase4.spec.ts` plays every new game and mode to a result. The old Hand and Book Cricket flows were updated for the new mode menu.
+- The team-choice redesign (match poster and nation tiles) was checked by screenshots on phone and desktop, in English and Bangla, after the suite ran.
+- Not tested: real phones and tablets, sound by ear, native-speaker review of the new Bangla text.
+
+## Class-bench additions — 7 November 2026
+
+- Production build and type checking pass.
+- Unit suite: **139 tests across nine files pass**, including `tests/bench-games.test.ts`.
+- Browser result: **all 24 new-game cases pass**, with no browser errors. Across the full regression scan and focused confirmation runs, all **60 non-skipped cases** passed; 14 existing profile-specific cases are intentionally skipped.
+- The broad scan initially hit a service-worker load error during a concurrent preview rebuild and timed-game test failures. Holding the build stable resolved the service-worker check. Balloon Burst and Haari Bhanga now advance a controlled browser clock; software WebGL is scoped to `phase3.spec.ts` instead of slowing every 2D canvas. The affected tests and 3D smoke checks passed on rerun.
+- New production-browser coverage in `e2e/bench-games.spec.ts` runs every new game's modes on mobile (390×844, touch) and desktop (1280×800), including both languages, complete matches, privacy, persistent results, pause, timeout, duplicate scoring and natural Bagh Bandi end conditions.
+- UI screenshots: `node scripts/capture-bench.mjs` while a preview server runs on port 4173. Outputs go to ignored `test-results/bench-visuals/`.
+- Final desktop/phone screenshots were inspected. Setup rules fold away so controls fit the phone viewport; solo score strips use the full width.
+- Hub expectations are now 22 playable cards, six planned cards and 28 roadmap rows. Playwright uses its installed Chromium by default on Windows/Linux/macOS; `PW_CHROMIUM` overrides it.
+
+See [rules, limitations and research sources](BENCH_GAMES.md). Older dated results below are retained as historical records.
+
 ## 1. Automated unit tests (Vitest)
 
 Command: `npm test`
@@ -10,7 +30,7 @@ Command: `npm test`
 | `tests/book-cricket.test.ts` | even pages in range, uniform last digit (each 20 % ± 1.5 % over 50,000 opens), Classic and No-ball rules, scorecard, chase win, unplayable custom rules, expected runs per ball (13/5), 200 simulated matches all finish |
 | `tests/pakhir-ure.test.ts` | unique ids, both languages, a picture for every item, notes for tricky items, balance of flyers, "finger down" wait, correct lift and correct hold, < 120 ms false start, lift-before-call false start, solo game over after 3 lives, versus ends after N calls with the computer playing, response window floor |
 | `tests/tug-balloon-biscuit.test.ts` | beat judging, rate limiter, one-sided pulling wins in < 20 s, equal teams stay central, double tap on one beat = slip, mashing loses, assist rate limit, hard AI beats easy AI (≥ 14 of 20), time limit ends a round, identical balloons for the same seed, pop/combo/miss penalty, two-hit tough balloon, rain cloud penalty, 10 taps/s limit, combo multipliers, AI scores on a shared field, pendulum energy never grows, biscuit reachable, no passing the frame without the biscuit, the computer finishes on easy/medium/hard (≥ 5 of 6 seeds each) |
-| `tests/platform.test.ts` | Bangla digits, template filling, UI text tables have equal keys and no empty text, 24 games numbered 1–24, only the 6 Phase 1 games are playable and have loaders, achievements belong to playable games, router, local records (best, wins, streaks, lower-is-better, minimum records), seeded random repeatability |
+| `tests/platform.test.ts` | Bangla digits, template filling, UI text tables have equal keys and no empty text, 28 games numbered 1–28, playable loaders and modes, achievements belong to playable games, router, local records (best, wins, streaks, lower-is-better, minimum records), seeded random repeatability |
 
 | `tests/phase2-a.test.ts` | Pen Fight: a still world stays still, a strong flick can push the other pen off, an off-centre flick spins, a pen off the bench is out, the computer finishes planning; Sack Race: perfect hop after landing, air taps wobble, wobble causes a fall, the computer finishes; Three-Legged: alternation, same-foot and together stumbles, the computer pair finishes; Spoon & Marble: speeding up rolls the marble back, braking rolls it forward, a drop stops the runner, the computer finishes (easy and hard); Elonti Belonti: nine-word chant, the caller turns, a moving walker is caught, a hard computer walker is rarely caught; Musical Chairs: foul during music, one kid left standing; Haari Bhanga: pot far from the start, hit and miss, honest shouts point the right way, the computer breaks the pot in ≥ 6 of 8 |
 | `tests/phase2-b.test.ts` | Rubber Band: the arc, the fan pushes bands down, the computer scores on every level, a weak pull does not shoot; Paper Airplane: a good throw flies farther, holding the nose up stalls, the score formula, the computer pilot; Paper Boat: the current is fastest in the middle, steering boats finish (≥ 7 of 8) while idle boats often sink, a soaked boat sinks; Notebook Drawing word and doodle data; every Phase 2 game has achievements |

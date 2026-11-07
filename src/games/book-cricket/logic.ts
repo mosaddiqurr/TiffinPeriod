@@ -63,6 +63,8 @@ export type Side = 0 | 1;
 export interface BCConfig {
   wickets: number;
   overs: number | null;
+  /** A ball limit that is not whole overs (Target Challenge). Overrides overs. */
+  balls?: number;
   rules: RuleSet;
 }
 
@@ -85,7 +87,7 @@ export interface BCState {
   result: (MatchResult & { winnerSide: Side | null }) | null;
 }
 
-export const limitsOf = (c: BCConfig): Limits => ({ wickets: c.wickets, balls: c.overs === null ? null : c.overs * 6 });
+export const limitsOf = (c: BCConfig): Limits => ({ wickets: c.wickets, balls: c.balls ?? (c.overs === null ? null : c.overs * 6) });
 export const other = (s: Side): Side => (s === 0 ? 1 : 0);
 export const battingSide = (st: BCState): Side => (st.current === 0 ? st.battingFirst : other(st.battingFirst));
 export const targetOf = (st: BCState) => (st.current === 1 ? st.innings[0].runs + 1 : undefined);
@@ -99,6 +101,12 @@ export function newMatch(config: BCConfig, battingFirst: Side, lineups: [string[
     cards: [card(firstSide), card(other(firstSide))],
     current: 0, done: false, lastPage: null, lastOutcome: null, result: null,
   };
+}
+
+/** Start straight in the chase: side 0 needs `target` runs. */
+export function newChase(config: BCConfig, target: number, lineups: [string[], string[]]): BCState {
+  const m = newMatch(config, 1, lineups);
+  return { ...m, innings: [{ ...newInnings(), runs: target - 1, balls: config.balls ?? 0 }, newInnings()], current: 1 };
 }
 
 /** Index of the batter at the crease in the current innings. */

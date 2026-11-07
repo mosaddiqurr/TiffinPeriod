@@ -71,3 +71,22 @@
   .hc-num .mini { height: 28px; }
   .hc-score { font-size: 32px; }
 }
+
+/* Added with the modes: chase display, notes, toss numbers */
+.hc-chase { width: min(560px, 100%); }
+.hc-chase .chase-hud { padding: 6px 10px; }
+.hc-note { display: block; margin-top: 6px; color: #fff8d6; font-weight: 700; font-size: 13px; line-height: 1.2; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
+.hc-num .lbl.big { font-size: 30px; }
+.hc-team .flag { margin-right: 4px; }
+.hc-pad-head .flag { flex: none; }
+.break-target { font: 800 22px var(--font-display); color: var(--pen-red); margin: 4px 0; }
+@media (max-height: 760px) {
+  .hc-chase .ch-press, .hc-chase .ch-row:nth-child(2) { display: none; }
+  .hc-score { font-size: 34px; }
+}
+@media (orientation: portrait) and (max-width: 700px) {
+  .vs-ai .hc-buttons:not(.n7):not(.n10) { grid-template-columns: repeat(6, 1fr); }
+  .vs-ai .hc-num { min-height: 64px; }
+  .vs-ai .hc-num .mini { height: 34px; }
+  .hc-stage { gap: 6px; padding: 6px; }
+}

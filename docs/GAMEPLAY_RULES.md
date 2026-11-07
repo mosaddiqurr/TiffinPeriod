@@ -1,5 +1,7 @@
 # Gameplay Rules
 
+The four additions (25–28), including exact regional and house-rule choices, are documented in [BENCH_GAMES.md](BENCH_GAMES.md): Chor Police, Naam Desh Ful Fol, Jor-Bejor and Bagh Bandi.
+
 ## Phase 1 (implemented)
 
 ### 01 Hand Cricket (হ্যান্ড ক্রিকেট)
@@ -64,6 +66,10 @@
 4. You cannot pass the frame without the biscuit.
 5. With the biscuit in your mouth, run to the finish. First to finish wins. After the first finish, the other racer has 9 more seconds.
 - Keys: Player 1 `A`/`D` to move, `W`/`Space` to jump. Player 2 arrow keys. Against the computer, the arrow keys also control Player 1.
+
+### Modes added in Phase 4 (Hand Cricket, Book Cricket, Number Cricket)
+
+Quick Match (countries, bat first or chase, toss), Target Challenge (12 levels with stars), Tournament (two groups, semi-finals, final, super over for tied knockouts) and Daily Challenge (same chase for everyone each day). The ball rules above are unchanged. Full Phase 4 rules: `docs/PHASE4_SPORTS_AND_DESK_GAMES.md`.
 
 ## Phase 2 (implemented)
 

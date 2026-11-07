@@ -4,6 +4,12 @@ import { expect, test, type Page } from '@playwright/test';
 // The headless browser draws WebGL in software, so the match runs faster
 // (timeScale) and a small in-page driver plays the shots and bowls.
 
+// Keep software WebGL scoped to 3D: forcing it globally also slows the 2D canvases.
+test.use({ launchOptions: {
+  executablePath: process.env.PW_CHROMIUM || undefined,
+  args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
+} });
+
 function trackErrors(page: Page) {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));

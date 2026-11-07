@@ -1,4 +1,5 @@
 import type { JSX } from 'react';
+import { BaghArt, ChitArt, FingerArt, WordArt } from '../games/bench-kit/art';
 
 // Original hand-drawn "ballpoint pen" doodles, used as game card art.
 // Style rule: blue pen outline (#1f3a93), round caps, one accent colour fill.
@@ -236,7 +237,113 @@ export const DoodleThreeLegged = ({ accent = '#6c3483' }: { accent?: string }) =
   <path d="M30 122 L140 122" stroke={accent} strokeWidth="2" />
 </>);
 
+export const DoodleShortPitch = ({ accent = '#196f3d' }: { accent?: string }) => D(<>
+  <ellipse cx="85" cy="94" rx="74" ry="30" {...common} fill="#cfe8b5" />
+  <ellipse cx="85" cy="94" rx="65" ry="25" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeDasharray="5 4" />
+  <path d="M79 72 L91 72 L97 118 L73 118 Z" {...common} fill="#e6cf9c" />
+  <path d="M80 110 L80 94 M85 110 L85 94 M90 110 L90 94 M78.5 94 L91.5 94" stroke="#6b4a1f" strokeWidth="2.2" strokeLinecap="round" />
+  <circle cx="112" cy="38" r="9" {...common} fill="#fde7cf" />
+  <path d="M101.5 38 A10.5 10.5 0 0 1 122.5 38 Z" fill="#1c3f7a" stroke="#23253a" strokeWidth="2" />
+  <path d="M104 41 L120 41" stroke="#9aa3ad" strokeWidth="2" />
+  <path d="M112 47 L112 74 M112 55 L100 64 M112 74 L104 98 M112 74 L120 98" {...common} />
+  <path d="M100 64 L86 82" stroke="#c9a25e" strokeWidth="6.5" strokeLinecap="round" />
+  <circle cx="60" cy="60" r="5.5" fill="#e6e24a" stroke="#23253a" strokeWidth="1.6" />
+  <path d="M66 62 L74 66 M66 57 L76 58" stroke={accent} strokeWidth="2" strokeLinecap="round" />
+  <circle cx="34" cy="30" r="16" fill="#ffffff" stroke={accent} strokeWidth="3" />
+  <text x="34" y="38" textAnchor="middle" fontFamily="Baloo Da 2" fontWeight="800" fontSize="21" fill="#23253a">৬</text>
+  <path d="M22.5 18.5 L45.5 41.5" stroke="#c62f2f" strokeWidth="3.6" strokeLinecap="round" />
+</>);
+
+
+// ---- Phase 4 doodles ----
+function DoodleNumberCricket({ accent = '#1f4e9c' }: { accent?: string }) {
+  return (
+    <svg viewBox="0 0 170 130" aria-hidden="true">
+      <g transform="rotate(-8 50 65)"><rect x="22" y="26" width="56" height="74" rx="4" {...common} fill="#fffaf0" />{[44, 58, 72, 86].map((y) => <path key={y} d={`M26 ${y} H74`} stroke="#c2d3e4" strokeWidth="1.5" />)}<text x="50" y="84" textAnchor="middle" fontFamily="Baloo Da 2" fontWeight="800" fontSize="40" fill={PEN}>৪</text></g>
+      <g transform="rotate(7 120 65)"><rect x="92" y="26" width="56" height="74" rx="4" {...common} fill="#fffaf0" />{[44, 58, 72, 86].map((y) => <path key={y} d={`M96 ${y} H144`} stroke="#c2d3e4" strokeWidth="1.5" />)}<text x="120" y="84" textAnchor="middle" fontFamily="Baloo Da 2" fontWeight="800" fontSize="40" fill="#c62f2f">০</text></g>
+      <circle cx="85" cy="18" r="13" fill={accent} /><text x="85" y="24" textAnchor="middle" fontFamily="Baloo Da 2" fontWeight="800" fontSize="16" fill="#fff">VS</text>
+    </svg>
+  );
+}
+function DoodleFlikk({ accent = '#11804a' }: { accent?: string }) {
+  return (
+    <svg viewBox="0 0 170 130" aria-hidden="true">
+      <rect x="14" y="12" width="142" height="106" rx="6" fill={accent} opacity="0.9" />
+      <path d="M14 65 H156 M85 12 V118" stroke="#fff" strokeWidth="2" opacity="0.7" /><circle cx="85" cy="65" r="18" fill="none" stroke="#fff" strokeWidth="2" opacity="0.7" />
+      <rect x="62" y="6" width="46" height="10" fill="none" stroke="#fff" strokeWidth="2.5" />
+      {[[50, 90], [85, 96], [120, 90], [70, 74]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="8" fill="#f42a41" stroke="#fff" strokeWidth="2" />)}
+      {[[60, 40], [110, 40], [85, 30]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="8" fill="#74acdf" stroke="#fff" strokeWidth="2" />)}
+      <circle cx="84" cy="56" r="5" fill="#fff" stroke="#222" strokeWidth="1.5" />
+      <path d="M70 74 Q 74 62 82 58" stroke="#ffe27a" strokeWidth="3" fill="none" strokeDasharray="4 4" />
+    </svg>
+  );
+}
+function DoodlePenalty({ accent = '#7a1f9a' }: { accent?: string }) {
+  return (
+    <svg viewBox="0 0 170 130" aria-hidden="true">
+      <path d="M30 26 H140 V76" {...common} strokeWidth={5} stroke="#555" /><path d="M30 26 V76" {...common} strokeWidth={5} stroke="#555" />
+      {[42, 56, 70, 84, 98, 112, 126].map((x) => <path key={x} d={`M${x} 26 V76`} stroke="#bbb" strokeWidth="1" />)}{[38, 50, 62].map((y) => <path key={y} d={`M30 ${y} H140`} stroke="#bbb" strokeWidth="1" />)}
+      <g transform="translate(108 46) rotate(30)"><rect x="-8" y="-14" width="16" height="26" rx="3" fill={accent} /><circle cx="0" cy="-20" r="6" fill="#b07a52" /><path d="M-8 -10 L-22 -22 M8 -10 L22 -22" stroke={accent} strokeWidth="5" strokeLinecap="round" /></g>
+      <circle cx="62" cy="40" r="7" fill="#fff" stroke="#222" strokeWidth="1.8" />
+      <path d="M85 116 Q 74 80 64 48" stroke="#f3b61f" strokeWidth="3" fill="none" strokeDasharray="5 5" />
+      <ellipse cx="85" cy="116" rx="14" ry="4" fill="#5a8f4a" />
+    </svg>
+  );
+}
+function DoodleFiveStones({ accent = '#8a6d3b' }: { accent?: string }) {
+  return (
+    <svg viewBox="0 0 170 130" aria-hidden="true">
+      {[[40, 96], [70, 108], [104, 98], [132, 110]].map(([x, y], i) => <ellipse key={i} cx={x} cy={y} rx="11" ry="9" fill="#d7c7ad" stroke={accent} strokeWidth="2.5" />)}
+      <ellipse cx="86" cy="24" rx="11" ry="9" fill="#e58f7a" stroke="#9a4f3c" strokeWidth="2.5" />
+      <path d="M86 36 V58" stroke="#9a4f3c" strokeWidth="2" strokeDasharray="3 4" />
+      <path d="M60 78 C 60 64 112 64 112 78 L 108 86 L 64 86 Z" {...common} fill="#fde7cf" />
+    </svg>
+  );
+}
+function DoodleDots({ accent = '#c0392b' }: { accent?: string }) {
+  return (
+    <svg viewBox="0 0 170 130" aria-hidden="true">
+      <rect x="30" y="20" width="44" height="44" fill="#e8edfb" /><text x="52" y="50" textAnchor="middle" fontFamily="Baloo Da 2" fontWeight="800" fontSize="22" fill={PEN}>R</text>
+      <rect x="74" y="64" width="44" height="44" fill="#fbe3e1" /><text x="96" y="94" textAnchor="middle" fontFamily="Baloo Da 2" fontWeight="800" fontSize="22" fill={accent}>S</text>
+      <path d="M30 20 H74 V64 H30 Z" stroke={PEN} strokeWidth="3.5" fill="none" /><path d="M74 64 H118 V108 H74 Z M118 20 V64" stroke={accent} strokeWidth="3.5" fill="none" />
+      {[30, 74, 118].map((x) => [20, 64, 108].map((y) => <circle key={`${x}-${y}`} cx={x} cy={y} r="4.5" fill="#23253a" />))}
+    </svg>
+  );
+}
+function DoodleHangman({ accent = '#34495e' }: { accent?: string }) {
+  return (
+    <svg viewBox="0 0 170 130" aria-hidden="true">
+      <rect x="10" y="8" width="150" height="114" rx="6" fill="#24392d" stroke="#7a5530" strokeWidth="5" />
+      <g stroke="#f4f1e6" strokeWidth="3.5" fill="none" strokeLinecap="round"><path d="M28 104 H70 M40 104 V24 H78 V34" /><circle cx="78" cy="44" r="9" /><path d="M78 53 V76 M78 60 L68 70 M78 60 L88 70" /></g>
+      {['_', 'আ', '_'].map((c, i) => <text key={i} x={108 + i * 16} y="80" fontFamily="Baloo Da 2" fontWeight="800" fontSize="18" fill="#f3b61f" textAnchor="middle">{c}</text>)}
+      <path d="M100 86 H150" stroke={accent} strokeWidth="0" />
+    </svg>
+  );
+}
+function DoodleEraser({ accent = '#d35400' }: { accent?: string }) {
+  return (
+    <svg viewBox="0 0 170 130" aria-hidden="true">
+      <rect x="10" y="10" width="150" height="110" rx="6" fill="#b98552" />
+      <g transform="rotate(-10 70 86)"><rect x="34" y="70" width="70" height="36" rx="6" fill="#f7f4ea" stroke="#555" strokeWidth="2" /><rect x="52" y="70" width="40" height="36" fill="#2f6fd6" /></g>
+      <g transform="rotate(14 112 44)"><rect x="80" y="28" width="64" height="32" rx="6" fill="#fff3c4" stroke="#555" strokeWidth="2" /><rect x="96" y="28" width="36" height="32" fill={accent} /></g>
+      <path d="M60 64 Q 70 34 92 36" stroke="#fff" strokeWidth="2.5" fill="none" strokeDasharray="4 5" />
+    </svg>
+  );
+}
+
 export const DOODLES: Record<string, (p: { accent?: string }) => JSX.Element> = {
+  'number-cricket': DoodleNumberCricket,
+  'flikk-football': DoodleFlikk,
+  'penalty': DoodlePenalty,
+  'five-stones': DoodleFiveStones,
+  'dots-boxes': DoodleDots,
+  'hangman': DoodleHangman,
+  'eraser-flip': DoodleEraser,
+  'chor-police': ChitArt,
+  'naam-desh': WordArt,
+  'jor-bejor': FingerArt,
+  'bagh-bandi': BaghArt,
+  'short-pitch': DoodleShortPitch,
   'hand-cricket': DoodleHandCricket,
   'book-cricket': DoodleBookCricket,
   'pakhir-ure': DoodlePakhirUre,

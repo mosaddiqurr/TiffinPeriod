@@ -49,7 +49,7 @@ export function Home() {
   const [ringing, setRinging] = useState(false);
   const ready = GAMES.filter((g) => g.playable);
   const soon = GAMES.filter((g) => !g.playable);
-  const modeLabel = { solo: t('modeSolo'), ai: t('modeAi'), local2p: t('mode2p') };
+  const modeLabel = { solo: t('modeSolo'), ai: t('modeAi'), local2p: t('mode2p'), local4p: t('mode4p') };
   const cats: Category[] = ['bench', 'sports', 'para'];
 
   const ring = () => {

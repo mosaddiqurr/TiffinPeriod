@@ -110,10 +110,12 @@ test.describe('desktop full plays', () => {
 
   test('Haari Bhanga: three swings end the turn', async ({ page }) => {
     const errors = trackErrors(page);
+    await page.clock.install();
     await open(page, 'haari-bhanga');
     await page.keyboard.press('Space'); // start: take off the spin
-    await page.waitForTimeout(1800);
-    for (let i = 0; i < 3; i++) { await page.keyboard.press('Space'); await page.waitForTimeout(600); }
+    await page.clock.runFor(1800);
+    for (let i = 0; i < 3; i++) { await page.keyboard.press('Space'); await page.clock.runFor(700); }
+    await page.clock.runFor(3000);
     await expect(result(page)).toBeVisible({ timeout: 15_000 });
     expect(errors).toEqual([]);
   });

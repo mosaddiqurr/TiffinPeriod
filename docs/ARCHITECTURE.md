@@ -15,7 +15,7 @@ src/
   main.tsx, App.tsx          entry, routes
   styles/global.css          design tokens and shared UI styles
   platform/                  services shared by all games
-    registry.ts              the 24 games (id, phase, titles, modes, lazy loader)
+    registry.ts              the 28 games (id, phase, titles, modes, lazy loader)
     router.ts                hash routes (#/, #/play/<id>, #/roadmap, #/settings, #/records)
     i18n.ts, strings.ts      Bangla / English text, Bangla digits
     settings.ts              language, sound, voice, haptics, reduced motion, input assist, player names
@@ -111,6 +111,10 @@ The game has three layers. Only the middle layer knows Three.js.
 Coordinates: physics `(x, h, y)` maps to Three.js `(x, h, −y)`. `x` is positive to the off side of a right-handed batter, `y` runs from the batter's stumps (0) to the bowler's stumps (11 m). The broadcast camera stands far behind the bowler (about 33 m from the batter) with a narrow lens, as on TV, so the off side appears on the left of the screen.
 
 Performance: about 100 draw calls and 13,000 triangles per frame (houses, flags, trees and tanks are instanced), Lambert materials, no real-time shadows (blob shadows), pixel ratio capped at 1.75. three.js is in the game's own chunk (about 155 kB gzip) and loads only when the game opens.
+
+## 3c. Phase 4: national teams, modes and online-ready rules
+
+See `docs/PHASE4_SPORTS_AND_DESK_GAMES.md`, section 4. In short: `src/shared/teams.ts` (nations, flags drawn in code), `tournament.ts` (groups, standings, knockouts, simulators), `cricketModes.ts` and `daily.ts` (ladders, stars, daily seed); `src/components/sport/` holds the shared sport UI and `CricketHub`, which runs Quick Match, Target Challenge, Tournament and Daily Challenge for Hand, Book and Number Cricket through one `Match` component per game. `src/platform/online.ts` defines the contract for later online play.
 
 ## 4. How to add a new game
 

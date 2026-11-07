@@ -6,25 +6,29 @@ import { createRng, type Rng } from '../../engine/rng';
 import { FloatTexts, Particles } from '../../engine/particles';
 import { clamp } from '../../engine/math';
 import { GameShell, type PadDef, type ShellConfig, type ShellResult, type ShellScene } from '../../components/GameShell';
-import { PlaneAI, TYPES, WORLD, launch, makeCourse, stepPlane, throwScore, type Course, type HitKind, type Plane } from './model';
+import { PlaneAI, TARGET_RINGS, TYPES, WORLD, launch, makeCourse, stepPlane, throwScore, type Challenge, type Course, type Fold, type HitKind, type Plane } from './model';
 
-const S: StringTable<'title' | 'lede' | 'r1' | 'r2' | 'r3' | 'r4' | 'fold' | 'glider' | 'dart' | 'up' | 'upSub' | 'turn' | 'throwN' | 'best' | 'wind' | 'aim' | 'ring' | 'landed' | 'crash' | 'finish' | 'won' | 'draw' | 'score' | 'keys'> = {
+const S: StringTable<'title' | 'lede' | 'r1' | 'r2' | 'r3' | 'r4' | 'r5' | 'fold' | 'glider' | 'dart' | 'hawk' | 'challenge' | 'distance' | 'accuracy' | 'obstacle' | 'folding' | 'bull' | 'miss' | 'up' | 'upSub' | 'turn' | 'throwN' | 'best' | 'wind' | 'aim' | 'ring' | 'landed' | 'crash' | 'finish' | 'won' | 'draw' | 'score' | 'keys'> = {
   en: {
-    title: 'Paper Airplane', lede: 'Fold a khata page. Throw it from the roof. How far will it fly?',
+    title: 'Paper Airplane Challenge', lede: 'Fold a khata page. Throw it from the roof. Distance, accuracy or a crowded sky?',
+    r5: 'Challenges: Distance (fly furthest), Accuracy (land on the roof with the chalk target, the centre scores most), Obstacles (wires and kites everywhere; reach the end for +200).',
+    hawk: 'Hawk (floaty, easy landings)', challenge: 'Challenge', distance: 'Distance', accuracy: 'Accuracy', obstacle: 'Obstacles', folding: 'Folding the page…', bull: 'On target!', miss: 'Missed the target roof',
     r1: 'On the roof, pull back from the plane and let go to throw. Pull further for a faster throw.', r2: 'In the air, hold ▲ to raise the nose. Too much and the plane stalls and drops.',
     r3: 'Fly through rings (+50). Warm rooftops lift you. Wires, water tanks and kites end the flight.', r4: 'Three throws each. Your best throw counts. A soft landing on a roof gives +100.',
-    fold: 'Plane fold', glider: 'Glider (wide wings)', dart: 'Dart (fast)', up: '▲', upSub: 'throw / nose up', turn: '{name}’s throw', throwN: 'Throw {n}/3', best: 'Best', wind: 'Wind',
+    fold: 'Plane fold', glider: 'Glider (wide wings)', dart: 'Dart (fast)', up: '▲', upSub: 'throw / nose up', turn: '{name} to throw', throwN: 'Throw {n}/3', best: 'Best', wind: 'Wind',
     aim: 'Pull back from the plane and let go', ring: 'Ring! +50', landed: 'Landed on a roof! +100', crash: 'Crash!', finish: 'Over the whole para! +100', won: '{name} wins!', draw: 'A draw!', score: 'Score', keys: 'Keys: ← → angle, hold Space to throw, then Space for nose up',
   },
   bn: {
-    title: 'কাগজের উড়োজাহাজ', lede: 'খাতার পাতা ভাঁজ করো। ছাদ থেকে ছুড়ে দাও। কতদূর যায়?',
+    title: 'কাগজের উড়োজাহাজ চ্যালেঞ্জ', lede: 'খাতার পাতা ভাঁজ করো। ছাদ থেকে ছুড়ে দাও। দূরত্ব, নিশানা নাকি বাধার আকাশ?',
+    r5: 'চ্যালেঞ্জ: দূরত্ব (সবচেয়ে দূরে ওড়ো), নিশানা (চকের দাগ দেওয়া ছাদে নামো, মাঝখানে বেশি পয়েন্ট), বাধা (চারদিকে তার আর ঘুড়ি; শেষ পর্যন্ত গেলে +২০০)।',
+    hawk: 'বাজপাখি (ভাসমান, সহজে নামে)', challenge: 'চ্যালেঞ্জ', distance: 'দূরত্ব', accuracy: 'নিশানা', obstacle: 'বাধা', folding: 'পাতা ভাঁজ হচ্ছে…', bull: 'ঠিক নিশানায়!', miss: 'নিশানার ছাদ ফসকে গেছে',
     r1: 'ছাদে উড়োজাহাজ থেকে পেছনে টেনে ছেড়ে দাও। বেশি টানলে বেশি জোরে যাবে।', r2: 'আকাশে ▲ চেপে ধরলে নাক উঁচু হবে। বেশি উঁচু করলে থেমে পড়ে যাবে।',
     r3: 'বৃত্তের ভেতর দিয়ে গেলে +৫০। গরম ছাদের উপর বাতাস তুলে দেয়। তার, পানির ট্যাংক আর ঘুড়িতে লাগলে শেষ।', r4: 'প্রত্যেকে তিনবার ছুড়বে। সেরাটা গুনবে। ছাদে আস্তে নামলে +১০০।',
     fold: 'ভাঁজের ধরন', glider: 'গ্লাইডার (চওড়া ডানা)', dart: 'ডার্ট (দ্রুত)', up: '▲', upSub: 'ছোড়ো / নাক উঁচু', turn: '{name}-এর পালা', throwN: 'ছোড়া {n}/৩', best: 'সেরা', wind: 'বাতাস',
     aim: 'উড়োজাহাজ থেকে পেছনে টেনে ছাড়ো', ring: 'বৃত্ত! +৫০', landed: 'ছাদে নামলো! +১০০', crash: 'ধাক্কা!', finish: 'পুরো পাড়া পার! +১০০', won: '{name} জিতেছে!', draw: 'সমান সমান!', score: 'পয়েন্ট', keys: 'কী-বোর্ড: ← → কোণ, স্পেস চেপে ছোড়ো, তারপর স্পেসে নাক উঁচু',
   },
 };
-type Txt = ReturnType<typeof useT<'turn' | 'throwN' | 'best' | 'wind' | 'aim' | 'ring' | 'landed' | 'crash' | 'finish' | 'won' | 'draw' | 'score'>>;
+type Txt = ReturnType<typeof useT<'turn' | 'throwN' | 'best' | 'wind' | 'aim' | 'ring' | 'landed' | 'crash' | 'finish' | 'won' | 'draw' | 'score' | 'folding' | 'bull' | 'miss'>>;
 const FONT = '"Baloo Da 2", sans-serif';
 
 interface Thrower { name: string; ai: PlaneAI | null; best: number; throws: number[] }
@@ -48,7 +52,8 @@ class PlaneScene implements Scene, ShellScene {
   private throwers: Thrower[] = [];
   private cur = 0;
   private round = 0;
-  private phase: 'aim' | 'fly' | 'after' | 'done' = 'aim';
+  private phase: 'fold' | 'aim' | 'fly' | 'after' | 'done' = 'fold';
+  private challenge: Challenge;
   private phaseT = 0;
   private windBase = 0;
   private drag: { x: number; y: number } | null = null;
@@ -61,11 +66,14 @@ class PlaneScene implements Scene, ShellScene {
   private type;
 
   constructor(private cfg: ShellConfig, private tx: Txt, private rng: Rng) {
-    this.course = makeCourse(rng);
-    this.type = TYPES[cfg.opts.fold === 'dart' ? 'dart' : 'glider'];
+    this.challenge = (['distance', 'accuracy', 'obstacle'].includes(String(cfg.opts.challenge)) ? cfg.opts.challenge : 'distance') as Challenge;
+    this.course = makeCourse(rng, this.challenge);
+    this.type = TYPES[(['glider', 'dart', 'hawk'].includes(String(cfg.opts.fold)) ? cfg.opts.fold : 'glider') as Fold];
     this.throwers.push({ name: cfg.names[0], ai: null, best: 0, throws: [] });
     if (cfg.mode !== 'solo') this.throwers.push({ name: cfg.names[1], ai: cfg.mode === 'ai' ? new PlaneAI(rng, cfg.diff === 'easy' ? 0.55 : cfg.diff === 'medium' ? 0.75 : 0.92) : null, best: 0, throws: [] });
     this.newThrow();
+    this.phase = 'fold';
+    sfx('page');
   }
 
   private get th() {
@@ -130,6 +138,11 @@ class PlaneScene implements Scene, ShellScene {
     this.fx.update(dt);
     this.texts.update(dt);
     if (this.kb.charging) this.kb.power = Math.min(1, this.kb.power + dt * 0.8);
+    if (this.phase === 'fold') {
+      if (Math.floor(this.phaseT * 3) !== Math.floor((this.phaseT - dt) * 3)) sfx('page', { pitch: 0.9 + this.phaseT * 0.2 });
+      if (this.phaseT > 1.5) { this.phase = 'aim'; this.phaseT = 0; }
+      return;
+    }
     if (this.phase === 'aim' && this.th.ai && this.phaseT > 1.2) {
       const lp = this.th.ai.launchParams();
       this.throwPlane(lp.angle, lp.power);
@@ -151,10 +164,13 @@ class PlaneScene implements Scene, ShellScene {
 
   private endFlight(hit: NonNullable<HitKind>) {
     const p = this.plane!;
-    const s = throwScore(p);
+    const s = throwScore(p, this.challenge, this.course);
     this.th.throws.push(s);
     this.th.best = Math.max(this.th.best, s);
-    if (hit === 'land') { this.texts.add(p.x, p.y - 40, this.tx('landed'), '#ffffff', 30, 1.6); sfx('fanfare'); }
+    const tg = this.course.target;
+    if (tg && hit === 'land' && p.x >= tg.x1 && p.x <= tg.x2) { this.texts.add(p.x, p.y - 40, this.tx('bull'), '#ffe27a', 34, 1.6); sfx('fanfare'); }
+    else if (tg && this.challenge === 'accuracy') { this.texts.add(p.x, p.y - 40, this.tx('miss'), '#ffd2c8', 26, 1.6); sfx(hit === 'land' ? 'good' : 'thud'); }
+    else if (hit === 'land') { this.texts.add(p.x, p.y - 40, this.tx('landed'), '#ffffff', 30, 1.6); sfx('fanfare'); }
     else if (hit === 'finish') { this.texts.add(p.x - 200, 300, this.tx('finish'), '#ffffff', 34, 1.8); sfx('fanfare'); }
     else { this.texts.add(p.x, p.y - 40, this.tx('crash'), '#ffd2c8', 30); sfx('thud'); this.fx.burst(p.x, p.y, 12, { colors: ['#fffdf6', '#c2d3e4'], shape: 'shred', speed: 200, size: 8, gravity: 400, max: 0.9 }); }
     this.texts.add(p.x, p.y - 80, `${fmtNum(s, this.cfg.lang)}`, '#ffe27a', 40, 1.8);
@@ -184,7 +200,7 @@ class PlaneScene implements Scene, ShellScene {
       title: !two ? `${this.tx('best')}: ${fmtNum(t[0].best, this.cfg.lang)}` : win === -1 ? this.tx('draw') : this.tx('won', { name: t[win].name }),
       rows,
       score: t[0].best,
-      achievements: [...(t[0].best >= 400 ? ['pp-far'] : []), ...(t[0].best >= 600 ? ['pp-ace'] : [])],
+      achievements: this.challenge === 'distance' ? [...(t[0].best >= 400 ? ['pp-far'] : []), ...(t[0].best >= 600 ? ['pp-ace'] : [])] : [],
     });
   }
 
@@ -222,6 +238,16 @@ class PlaneScene implements Scene, ShellScene {
       ctx.strokeStyle = r.taken ? 'rgba(255, 210, 60, 0.3)' : '#f3b61f'; ctx.lineWidth = 6;
       ctx.beginPath(); ctx.ellipse(r.x, r.y, 14, 40, 0, 0, 6.283); ctx.stroke();
     }
+    // Chalk target on the accuracy roof
+    const tg = this.course.target;
+    if (tg) {
+      TARGET_RINGS.slice().reverse().forEach((r, i) => {
+        ctx.fillStyle = i === 2 ? '#e0333f' : i === 1 ? '#fffdf6' : 'rgba(224,51,63,0.55)';
+        ctx.beginPath(); ctx.ellipse(tg.cx, tg.top - 2, r, 6 + r * 0.06, 0, 0, 6.283); ctx.fill();
+      });
+      ctx.fillStyle = '#7a7a7a'; ctx.fillRect(tg.cx - 2, tg.top - 90, 4, 88);
+      ctx.fillStyle = '#e0333f'; ctx.beginPath(); ctx.moveTo(tg.cx + 2, tg.top - 90); ctx.lineTo(tg.cx + 40, tg.top - 80 + Math.sin(this.time * 5) * 3); ctx.lineTo(tg.cx + 2, tg.top - 68); ctx.fill();
+    }
     // Kites
     for (const k of this.course.kites) {
       const kx = k.x + Math.sin(this.time + k.phase) * 10, ky = k.y + Math.cos(this.time * 1.3 + k.phase) * 6;
@@ -238,7 +264,8 @@ class PlaneScene implements Scene, ShellScene {
     ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 2; ctx.setLineDash([4, 6]);
     ctx.beginPath(); this.trail.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke(); ctx.setLineDash([]);
     const p = this.plane;
-    if (p) drawPlane(ctx, p.x, p.y, p.pitch, p.stalled);
+    if (this.phase === 'fold') drawFolding(ctx, WORLD.startX, WORLD.startY, Math.min(1, this.phaseT / 1.3));
+    else if (p) drawPlane(ctx, p.x, p.y, p.pitch, p.stalled);
     else {
       const aim = this.dragAim() ?? (this.kb.charging || !this.th.ai ? { angle: this.kb.angle, power: this.kb.charging ? this.kb.power : 0.5 } : null);
       drawPlane(ctx, WORLD.startX, WORLD.startY, aim?.angle ?? 0.2, false);
@@ -257,11 +284,12 @@ class PlaneScene implements Scene, ShellScene {
     ctx.restore();
     // HUD
     ctx.font = `800 22px ${FONT}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillStyle = '#1f3a93';
-    ctx.fillText(`${this.tx('turn', { name: this.th.name })} · ${this.tx('throwN', { n: this.round + 1 })}`, v.left + 16, v.top + 26);
+    ctx.fillText(`${this.tx('turn', { name: this.th.name })} · ${this.tx('throwN', { n: Math.min(3, this.round + 1) })}`, v.left + 16, v.top + 26);
     ctx.textAlign = 'right';
     const w = this.windBase;
     ctx.fillText(`${this.tx('wind')} ${w >= 0 ? '→' : '←'} ${fmtNum(Math.abs(w), this.cfg.lang)}   ${this.tx('best')} ${this.throwers.map((t) => fmtNum(t.best, this.cfg.lang)).join(' / ')}`, v.right - 16, v.top + 26);
     if (p && this.phase === 'fly') { ctx.textAlign = 'center'; ctx.fillText(`${fmtNum(throwScore(p), this.cfg.lang)}`, (v.left + v.right) / 2, v.top + 60); }
+    if (this.phase === 'fold') { ctx.textAlign = 'center'; ctx.font = `700 20px ${FONT}`; ctx.fillStyle = '#5b4636'; ctx.fillText(this.tx('folding'), WORLD.startX + 200 - cam, WORLD.startY - 120); }
     if (this.phase === 'aim' && !this.th.ai) { ctx.textAlign = 'center'; ctx.font = `700 18px ${FONT}`; ctx.fillStyle = '#5b4636'; ctx.fillText(this.tx('aim'), WORLD.startX + 260 - cam, WORLD.startY - 120); }
   }
 }
@@ -285,6 +313,26 @@ function drawBuilding(ctx: CanvasRenderingContext2D, x: number, w: number, top: 
     ctx.strokeStyle = '#3c3c3c'; ctx.lineWidth = 2; for (let k = 1; k < 4; k++) { ctx.beginPath(); ctx.moveTo(tx, top - 46 + k * 11); ctx.lineTo(tx + 44, top - 46 + k * 11); ctx.stroke(); }
     ctx.fillStyle = '#2b2b2b'; ctx.fillRect(tx + 14, top - 52, 16, 6);
   }
+}
+
+/** A khata page folding into a plane: a rectangle, then a long triangle, then a dart, by the progress u. */
+function drawFolding(ctx: CanvasRenderingContext2D, x: number, y: number, u: number) {
+  const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
+  const sheet = [[-34, -24], [34, -24], [34, 24], [-34, 24]];
+  const tri = [[-30, -20], [30, 0], [-30, 20], [-30, 0]];
+  const dart = [[-22, -12], [26, 0], [-22, 6], [-14, 0]];
+  const k = u < 0.5 ? u / 0.5 : (u - 0.5) / 0.5;
+  const [a, b] = u < 0.5 ? [sheet, tri] : [tri, dart];
+  const pts = a.map(([ax, ay], i) => [lerp(ax, b[i][0], k), lerp(ay, b[i][1], k)]);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(-0.2 * u);
+  ctx.fillStyle = '#fffdf6'; ctx.strokeStyle = '#9aa0a6'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); pts.forEach(([px, py], i) => (i ? ctx.lineTo(px, py) : ctx.moveTo(px, py))); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = 'rgba(31, 58, 147, 0.35)';
+  for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(pts[0][0], i * 6 * (1 - u * 0.6)); ctx.lineTo(pts[1][0] * 0.8, i * 6 * (1 - u * 0.6) * 0.5); ctx.stroke(); }
+  ctx.strokeStyle = 'rgba(198, 47, 47, 0.5)'; ctx.beginPath(); ctx.moveTo(pts[3][0], pts[3][1]); ctx.lineTo(pts[1][0], pts[1][1]); ctx.stroke();
+  ctx.restore();
 }
 
 function drawPlane(ctx: CanvasRenderingContext2D, x: number, y: number, pitch: number, stalled: boolean) {
@@ -311,9 +359,12 @@ export default function PaperPlane({ onExit }: GameProps) {
   return (
     <GameShell
       gameId="paper-plane" onExit={onExit} title={t('title')} lede={t('lede')}
-      rules={[t('r1'), <b key="r2">{t('r2')}</b>, t('r3'), t('r4')]}
+      rules={[t('r1'), <b key="r2">{t('r2')}</b>, t('r3'), t('r4'), t('r5')]}
       modes={['solo', 'ai', 'local2p']} difficulty={(m) => m === 'ai'}
-      options={[{ key: 'fold', label: t('fold'), def: 'glider', choices: [{ v: 'glider', label: t('glider') }, { v: 'dart', label: t('dart') }] }]}
+      options={[
+        { key: 'challenge', label: t('challenge'), def: 'distance', choices: [{ v: 'distance', label: t('distance') }, { v: 'accuracy', label: t('accuracy') }, { v: 'obstacle', label: t('obstacle') }] },
+        { key: 'fold', label: t('fold'), def: 'glider', choices: [{ v: 'glider', label: t('glider') }, { v: 'dart', label: t('dart') }, { v: 'hawk', label: t('hawk') }] },
+      ]}
       hint={t('keys')}
       createScene={(cfg: ShellConfig) => new PlaneScene(cfg, t, createRng())}
       pads={pads}

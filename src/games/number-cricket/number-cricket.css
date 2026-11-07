@@ -1,0 +1,20 @@
+/* Number Cricket: a notebook desk instead of the wooden bench. */
+.hc-root.number {
+  background:
+    radial-gradient(ellipse at 50% 110%, rgba(31, 58, 147, 0.18), transparent 60%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.035) 0 1px, transparent 1px 6px),
+    linear-gradient(#7d9a74, #5f7f5b);
+}
+.nc-chit { height: 100%; max-height: 220px; width: auto; max-width: 100%; filter: drop-shadow(0 6px 5px rgba(0,0,0,0.28)); }
+.nc-chit.open { animation: nc-open .3s cubic-bezier(0.2, 1.4, 0.4, 1); }
+@keyframes nc-open { from { transform: scaleY(0.4); } }
+.hc-root.number .hc-hand.left svg, .hc-root.number .hc-hand.right svg { transform: none; }
+.hc-root.number .hc-num { min-height: 58px; }
+.hc-root.number .hc-num .lbl { font-size: 28px; }
+.hc-buttons.n7 { grid-template-columns: repeat(7, 1fr); }
+.hc-buttons.n10 { grid-template-columns: repeat(5, 1fr); }
+@media (orientation: portrait) and (max-width: 700px) {
+  .hc-buttons.n7 { grid-template-columns: repeat(4, 1fr); }
+  .hc-buttons.n10 { grid-template-columns: repeat(5, 1fr); }
+  .two-p .hc-root.number .hc-num { min-height: 46px; }
+}

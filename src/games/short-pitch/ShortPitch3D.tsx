@@ -8,7 +8,7 @@ import { sfx, unlockAudio } from '../../platform/audio';
 import { capturePointer } from '../../engine/timing';
 import { oversText } from '../../shared/cricket';
 import { DifficultySeg, ModeSeg, Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames, type Difficulty, type Mode } from '../../components/ui';
-import { ShortPitchGame, TEAM, type HudState, type SPResult } from './game';
+import { ShortPitchGame, TEAM, type HudState, type ShotName, type SPResult } from './game';
 import type { DType } from './sim';
 
 // 3D Short-Pitch Cricket: the para game with a circular boundary where a
@@ -22,7 +22,8 @@ type K =
   | 'tapPitch' | 'bats' | 'bowls' | 'target' | 'need' | 'thisOver'
   | 'four' | 'sixOut' | 'caught' | 'bowled' | 'runOut' | 'run1' | 'runsN' | 'dot' | 'wide' | 'dropped' | 'break' | 'won' | 'tied'
   | 'perfect' | 'good' | 'early' | 'late' | 'edge' | 'miss'
-  | 'noGl' | 'byRuns' | 'byWk' | 'batter' | 'fours' | 'best' | 'straight' | 'off' | 'leg' | 'stickHint' | 'swipeHint';
+  | 'noGl' | 'byRuns' | 'byWk' | 'batter' | 'fours' | 'best' | 'straight' | 'off' | 'leg' | 'stickHint' | 'swipeHint' | 'tip'
+  | ShotName;
 
 const S: StringTable<K> = {
   en: {
@@ -46,6 +47,9 @@ const S: StringTable<K> = {
     noGl: 'This game needs 3D graphics (WebGL). Please try another browser or turn on hardware acceleration.',
     byRuns: '{name} won by {n} runs', byWk: '{name} won by {n} wickets', batter: 'Batter {n}', fours: 'Fours', best: 'Top batter',
     straight: 'straight', off: 'off', leg: 'leg', stickHint: 'Hold for direction', swipeHint: 'or swipe on the field',
+    tip: 'Tap Hit when the ball reaches the bat. Hold the stick to choose the direction.',
+    straightDrive: 'Straight drive', coverDrive: 'Cover drive', onDrive: 'On drive', squareCut: 'Square cut', pull: 'Pull shot',
+    lateCut: 'Late cut', glance: 'Leg glance', edged: 'Off the edge!', defended: 'Blocked', lofted: 'In the air!',
   },
   bn: {
     title: 'শর্ট-পিচ ক্রিকেট ৩ডি',
@@ -68,6 +72,9 @@ const S: StringTable<K> = {
     noGl: 'এই খেলার জন্য ৩ডি গ্রাফিক্স (WebGL) লাগে। অন্য ব্রাউজারে চেষ্টা করো।',
     byRuns: '{name} {n} রানে জিতেছে', byWk: '{name} {n} উইকেটে জিতেছে', batter: 'ব্যাটার {n}', fours: 'চার', best: 'সেরা ব্যাটার',
     straight: 'সোজা', off: 'অফ', leg: 'লেগ', stickHint: 'ধরে রেখে দিক ঠিক করো', swipeHint: 'অথবা মাঠে আঙুল টানো',
+    tip: 'বল ব্যাটের কাছে এলে ‘মারো’ চাপো। স্টিক ধরে দিক ঠিক করো।',
+    straightDrive: 'সোজা ড্রাইভ', coverDrive: 'কভার ড্রাইভ', onDrive: 'অন ড্রাইভ', squareCut: 'স্কয়ার কাট', pull: 'পুল শট',
+    lateCut: 'লেট কাট', glance: 'লেগ গ্লান্স', edged: 'ব্যাটের কানায়!', defended: 'ঠেকিয়ে দিল', lofted: 'উড়ে যাচ্ছে!',
   },
 };
 
@@ -215,6 +222,8 @@ export default function ShortPitch3D({ onExit }: GameProps) {
               <b>{t(h.timing.t)}</b>
             </div>
           )}
+          {h.shotName && <div className="sp-turn shot" data-testid="sp-shotname">{t(h.shotName)}</div>}
+          {h.tip && <div className="sp-tip" role="note">{t('tip')}</div>}
           {(h.phase === 'pick' || h.phase === 'windup') && <div className="sp-turn">{showBowl ? t('bowls', { name: bowlName }) : t('bats', { name: batName })}</div>}
         </>
       )}

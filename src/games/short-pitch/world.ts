@@ -204,6 +204,8 @@ export interface World {
   stumps: { near: Group; far: Group; nearBails: Mesh[]; farBails: Mesh[] };
   ball: Mesh;
   shadow: Mesh;
+  /** A short tapered trail behind the ball in play (one draw call). */
+  trail: InstancedMesh;
   marker: Mesh;
   zones: Group;
   aim: Mesh;
@@ -211,6 +213,21 @@ export interface World {
 }
 
 const DUMMY = new Object3D();
+export const TRAIL_N = 14;
+
+/** Place the trail points (newest first); the spheres get smaller toward the tail. */
+export function setTrail(t: InstancedMesh, pts: Array<[number, number, number]>) {
+  const n = Math.min(TRAIL_N, pts.length);
+  for (let i = 0; i < n; i++) {
+    DUMMY.position.set(...pts[i]);
+    DUMMY.rotation.set(0, 0, 0);
+    DUMMY.scale.setScalar(1 - i / TRAIL_N);
+    DUMMY.updateMatrix();
+    t.setMatrixAt(i, DUMMY.matrix);
+  }
+  t.count = n;
+  t.instanceMatrix.needsUpdate = true;
+}
 
 export function buildWorld(): World {
   const scene = new Scene();
@@ -388,5 +405,9 @@ export function buildWorld(): World {
   const marker = new Mesh(new TorusGeometry(0.22, 0.045, 6, 24), new MeshBasicMaterial({ color: '#e0333f' }));
   marker.rotation.x = Math.PI / 2; marker.position.y = 0.035; marker.visible = false;
   scene.add(marker);
-  return { scene, stumps: { near: near.g, far: far.g, nearBails: near.bails, farBails: far.bails }, ball, shadow, marker, zones, aim, board: { draw: drawBoard } };
+  const trail = new InstancedMesh(new SphereGeometry(0.09, 8, 6), new MeshBasicMaterial({ color: '#fff7b0', transparent: true, opacity: 0.45, depthWrite: false }), TRAIL_N);
+  trail.count = 0;
+  trail.frustumCulled = false;
+  scene.add(trail);
+  return { scene, stumps: { near: near.g, far: far.g, nearBails: near.bails, farBails: far.bails }, ball, shadow, trail, marker, zones, aim, board: { draw: drawBoard } };
 }

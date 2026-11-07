@@ -7,9 +7,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4173',
     launchOptions: {
-      executablePath: process.env.PW_CHROMIUM || '/opt/pw-browsers/chromium-1243/chrome-linux64/chrome',
-      // WebGL in software for the 3D game on machines without a GPU
-      args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
+      executablePath: process.env.PW_CHROMIUM || undefined,
     },
   },
   webServer: {

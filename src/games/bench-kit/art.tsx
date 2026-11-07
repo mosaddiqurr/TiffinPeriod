@@ -1,0 +1,11 @@
+import { Hand } from '../hand-cricket/Hand';
+export function ChitArt({ accent = '#1f3a93' }: { accent?: string }) {
+  return <svg viewBox="0 0 170 140" aria-hidden="true">{['বাবু', '?', '?', 'পুলিশ'].map((s, i) => <g key={i} transform={`translate(${i % 2 * 78 + 12} ${Math.floor(i / 2) * 62 + 12}) rotate(${i % 2 ? 7 : -6} 28 24)`}><rect x="3" y="4" width="60" height="48" fill="#d9caab" /><rect width="60" height="48" fill="#fffdf6" stroke={accent} strokeWidth="2" /><path d="M0 0L60 48M60 0L0 48" stroke="#d5c8a3" /><text x="30" y="31" textAnchor="middle" fontFamily="var(--font-display)" fontSize="20" fill={accent}>{s}</text></g>)}</svg>;
+}
+export function WordArt({ accent = '#1f3a93' }: { accent?: string }) {
+  return <svg viewBox="0 0 170 140" aria-hidden="true"><g transform="rotate(-5 85 70)"><rect x="15" y="18" width="140" height="105" rx="3" fill="#fffdf6" stroke={accent} strokeWidth="2" />{[43, 68, 93].map((y) => <path key={y} d={`M15 ${y}H155`} stroke="#c2d3e4" />)}{[50, 85, 120].map((x) => <path key={x} d={`M${x} 18V123`} stroke="#c2d3e4" />)}<text x="32" y="39" fontFamily="var(--font-display)" fontSize="18" fill={accent}>নাম</text><text x="59" y="64" fontFamily="var(--font-display)" fontSize="21" fill={accent}>ক</text><path d="M126 106L147 61L153 64L132 109L125 116Z" fill="#d8a649" stroke="#795334" /></g></svg>;
+}
+export function FingerArt() { return <div style={{ display: 'flex', height: '100%' }}><Hand n={2} /><Hand n={3} mirror cuff="#c62f2f" /></div>; }
+export function BaghArt({ accent = '#0b5d43' }: { accent?: string }) {
+  return <svg viewBox="0 0 170 140" aria-hidden="true"><rect x="25" y="10" width="120" height="120" rx="4" fill="#efe1bd" stroke="#987548" strokeWidth="5" />{[0, 1, 2, 3, 4].map((i) => <g key={i}><path d={`M35 ${20 + i * 25}H135M${35 + i * 25} 20V120`} stroke={accent} strokeWidth="1.5" /></g>)}<path d="M35 20L135 120M135 20L35 120M85 20L135 70L85 120L35 70Z" fill="none" stroke={accent} strokeWidth="1.5" />{[[60, 20], [110, 20], [60, 70], [110, 70]].map(([x, y], i) => <g key={i}><circle cx={x} cy={y} r="10" fill="#fffdf6" stroke={accent} /><text x={x} y={y + 4} textAnchor="middle" fontSize="12" fill={accent}>৫</text></g>)}{[45, 95].map((y) => <circle key={y} cx="85" cy={y} r="10" fill="#f2b93b" stroke="#794619" strokeWidth="2" />)}</svg>;
+}

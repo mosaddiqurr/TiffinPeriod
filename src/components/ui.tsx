@@ -16,6 +16,8 @@ export function usePlayerNames(): [string, string] {
 // ---------- Game bar context: a game tells the bar how to pause and what help to show ----------
 export interface BarConfig {
   onPause?: () => void;
+  /** Games with a separate help overlay can resume directly when it closes. */
+  onResume?: () => void;
   help?: ReactNode;
 }
 export const BarContext = createContext<(cfg: BarConfig) => void>(() => {});

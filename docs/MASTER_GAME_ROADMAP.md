@@ -2,13 +2,38 @@
 
 "Tiffin Period" is the working title of the platform. You can change it in one place: `src/platform/strings.ts` (`brand`).
 
-The platform has **24 confirmed games and modes** in three phases.
+The platform has **28 confirmed games and modes** in three phases: **22 playable** and six planned.
 
 - **Phase 1** (done): 6 games. They are built, tested and playable.
 - **Phase 2** (done): 11 games. They are built, tested and playable.
-- **Phase 3** (in progress): 7 games. **1 is built and playable: 18 Short-Pitch Cricket 3D.** The other 6 are researched and planned. They are **not** playable. The hub shows them as "Coming soon" (শীঘ্রই).
+- **Phase 3** (in progress): 11 games. **Five are playable:** Short-Pitch Cricket 3D and the four class-bench additions below. Six are researched and planned; the hub shows those as "Coming soon" (শীঘ্রই).
+
+## Additional class-bench games (PLAYABLE, 7 November 2026)
+
+| No. | Game | Bangla | Modes | Core mechanic |
+|---|---|---|---|---|
+| 25 | Chor Police | চোর-পুলিশ | vs computer, 4 friends | Private role chits, police accusation, round scoring |
+| 26 | Naam Desh Ful Fol | নাম দেশ ফুল ফল | solo, 2 players | Random Bangla letter, four timed categories, reviewed answers |
+| 27 | Jor-Bejor | জোড়-বিজোড় | vs computer, 2 players | Locked 0–5 finger picks, sum parity, first to target |
+| 28 | Bagh Bandi | বাঘবন্দী | vs computer, 2 players | Two tigers against twenty stacked goats on the Bengal board |
+
+See [implemented rules, research and house-rule choices](BENCH_GAMES.md). Existing game numbers remain unchanged.
 
 The owner changed the Phase 3 scope on 2026-11-04: build **one** cricket game only, a 3D short-pitch game, and do not build the other Phase 3 games yet. The 2D street-cricket prototype (four venues on one engine) was removed before release.
+
+## Phase 4 — national teams and new desk games (PLAYABLE, 7 November 2026)
+
+| No. | Game | Status |
+|---|---|---|
+| 29 | Number Cricket | PLAYABLE |
+| 30 | Flikk Football (one game for Paper Football and Flikk Football) | PLAYABLE |
+| 31 | Penalty Shootout | PLAYABLE |
+| 32 | Five Stones (পাঁচ গুটি) | PLAYABLE |
+| 33 | Dots and Boxes (ঘর কাটা) | PLAYABLE |
+| 34 | Hangman | PLAYABLE |
+| 35 | Eraser Flip | PLAYABLE |
+
+Upgrades: Hand Cricket and Book Cricket (national teams and four modes), Paper Airplane (folds, Distance/Accuracy/Obstacles). Next: online play behind `src/platform/online.ts` (random 1v1, invite links, friend challenges, leaderboards).
 
 ## Status legend
 
@@ -44,7 +69,7 @@ The owner changed the Phase 3 scope on 2026-11-04: build **one** cricket game on
 | 16 | Sack Race | বস্তা দৌড় | Sports day | vs computer, 2 players | Tap to hop; best just after landing; too soon or in the air = wobble; too much = fall | Race base + hop model |
 | 17 | Three-Legged Race | তিন পায়ে দৌড় | Sports day | vs computer, 2 players (co-op) | Alternate the outer and the tied legs at a steady pace; in co-op, one player per leg | Race base + step model |
 
-## Phase 3 — hard games (1 PLAYABLE, 6 PLANNED)
+## Original Phase 3 — hard games (1 PLAYABLE, 6 PLANNED)
 
 | No. | Game | Bangla | Where | Planned core mechanic | Planned tech | Reuses |
 |---|---|---|---|---|---|---|

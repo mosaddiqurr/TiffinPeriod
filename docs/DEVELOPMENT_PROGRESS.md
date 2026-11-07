@@ -1,6 +1,18 @@
 # Development Progress
 
-Last update: 2026-11-04.
+Last update: 2026-11-07.
+
+## Phase 4: national teams and new desk games (done, 7 November 2026)
+
+- Seven new games: Number Cricket, Flikk Football, Penalty Shootout, Five Stones, Dots and Boxes, Hangman, Eraser Flip.
+- Hand Cricket and Book Cricket: national teams, Quick Match (bat first, chase or toss), Target Challenge (12 levels with stars), Tournament (groups, semi-finals, final, super over), Daily Challenge (shared daily seed, best score, streak, share text). The ball rules did not change.
+- Paper Airplane: a folding animation, a third fold (Hawk), and Distance / Accuracy / Obstacles challenges.
+- Shared parts: `src/shared/teams.ts`, `tournament.ts`, `cricketModes.ts`, `daily.ts`, `src/components/sport/`, and the online contract in `src/platform/online.ts`.
+- Details, rules and limits: `docs/PHASE4_SPORTS_AND_DESK_GAMES.md`. Nothing was committed or pushed.
+
+## Class-bench additions (done)
+
+Chor Police, Naam Desh Ful Fol, Jor-Bejor and Bagh Bandi are implemented and reachable from the hub in Bangla and English. The platform now has 22 playable games and six planned entries. Details, references, house rules and test coverage: [BENCH_GAMES.md](BENCH_GAMES.md).
 
 ## Phase 1 checklist (done)
 

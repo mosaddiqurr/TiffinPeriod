@@ -1,0 +1,23 @@
+.ff-root { position: absolute; inset: 0; display: flex; flex-direction: column; background: #7d5230; }
+.ff-top { padding: 6px 8px 4px; display: grid; gap: 4px; }
+.ff-top .flag-score { max-width: 560px; width: 100%; margin: 0 auto; padding: 4px 10px; }
+.ff-pens { display: flex; justify-content: center; gap: 18px; color: #fff; }
+.ff-pens span { display: inline-flex; align-items: center; gap: 4px; }
+.ff-pens i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.ff-pens i.g { background: #4cc38a; }
+.ff-pens i.m { background: #ff5a4f; }
+.ff-canvas { position: relative; flex: 1; min-height: 0; }
+.ff-bottom { display: flex; align-items: center; gap: 10px; padding: 6px 10px 8px; background: rgba(255, 250, 235, 0.95); box-shadow: 0 -4px 14px -6px rgba(0,0,0,0.4); }
+.ff-turn { display: inline-flex; align-items: center; gap: 8px; font: 800 18px var(--font-display); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 6px solid var(--kit); padding-left: 8px; }
+.ff-flicks { display: inline-flex; gap: 5px; }
+.ff-flicks i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--pen); display: inline-block; }
+.ff-flicks i.used { background: #b9c3dc; border-color: #b9c3dc; }
+.ff-flicks i.now { background: var(--pen); }
+.ff-regroup { min-height: 42px; padding: 4px 14px; font-size: 16px; }
+
+.ff-tactics { margin-top: 6px; }
+.ff-forms { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.ff-form { display: grid; justify-items: center; gap: 2px; padding: 6px; border-radius: 10px; border: 2px solid #d4c69f; background: #fffdf6; }
+.ff-form[aria-pressed='true'] { border-color: var(--pen); background: #e8edfb; box-shadow: inset 0 0 0 1px var(--pen); }
+.ff-form b { font: 800 16px var(--font-display); }
+.ff-form-svg { width: 100%; max-width: 110px; height: auto; display: block; }

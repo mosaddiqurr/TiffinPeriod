@@ -24,7 +24,7 @@ Copyright Indian Type Foundry. Packaged by Fontsource (@fontsource/hind-siliguri
 
 ## Microsoft Fluent Emoji (Flat style) — MIT
 Copyright (c) Microsoft Corporation. https://github.com/microsoft/fluentui-emoji
-We use 48 SVG pictures in Pakhir Ure (`src/games/pakhir-ure/art/`). The full licence text is in `src/games/pakhir-ure/art/LICENSE-fluentui-emoji.txt`.
+We use 48 SVG pictures in Pakhir Ure (`src/games/pakhir-ure/art/`). Bagh Bandi also reuses the tiger and goat pictures from that folder. The full licence text is in `src/games/pakhir-ure/art/LICENSE-fluentui-emoji.txt`.
 
 ## Build and test tools (not shipped in the app)
 Vite, @vitejs/plugin-react, vite-plugin-pwa, Vitest (MIT); TypeScript, Playwright (Apache-2.0).
