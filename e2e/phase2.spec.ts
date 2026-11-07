@@ -33,6 +33,32 @@ test('phone: every Phase 2 game opens and starts without errors', async ({ page,
   expect(errors).toEqual([]);
 });
 
+test('Pen Fight 3D: a real drag on your pen shows the power and flicks it', async ({ page }) => {
+  const errors = trackErrors(page);
+  await open(page, 'pen-fight');
+  await expect(page.getByTestId('touch-hint')).toBeVisible();
+  await page.waitForTimeout(800);
+  type PF = { screenOf(i: number, t: number): [number, number]; state: { phase: string; turn: number; pens: Array<{ x: number; y: number }> } };
+  const pf = () => (window as unknown as { __penFight: PF }).__penFight;
+  const box = (await page.locator('.pf-host canvas').boundingBox())!;
+  const g = await page.evaluate(() => { const s = (window as unknown as { __penFight: { screenOf(i: number, t: number): [number, number] } }).__penFight; return { me: s.screenOf(0, 0.15), op: s.screenOf(1, 0) }; });
+  void pf;
+  const gx = box.x + g.me[0], gy = box.y + g.me[1];
+  const dx = g.me[0] - g.op[0], dy = g.me[1] - g.op[1], L = Math.hypot(dx, dy);
+  const before = await page.evaluate(() => (window as unknown as { __penFight: PF }).__penFight.state.pens[0]);
+  await page.mouse.move(gx, gy);
+  await page.mouse.down();
+  await page.mouse.move(gx + (dx / L) * 80, gy + (dy / L) * 80, { steps: 10 });
+  await expect(page.getByTestId('power-tag')).toBeVisible();
+  await expect(page.getByTestId('power-bar')).toBeVisible();
+  await page.mouse.up();
+  await expect(page.getByTestId('power-tag')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __penFight: PF }).__penFight.state.turn), { timeout: 10_000 }).toBe(1);
+  const after = await page.evaluate(() => (window as unknown as { __penFight: PF }).__penFight.state.pens[0]);
+  expect(Math.hypot(after.x - before.x, after.y - before.y)).toBeGreaterThan(3);
+  expect(errors).toEqual([]);
+});
+
 test.describe('desktop full plays', () => {
   test.skip(({ isMobile }) => isMobile);
   test.setTimeout(200_000);

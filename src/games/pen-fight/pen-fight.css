@@ -1,0 +1,86 @@
+.pf-root { position: absolute; inset: 0; background: #2d2318; overflow: hidden; user-select: none; -webkit-user-select: none; }
+.pf-host { position: absolute; inset: 0; }
+.pf-host canvas { display: block; }
+.pf-nogl { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; color: #fff; text-align: center; font-size: 18px; }
+
+/* Setup: the two pens */
+.pf-pens { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 6px; }
+.pf-pen-opt {
+  position: relative; display: grid; gap: 4px; align-content: start; text-align: left; padding: 10px 12px 12px; border: 0; border-radius: 14px; color: inherit;
+  background: #fffdf6; box-shadow: 0 0 0 1.5px #e4d8b8, 0 3px 0 #e4d8b8; transition: transform .12s, box-shadow .12s;
+}
+.pf-pen-opt:hover { transform: translateY(-1px); }
+.pf-pen-opt[aria-checked='true'] { background: linear-gradient(160deg, #fff7d6, #fffdf6); box-shadow: 0 0 0 2.5px #f3b61f, 0 6px 14px -8px rgba(0,0,0,0.45); }
+.pf-pen-opt b { font: 800 16px/1.15 var(--font-display); }
+.pf-pen-opt small { font-size: 12.5px; line-height: 1.3; color: var(--ink-soft); }
+.pf-art { width: 100%; max-width: 190px; height: auto; display: block; margin: 2px 0 4px; filter: drop-shadow(0 3px 2px rgba(0,0,0,0.25)); }
+.pf-art.small { width: 54px; margin: 0; filter: none; }
+.pf-stats { display: grid; gap: 2px; margin-top: 4px; }
+.pf-stats > span { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.pf-stats em { font-style: normal; width: 46px; color: var(--ink-soft); }
+.pf-stats i { display: inline-flex; gap: 2px; }
+.pf-stats s { width: 12px; height: 6px; border-radius: 3px; background: #e6dcc2; text-decoration: none; }
+.pf-stats s.on { background: #f3b61f; }
+.pf-check { position: absolute; top: 7px; right: 8px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: #f3b61f; color: #3a2a00; font: 900 12px/1 var(--font-body); }
+
+/* In play */
+.pf-hud { position: absolute; left: 10px; right: 10px; top: 10px; display: flex; justify-content: space-between; gap: 8px; pointer-events: none; }
+.pf-chip {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 8px; border-radius: 999px; min-width: 0;
+  background: rgba(20, 14, 8, 0.72); color: #fff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.08); backdrop-filter: blur(4px);
+  transition: box-shadow .2s, transform .2s;
+}
+.pf-chip.right { flex-direction: row-reverse; padding: 6px 8px 6px 12px; }
+.pf-chip.on { box-shadow: inset 0 0 0 2.5px var(--cap), 0 0 18px -2px var(--cap); transform: translateY(1px); }
+.pf-chip b { font: 800 22px/1 var(--font-display); }
+.pf-name { font: 700 15px var(--font-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 28vw; }
+.pf-pips { display: inline-flex; gap: 3px; }
+.pf-pips i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.22); }
+.pf-pips i.on { background: var(--cap); box-shadow: 0 0 6px var(--cap); }
+.pf-turn {
+  position: absolute; left: 50%; top: 64px; translate: -50% 0; padding: 6px 16px; border-radius: 999px; pointer-events: none;
+  background: var(--cap); color: #fff; font: 800 17px var(--font-display); box-shadow: 0 6px 16px -6px rgba(0,0,0,0.6); white-space: nowrap;
+  animation: pf-pop .3s cubic-bezier(.2,1.4,.4,1);
+}
+.pf-turn.ai { background: rgba(20, 14, 8, 0.75); }
+@keyframes pf-pop { from { transform: scale(0.85); opacity: 0; } }
+.pf-touch {
+  position: absolute; left: 50%; bottom: 18px; translate: -50% 0; display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px;
+  background: rgba(255, 246, 214, 0.95); color: #3a2516; font: 800 16px var(--font-display); pointer-events: none; white-space: nowrap;
+  box-shadow: 0 8px 18px -8px rgba(0,0,0,0.6); animation: pf-breathe 1.6s ease-in-out infinite;
+}
+.pf-hand { font-size: 20px; animation: pf-tap 1.6s ease-in-out infinite; display: inline-block; }
+@keyframes pf-breathe { 50% { transform: scale(1.04); } }
+@keyframes pf-tap { 50% { transform: translateY(4px); } }
+
+/* While dragging: a big readout next to the finger and a bar at the bottom */
+.pf-power-tag {
+  position: absolute; translate: -50% -100%; margin-top: -46px; pointer-events: none; padding: 6px 12px; border-radius: 12px;
+  background: var(--pc); color: #1b1208; font: 900 24px/1 var(--font-display); box-shadow: 0 0 0 3px #fff, 0 10px 18px -6px rgba(0,0,0,0.6);
+}
+.pf-power-tag::after { content: ''; position: absolute; left: 50%; bottom: -8px; translate: -50% 0; border: 8px solid transparent; border-bottom: 0; border-top-color: var(--pc); }
+.pf-power {
+  position: absolute; left: 50%; bottom: 16px; translate: -50% 0; width: min(440px, calc(100% - 32px)); display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px; border-radius: 999px; background: rgba(20, 14, 8, 0.82); color: #fff; pointer-events: none; box-shadow: 0 0 0 2px var(--pc);
+}
+.pf-power span { font: 700 14px var(--font-body); }
+.pf-power b { font: 900 20px var(--font-display); color: var(--pc); min-width: 52px; text-align: right; }
+.pf-power-track { position: relative; flex: 1; height: 14px; border-radius: 7px; background: rgba(255,255,255,0.14); overflow: hidden; }
+.pf-power-fill { height: 100%; border-radius: 7px; background: linear-gradient(90deg, #5ee07a, #ffd23f 55%, #ff5a4a); transition: width .04s linear; }
+.pf-power-track i { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.4); }
+.pf-banner {
+  position: absolute; left: 50%; top: 42%; translate: -50% -50%; display: grid; justify-items: center; gap: 4px; padding: 14px 26px; border-radius: 18px; pointer-events: none;
+  background: rgba(20, 14, 8, 0.82); color: #fff; box-shadow: 0 0 0 3px var(--cap), 0 14px 30px -10px rgba(0,0,0,0.7); text-align: center;
+  animation: pf-pop .35s cubic-bezier(.2,1.4,.4,1);
+}
+.pf-banner b { font: 900 30px var(--font-display); color: #ffe27a; }
+.pf-banner small { font-size: 15px; color: #ffd0c8; }
+.reduced-motion .pf-touch, .reduced-motion .pf-hand { animation: none; }
+@media (max-width: 640px) {
+  .pf-pens { grid-template-columns: 1fr; }
+  .pf-name { max-width: 22vw; font-size: 13px; }
+  .pf-chip b { font-size: 19px; }
+  .pf-art.small { width: 40px; }
+  .pf-turn { top: 58px; font-size: 15px; }
+  .pf-touch { font-size: 14px; }
+}

@@ -79,12 +79,14 @@ Quick Match (countries, bat first or chase, toss), Target Challenge (12 levels w
 ## Phase 2 (implemented)
 
 ### 07 Pen Fight (কলম যুদ্ধ)
-1. Two pens lie on a wooden bench. Players take turns.
-2. On your turn, touch your own pen, pull back and let go. The arrow shows the direction and the power. Keys: ← → aim, ↑ ↓ move the grab point, hold `Space` for power and release to flick.
-3. A flick near the end of the pen spins it. A flick at the middle pushes it straight.
-4. When the pens stop, a pen whose centre is off the bench has fallen.
-5. If the other pen fell, you win the point. If your own pen fell (even if both fell), the other player wins the point. If none fell, the turn passes.
-6. The first to 3 (or 5) points wins. The pens go back to the start after each point.
+3D (Three.js): one student's half of an old wooden school bench (60 × 38 cm), seen close up, with soft window light and shadows. Physics is our own (`src/games/pen-fight/model.ts`), deterministic at 1/240 s.
+1. Two pens, chosen on the setup screen: the **classic ballpoint** (light white six-sided pen, coloured cap: quick, long-range, easy to send off yourself) and the **gel pen** (heavier, clear barrel, rubber grip: slides less, hits harder, grips the desk). Player 1 has a blue cap, player 2 or the computer a red cap. Generic designs, no brand names or logos.
+2. Players take turns. On your turn your pen glows. Touch it, pull back and let go: the pen shoots the opposite way. While you hold it you see a ring where you touched, a band to your finger, a big arrow coloured by power, the first part of the path, a % reading next to your finger and a power bar. Keys: ← → aim, ↑ ↓ move where you touch the pen, hold `Space` for power and let go to flick.
+3. The flick is a finger hitting one point of the pen: at the middle it pushes straight, near an end it spins. The same finger moves a light pen faster and a heavy pen with more momentum.
+4. Pens slide with real (Coulomb) friction worked out along the pen, so a spinning pen curves; they bounce off each other with a little grip, which turns them.
+5. A pen falls when its middle goes past the edge, so a pen hanging over the edge is still in. It tips off and drops to the floor.
+6. If the other pen fell, you win the point. If your own pen fell (even if both fell), the other player wins the point. If none fell, the turn passes.
+7. The first to 3 (or 5) points wins. The pens go back to their starting places after each point, and the first turn alternates.
 
 ### 08 Rubber Band Shooting (রাবার ব্যান্ড শুটিং)
 1. Touch the hand, pull back and let go. Pull further for more power. An optional aim guide shows the first part of the path.

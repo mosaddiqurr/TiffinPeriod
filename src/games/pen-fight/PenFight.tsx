@@ -1,306 +1,259 @@
-import Matter from 'matter-js';
-import type { Scene, View } from '../../engine/GameCanvas';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GameProps } from '../../platform/registry';
-import { useT, fmtNum, type StringTable } from '../../platform/i18n';
-import { sfx, vibrate } from '../../platform/audio';
-import { createRng, type Rng } from '../../engine/rng';
-import { FloatTexts, Particles } from '../../engine/particles';
-import { GameShell, type PadDef, type ShellConfig, type ShellResult, type ShellScene } from '../../components/GameShell';
-import { BENCH, PEN, PenAI, PenWorld, START, type Flick, type PenPose } from './model';
+import { useT, type StringTable } from '../../platform/i18n';
+import { UI } from '../../platform/strings';
+import { recordResult, type Outcome } from '../../platform/scores';
+import { sfx, unlockAudio } from '../../platform/audio';
+import { readJSON, writeJSON } from '../../platform/storage';
+import { DifficultySeg, ModeSeg, Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames, type Difficulty, type Mode } from '../../components/ui';
+import { KIT } from './desk3d';
+import { PenFightGame, powerColor, type PFEnd, type PFHud } from './game';
+import type { PenId } from './model';
+import './pen-fight.css';
 
-const S: StringTable<'title' | 'lede' | 'r1' | 'r2' | 'r3' | 'r4' | 'turn' | 'aim' | 'thinking' | 'point' | 'won' | 'score' | 'flicks' | 'target' | 'pts' | 'keys'> = {
+// Pen Fight in 3D: two school pens on an old wooden bench. Touch your pen, pull back, let go.
+// Knock the other pen off the desk; if yours falls, the point goes to the other side.
+
+type K =
+  | 'title' | 'lede' | 'r1' | 'r2' | 'r3' | 'r4' | 'r5' | 'keys' | 'target' | 'pts' | 'yourPen' | 'oppPen' | 'p2Pen'
+  | 'classic' | 'classicSub' | 'gel' | 'gelSub' | 'speed' | 'weight' | 'grip'
+  | 'turn' | 'yourTurn' | 'thinking' | 'touch' | 'power' | 'point' | 'selfOut' | 'won' | 'score' | 'flicks' | 'selfOuts' | 'noGl' | 'round';
+
+const S: StringTable<K> = {
   en: {
-    title: 'Pen Fight', lede: 'Two pens on the bench. One flick at a time. Push the other pen off!',
-    r1: 'On your turn, touch YOUR pen, pull back and let go. The arrow shows the direction and the power.', r2: 'Flick near the end of the pen to spin it. Flick the middle to push it straight.',
-    r3: 'If the other pen falls off the bench, you win the point. If your own pen falls, the other player wins the point.', r4: 'The first to the target score wins.',
-    turn: '{name}: your turn', aim: 'Touch your pen, pull back, let go', thinking: 'The computer is thinking…', point: 'Point to {name}!', won: '{name} wins the pen fight!', score: 'Score', flicks: 'Flicks', target: 'Points to win', pts: '{n} points', keys: 'Keys: ← → aim, ↑ ↓ grab point, hold Space for power',
+    title: 'Pen Fight', lede: 'Two pens on the last bench. One flick each. Knock theirs off, keep yours on.',
+    r1: 'On your turn, touch YOUR pen (it glows), pull back and let go. The pen shoots the opposite way.',
+    r2: 'Pull further for more power. The band, the arrow and the number by your finger show how hard.',
+    r3: 'Flick the middle of the pen to push it straight. Flick near an end to spin it.',
+    r4: 'A pen falls when its middle goes past the edge, so a pen hanging over the edge is still in.',
+    r5: 'Knock the other pen off and the point is yours. If your own pen falls, the point goes to the other side.',
+    keys: 'Keys: ← → aim · ↑ ↓ where you touch the pen · hold Space for power, let go to flick',
+    target: 'Points to win', pts: '{n} points', yourPen: 'Your pen', oppPen: 'Computer’s pen', p2Pen: '{name}’s pen',
+    classic: 'Classic ballpoint', classicSub: 'The white six-sided school pen. Light and quick: long shots, but easy to send off yourself.',
+    gel: 'Gel pen', gelSub: 'Clear barrel, rubber grip. Heavy: slides less, hits harder, grips the desk.',
+    speed: 'Speed', weight: 'Weight', grip: 'Grip',
+    turn: '{name}: your turn', yourTurn: 'Your turn', thinking: 'Computer is aiming…', touch: 'Touch your pen · pull back · let go',
+    power: 'Power', point: 'Point to {name}!', selfOut: '{name}’s own pen fell!', won: '{name} wins the pen fight!',
+    score: 'Score', flicks: 'Flicks', selfOuts: 'Own pen fell', noGl: 'This game needs 3D graphics (WebGL). Please try another browser or turn on hardware acceleration.', round: 'Round {n}',
   },
   bn: {
-    title: 'কলম যুদ্ধ', lede: 'বেঞ্চে দুটো কলম। পালা করে টোকা। অন্যটাকে ফেলে দাও!',
-    r1: 'তোমার পালায় নিজের কলমে আঙুল রাখো, পেছনে টেনে ছেড়ে দাও। তীর দেখাবে দিক আর জোর।', r2: 'কলমের মাথার দিকে টোকা দিলে ঘুরবে। মাঝখানে দিলে সোজা যাবে।',
-    r3: 'অন্য কলম বেঞ্চ থেকে পড়লে পয়েন্ট তোমার। নিজের কলম পড়লে পয়েন্ট অন্যজনের।', r4: 'যে আগে লক্ষ্য পয়েন্টে পৌঁছাবে, সে জিতবে।',
-    turn: '{name}: তোমার পালা', aim: 'কলমে আঙুল রাখো, টেনে ছাড়ো', thinking: 'কম্পিউটার ভাবছে…', point: 'পয়েন্ট {name}-এর!', won: '{name} কলম যুদ্ধে জিতেছে!', score: 'পয়েন্ট', flicks: 'টোকা', target: 'জিততে পয়েন্ট', pts: '{n} পয়েন্ট', keys: 'কী-বোর্ড: ← → দিক, ↑ ↓ টোকার জায়গা, স্পেস চেপে জোর',
+    title: 'কলম যুদ্ধ', lede: 'শেষ বেঞ্চে দুটো কলম। পালা করে টোকা। ওরটা ফেলো, নিজেরটা রাখো।',
+    r1: 'তোমার পালায় নিজের কলমে (যেটা জ্বলছে) আঙুল রাখো, পেছনে টেনে ছেড়ে দাও। কলম উল্টো দিকে ছুটবে।',
+    r2: 'যত বেশি টানবে তত জোর। টানার ফিতা, তীর আর আঙুলের পাশের সংখ্যা জোর দেখায়।',
+    r3: 'কলমের মাঝখানে টোকা দিলে সোজা যাবে। মাথার দিকে দিলে ঘুরবে।',
+    r4: 'কলমের মাঝখান বেঞ্চের কিনারা পার হলে তবেই পড়ে। কিনারায় ঝুলে থাকলে এখনো খেলায় আছে।',
+    r5: 'অন্য কলম ফেলে দিলে পয়েন্ট তোমার। নিজের কলম পড়লে পয়েন্ট অন্যজনের।',
+    keys: 'কী-বোর্ড: ← → দিক · ↑ ↓ কলমের কোথায় টোকা · স্পেস চেপে জোর, ছেড়ে দিলে টোকা',
+    target: 'জিততে পয়েন্ট', pts: '{n} পয়েন্ট', yourPen: 'তোমার কলম', oppPen: 'কম্পিউটারের কলম', p2Pen: '{name}-এর কলম',
+    classic: 'সাদা বলপেন', classicSub: 'স্কুলের চেনা ছয়-কোনা সাদা কলম। হালকা আর দ্রুত: দূরে যায়, কিন্তু নিজেই পড়ে যেতে পারে।',
+    gel: 'জেল পেন', gelSub: 'স্বচ্ছ বডি, রাবার গ্রিপ। ভারী: কম পিছলায়, জোরে ধাক্কা দেয়, বেঞ্চ আঁকড়ে থাকে।',
+    speed: 'গতি', weight: 'ওজন', grip: 'গ্রিপ',
+    turn: '{name}-এর পালা', yourTurn: 'তোমার পালা', thinking: 'কম্পিউটার তাক করছে…', touch: 'কলমে আঙুল রাখো · পেছনে টানো · ছাড়ো',
+    power: 'জোর', point: 'পয়েন্ট {name}-এর!', selfOut: '{name}-এর নিজের কলম পড়ে গেছে!', won: '{name} কলম যুদ্ধে জিতেছে!',
+    score: 'পয়েন্ট', flicks: 'টোকা', selfOuts: 'নিজের কলম পড়েছে', noGl: 'এই খেলার জন্য ৩ডি গ্রাফিক্স (WebGL) লাগে। অন্য ব্রাউজারে চেষ্টা করো।', round: 'রাউন্ড {n}',
   },
 };
-type Txt = ReturnType<typeof useT<'turn' | 'aim' | 'thinking' | 'point' | 'won' | 'score' | 'flicks'>>;
-const FONT = '"Baloo Da 2", sans-serif';
-const CAPS = ['#c0392b', '#1f4e9c'];
 
-class PenScene implements Scene, ShellScene {
-  designW = 1000;
-  designH = 630;
-  onOver?: (r: ShellResult) => void;
-  private w = new PenWorld(START);
-  private turn = 0;
-  private phase: 'aim' | 'moving' | 'point' | 'done' = 'aim';
-  private phaseT = 0;
-  private drag: { t: number; x: number; y: number } | null = null;
-  private kb = { dir: 0, t: 0, power: 0, charging: false, used: false };
-  private scores = [0, 0];
-  private flicks = [0, 0];
-  private ai: PenAI | null;
-  private aiPlanning = false;
-  private fx = new Particles(200);
-  private texts = new FloatTexts();
-  private fall: Array<{ pose: PenPose; i: number; t: number }> = [];
-  private lastHit = 0;
-  private target: number;
-  private starter = 0;
-
-  constructor(private cfg: ShellConfig, private tx: Txt, rng: Rng) {
-    this.ai = cfg.mode === 'ai' ? new PenAI(1, cfg.diff, rng) : null;
-    this.target = Number(cfg.opts.target ?? 3);
-    this.resetKb();
-    onCollide(this.w, () => this.hit());
-  }
-
-  private hit() {
-    if (this.w.engine.timing.timestamp - this.lastHit < 120) return;
-    this.lastHit = this.w.engine.timing.timestamp;
-    sfx('click', { pitch: 1.6, gain: 0.8 });
-  }
-
-  private resetKb() {
-    const me = this.w.pose(this.turn), op = this.w.pose(1 - this.turn);
-    this.kb = { dir: Math.atan2(op.y - me.y, op.x - me.x), t: 0.2, power: 0, charging: false, used: false };
-  }
-
-  private isHuman(i: number) {
-    return !(this.ai && i === 1);
-  }
-
-  control(_player: number, action: string, down: boolean) {
-    if (this.phase !== 'aim' || !this.isHuman(this.turn)) return;
-    if (action === 'left' && down) { this.kb.dir -= 0.08; this.kb.used = true; }
-    if (action === 'right' && down) { this.kb.dir += 0.08; this.kb.used = true; }
-    if (action === 'up' && down) { this.kb.t = Math.min(0.45, this.kb.t + 0.1); this.kb.used = true; }
-    if (action === 'down' && down) { this.kb.t = Math.max(-0.45, this.kb.t - 0.1); this.kb.used = true; }
-    if (action === 'power') {
-      this.kb.used = true;
-      if (down) { this.kb.charging = true; this.kb.power = 0; }
-      else if (this.kb.charging) { this.kb.charging = false; this.doFlick({ t: this.kb.t, dir: this.kb.dir, power: Math.max(0.15, this.kb.power) }); }
-    }
-  }
-
-  pointerDown(x: number, y: number) {
-    if (this.phase !== 'aim' || !this.isHuman(this.turn)) return;
-    const g = this.w.grabAt(this.turn, x, y);
-    if (g !== null) this.drag = { t: g, x, y };
-  }
-  pointerMove(x: number, y: number) {
-    if (this.drag) { this.drag.x = x; this.drag.y = y; }
-  }
-  pointerUp(x: number, y: number) {
-    if (!this.drag) return;
-    const f = this.dragFlick(x, y);
-    this.drag = null;
-    if (f) this.doFlick(f);
-  }
-
-  private grabPoint(i: number, t: number) {
-    const p = this.w.pose(i);
-    return { x: p.x + Math.cos(p.angle) * t * PEN.len, y: p.y + Math.sin(p.angle) * t * PEN.len };
-  }
-
-  private dragFlick(x: number, y: number): Flick | null {
-    if (!this.drag) return null;
-    const g = this.grabPoint(this.turn, this.drag.t);
-    const dx = g.x - x, dy = g.y - y;
-    const len = Math.hypot(dx, dy);
-    if (len < 18) return null;
-    return { t: this.drag.t, dir: Math.atan2(dy, dx), power: Math.min(1, len / 170) };
-  }
-
-  private doFlick(f: Flick) {
-    this.w.flick(this.turn, f);
-    this.flicks[this.turn]++;
-    this.phase = 'moving';
-    this.phaseT = 0;
-    sfx('click', { pitch: 0.7 + f.power * 0.6 });
-    vibrate(15);
-  }
-
-  update(dt: number) {
-    this.fx.update(dt);
-    this.texts.update(dt);
-    this.fall = this.fall.filter((f) => (f.t += dt) < 0.8);
-    this.phaseT += dt;
-    if (this.phase === 'aim') {
-      if (this.kb.charging) this.kb.power = Math.min(1, this.kb.power + dt * 0.9);
-      if (!this.isHuman(this.turn) && this.ai) {
-        if (!this.aiPlanning && this.phaseT > 0.4) { this.ai.start([this.w.pose(0), this.w.pose(1)]); this.aiPlanning = true; }
-        if (this.aiPlanning && this.phaseT > 0.9) {
-          const f = this.ai.work(10);
-          if (f) { this.aiPlanning = false; this.doFlick(f); }
-        }
-      }
-      return;
-    }
-    if (this.phase === 'moving') {
-      const before = [...this.w.out];
-      const steps = Math.round((dt * 1000) / (1000 / 120));
-      for (let s = 0; s < Math.max(1, steps); s++) this.w.step();
-      this.w.out.forEach((o, i) => {
-        if (o && !before[i]) {
-          const b = this.w.pens[i];
-          this.fall.push({ pose: { x: b.position.x, y: b.position.y, angle: b.angle }, i, t: 0 });
-          sfx('thud', { pitch: 1.5 });
-        }
-      });
-      if ((this.phaseT > 0.3 && this.w.settled()) || this.phaseT > 6) this.resolve();
-      return;
-    }
-    if (this.phase === 'point' && this.phaseT > 1.6) {
-      if (this.scores.some((s) => s >= this.target)) this.finish();
-      else this.newRound();
-    }
-  }
-
-  private resolve() {
-    const me = this.turn, op = 1 - me;
-    const [oOut, mOut] = [this.w.out[op], this.w.out[me]];
-    let winner: number | null = null;
-    if (mOut) winner = op;          // your own pen fell (even if both fell)
-    else if (oOut) winner = me;
-    if (winner === null) {
-      this.turn = op;
-      this.phase = 'aim';
-      this.phaseT = 0;
-      this.resetKb();
-      return;
-    }
-    this.scores[winner]++;
-    this.texts.add(500, 300, this.tx('point', { name: this.cfg.names[winner] }), '#ffe27a', 40, 1.6);
-    sfx(this.isHuman(winner) ? 'good' : 'bad');
-    if (this.isHuman(winner)) this.fx.burst(500, 300, 26, { colors: ['#e3127d', '#ffc20e', '#009e96', '#fff'], shape: 'rect', speed: 340, size: 8, gravity: 300, max: 1.2 });
-    this.phase = 'point';
-    this.phaseT = 0;
-  }
-
-  private newRound() {
-    this.w = new PenWorld(START);
-    onCollide(this.w, () => this.hit());
-    this.starter = 1 - this.starter;
-    this.turn = this.starter;
-    this.phase = 'aim';
-    this.phaseT = 0;
-    this.resetKb();
-  }
-
-  private finish() {
-    this.phase = 'done';
-    const w = this.scores[0] > this.scores[1] ? 0 : 1;
-    const n = (v: number) => fmtNum(v, this.cfg.lang);
-    this.onOver?.({
-      outcome: this.cfg.mode === 'ai' ? (w === 0 ? 'win' : 'loss') : 'none',
-      title: this.tx('won', { name: this.cfg.names[w] }),
-      rows: [
-        [this.tx('score'), `${n(this.scores[0])} — ${n(this.scores[1])}`],
-        [`${this.cfg.names[0]} — ${this.tx('flicks')}`, this.flicks[0]],
-        [`${this.cfg.names[1]} — ${this.tx('flicks')}`, this.flicks[1]],
-      ],
-      score: this.cfg.mode === 'ai' ? this.scores[0] - this.scores[1] : undefined,
-      achievements: [...(this.cfg.mode === 'ai' && w === 0 ? ['pf-win'] : []), ...(this.cfg.mode === 'ai' && w === 0 && this.cfg.diff === 'hard' ? ['pf-hard'] : [])],
-    });
-  }
-
-  render(ctx: CanvasRenderingContext2D, v: View) {
-    // Classroom floor
-    ctx.fillStyle = '#5b4636';
-    ctx.fillRect(v.left, v.top, v.right - v.left, v.bottom - v.top);
-    // Bench top with wood grain and old carvings
-    const { x, y, w, h } = BENCH;
-    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x + 8, y + 12, w, h);
-    const g = ctx.createLinearGradient(0, y, 0, y + h);
-    g.addColorStop(0, '#b98552'); g.addColorStop(1, '#a5713f');
-    ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
-    ctx.strokeStyle = 'rgba(90, 55, 25, 0.22)'; ctx.lineWidth = 2;
-    for (let i = 0; i < 18; i++) { const yy = y + 14 + i * 26; ctx.beginPath(); ctx.moveTo(x, yy); ctx.bezierCurveTo(x + w * 0.3, yy + 8, x + w * 0.6, yy - 8, x + w, yy + 3); ctx.stroke(); }
-    ctx.strokeStyle = '#7a4a22'; ctx.lineWidth = 6; ctx.strokeRect(x, y, w, h);
-    ctx.fillStyle = 'rgba(70, 40, 15, 0.35)'; ctx.font = `700 30px ${FONT}`; ctx.textAlign = 'center';
-    ctx.fillText('রাফি + মিতু', x + w * 0.78, y + h * 0.86);
-    ctx.beginPath(); ctx.arc(x + w * 0.15, y + h * 0.18, 26, 0, 6.283); ctx.strokeStyle = 'rgba(70, 40, 15, 0.3)'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = 'rgba(31, 58, 147, 0.25)'; ctx.beginPath(); ctx.ellipse(x + w * 0.5, y + h * 0.15, 22, 12, 0.4, 0, 6.283); ctx.fill();
-    // Pens
-    this.w.pens.forEach((b, i) => { if (!this.w.out[i]) drawPen(ctx, b.position.x, b.position.y, b.angle, CAPS[i], 1); });
-    for (const f of this.fall) drawPen(ctx, f.pose.x, f.pose.y, f.pose.angle + f.t * 3, CAPS[f.i], 1 - f.t);
-    // Aim arrow
-    if (this.phase === 'aim' && this.isHuman(this.turn)) {
-      let flick: Flick | null = null;
-      if (this.drag) flick = this.dragFlick(this.drag.x, this.drag.y);
-      else if (this.kb.used) flick = { t: this.kb.t, dir: this.kb.dir, power: this.kb.charging ? this.kb.power : 0.3 };
-      const gp = this.grabPoint(this.turn, this.drag?.t ?? this.kb.t);
-      ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(gp.x, gp.y, 7, 0, 6.283); ctx.fill();
-      if (flick) {
-        const L = 40 + flick.power * 150;
-        const ex = gp.x + Math.cos(flick.dir) * L, ey = gp.y + Math.sin(flick.dir) * L;
-        ctx.strokeStyle = `rgba(255, ${Math.round(230 - flick.power * 180)}, 60, 0.95)`; ctx.lineWidth = 6; ctx.lineCap = 'round';
-        ctx.setLineDash([10, 8]); ctx.beginPath(); ctx.moveTo(gp.x, gp.y); ctx.lineTo(ex, ey); ctx.stroke(); ctx.setLineDash([]);
-        ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex - Math.cos(flick.dir - 0.4) * 18, ey - Math.sin(flick.dir - 0.4) * 18); ctx.lineTo(ex - Math.cos(flick.dir + 0.4) * 18, ey - Math.sin(flick.dir + 0.4) * 18); ctx.closePath(); ctx.fillStyle = ctx.strokeStyle; ctx.fill();
-      }
-    }
-    this.fx.draw(ctx);
-    this.texts.draw(ctx, FONT);
-    // HUD
-    ctx.textBaseline = 'middle';
-    for (const i of [0, 1]) {
-      const label = `${this.cfg.names[i]}  ${fmtNum(this.scores[i], this.cfg.lang)}`;
-      ctx.font = `800 22px ${FONT}`;
-      const tw = ctx.measureText(label).width + 26;
-      const hx = i === 0 ? BENCH.x : BENCH.x + BENCH.w - tw;
-      ctx.fillStyle = CAPS[i]; ctx.beginPath(); ctx.roundRect?.(hx, 22, tw, 38, 19); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.fillText(label, hx + 13, 42);
-    }
-    const msg = this.phase === 'aim' ? (this.isHuman(this.turn) ? this.tx('turn', { name: this.cfg.names[this.turn] }) : this.tx('thinking')) : '';
-    if (msg) {
-      ctx.font = `700 20px ${FONT}`; ctx.textAlign = 'center'; ctx.fillStyle = '#fff6df';
-      ctx.fillText(msg, 500, 42);
-      if (this.isHuman(this.turn)) { ctx.font = `600 16px ${FONT}`; ctx.fillText(this.tx('aim'), 500, BENCH.y + BENCH.h + 40); }
-    }
-  }
-}
-
-/** Click sound when the pens touch. */
-function onCollide(w: PenWorld, fn: () => void) {
-  Matter.Events.on(w.engine, 'collisionStart', fn);
-}
-
-function drawPen(ctx: CanvasRenderingContext2D, x: number, y: number, a: number, cap: string, alpha: number) {
-  ctx.save();
-  ctx.globalAlpha = Math.max(0, alpha);
-  ctx.translate(x, y);
-  ctx.rotate(a);
-  ctx.scale(alpha < 1 ? 0.6 + alpha * 0.4 : 1, alpha < 1 ? 0.6 + alpha * 0.4 : 1);
-  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.roundRect?.(-PEN.len / 2 + 4, -PEN.wid / 2 + 6, PEN.len, PEN.wid, 7); ctx.fill();
-  const g = ctx.createLinearGradient(0, -PEN.wid / 2, 0, PEN.wid / 2);
-  g.addColorStop(0, '#ffffff'); g.addColorStop(0.5, '#e9ecef'); g.addColorStop(1, '#c9ced3');
-  ctx.fillStyle = g; ctx.beginPath(); ctx.roundRect?.(-PEN.len / 2, -PEN.wid / 2, PEN.len - 26, PEN.wid, 6); ctx.fill();
-  ctx.strokeStyle = 'rgba(0,0,0,0.15)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-PEN.len / 2 + 6, 0); ctx.lineTo(PEN.len / 2 - 32, 0); ctx.stroke();
-  ctx.fillStyle = cap; ctx.beginPath(); ctx.roundRect?.(PEN.len / 2 - 44, -PEN.wid / 2 - 1, 44, PEN.wid + 2, 7); ctx.fill();
-  ctx.fillRect(PEN.len / 2 - 40, -PEN.wid / 2 - 5, 30, 4);
-  ctx.fillStyle = cap; ctx.beginPath(); ctx.arc(-PEN.len / 2 + 3, 0, 4, 0, 6.283); ctx.fill();
-  ctx.restore();
-}
+const STATS: Record<PenId, [number, number, number]> = { classic: [5, 2, 2], gel: [3, 5, 4] };
 
 export default function PenFight({ onExit }: GameProps) {
   const t = useT(S);
-  const pads = (): PadDef[] => [
-    { player: 0, action: 'left', label: '←', area: 'bl', hidden: true, keys: ['ArrowLeft', 'KeyA'] },
-    { player: 0, action: 'right', label: '→', area: 'bl', hidden: true, keys: ['ArrowRight', 'KeyD'] },
-    { player: 0, action: 'up', label: '↑', area: 'bl', hidden: true, keys: ['ArrowUp', 'KeyW'] },
-    { player: 0, action: 'down', label: '↓', area: 'bl', hidden: true, keys: ['ArrowDown', 'KeyS'] },
-    { player: 0, action: 'power', label: 'Space', area: 'bl', hidden: true, keys: ['Space'] },
-  ];
+  const u = useT(UI);
+  const [n1, n2] = usePlayerNames();
+  const [mode, setMode] = useState<Mode>('ai');
+  const [diff, setDiff] = useState<Difficulty>('medium');
+  const [target, setTarget] = useState(3);
+  const [pens, setPensState] = useState<[PenId, PenId]>(() => readJSON<[PenId, PenId]>('pf.pens', ['classic', 'gel']));
+  const setPens = (p: [PenId, PenId]) => { setPensState(p); writeJSON('pf.pens', p); };
+  const [matchId, setMatchId] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [hud, setHud] = useState<PFHud | null>(null);
+  const [done, setDone] = useState<{ e: PFEnd; outcome: Outcome } | null>(null);
+  const [glError, setGlError] = useState(false);
+  const hostRef = useRef<HTMLDivElement>(null);
+  const gameRef = useRef<PenFightGame | null>(null);
+  const names: [string, string] = mode === 'ai' ? [u('you'), u('computer')] : [n1, n2];
+  const cfgRef = useRef({ mode, diff, target, pens, names });
+  cfgRef.current = { mode, diff, target, pens, names };
+
+  const rules = [t('r1'), t('r2'), t('r3'), t('r4'), t('r5')];
+  const help = <><ol>{rules.map((r, i) => <li key={i}>{i === 0 ? <b>{r}</b> : r}</li>)}</ol><p className="hide-touch" style={{ fontSize: 14, color: 'var(--ink-soft)' }}>{t('keys')}</p></>;
+
+  const start = useCallback(() => {
+    unlockAudio();
+    sfx('bell', { gain: 0.5 });
+    setDone(null);
+    setHud(null);
+    setPaused(false);
+    setGlError(false);
+    setMatchId((m) => m + 1);
+  }, []);
+
+  useEffect(() => {
+    if (matchId === 0 || !hostRef.current) return;
+    const c = cfgRef.current;
+    let g: PenFightGame;
+    try {
+      g = new PenFightGame(hostRef.current, { mode: c.mode === 'local2p' ? 'local2p' : 'ai', diff: c.diff, pens: c.pens, target: c.target }, {
+        onHud: setHud,
+        onHidden: () => setPaused(true),
+        onOver: (e) => {
+          const vsAI = c.mode === 'ai';
+          const outcome: Outcome = vsAI ? (e.winner === 0 ? 'win' : 'loss') : 'none';
+          recordResult('pen-fight', { outcome, score: vsAI ? e.scores[0] - e.scores[1] : undefined }, () => [
+            ...(vsAI && e.winner === 0 ? ['pf-win'] : []),
+            ...(vsAI && e.winner === 0 && c.diff === 'hard' ? ['pf-hard'] : []),
+          ]);
+          window.setTimeout(() => setDone({ e, outcome }), 600);
+        },
+      });
+    } catch (err) {
+      console.error('[pen-fight] WebGL failed', err);
+      setGlError(true);
+      return;
+    }
+    gameRef.current = g;
+    (window as unknown as { __penFight?: PenFightGame }).__penFight = g;
+    return () => {
+      g.dispose();
+      if (gameRef.current === g) gameRef.current = null;
+      delete (window as unknown as { __penFight?: PenFightGame }).__penFight;
+    };
+  }, [matchId]);
+
+  useEffect(() => { gameRef.current?.setPaused(paused || !!done); }, [paused, done]);
+
+  useGameBar({ onPause: matchId > 0 && !done ? () => setPaused(true) : undefined, help }, [matchId, !!done, t.lang]);
+
+  if (matchId === 0) {
+    const pick = (side: 0 | 1, label: string) => (
+      <>
+        <div className="opt-label">{label}</div>
+        <div className="pf-pens" role="radiogroup" aria-label={label}>
+          {(['classic', 'gel'] as PenId[]).map((id) => (
+            <button key={id} type="button" role="radio" aria-checked={pens[side] === id} className="pf-pen-opt" data-testid={`pen-${side}-${id}`}
+              onClick={() => { if (pens[side] !== id) { sfx('click'); const p: [PenId, PenId] = [...pens]; p[side] = id; setPens(p); } }}>
+              <PenArt id={id} cap={KIT[side].cap} />
+              <b>{t(id)}</b>
+              <small>{t(id === 'classic' ? 'classicSub' : 'gelSub')}</small>
+              <span className="pf-stats">
+                {(['speed', 'weight', 'grip'] as const).map((k, i) => (
+                  <span key={k}><em>{t(k)}</em><i>{Array.from({ length: 5 }, (_, j) => <s key={j} className={j < STATS[id][i] ? 'on' : ''} />)}</i></span>
+                ))}
+              </span>
+              {pens[side] === id && <span className="pf-check" aria-hidden="true">✓</span>}
+            </button>
+          ))}
+        </div>
+      </>
+    );
+    return (
+      <div className="pf-root">
+        <Overlay label={t('title')}>
+          <div className="sheet ruled" data-testid="setup">
+            <h2>{t('title')}</h2>
+            <p className="lede">{t('lede')}</p>
+            <ol>{rules.map((r, i) => <li key={i}>{i === 0 ? <b>{r}</b> : r}</li>)}</ol>
+            <ModeSeg value={mode} onChange={setMode} modes={['ai', 'local2p']} />
+            {mode === 'ai' && <DifficultySeg value={diff} onChange={setDiff} />}
+            {pick(0, mode === 'ai' ? t('yourPen') : t('p2Pen', { name: n1 }))}
+            {pick(1, mode === 'ai' ? t('oppPen') : t('p2Pen', { name: n2 }))}
+            <div className="opt-label">{t('target')}</div>
+            <Seg label={t('target')} value={target} onChange={setTarget} options={[3, 5].map((v) => ({ v, label: t('pts', { n: v }) }))} />
+            <p className="hide-touch" style={{ margin: '10px 0 0', fontSize: 14, color: 'var(--ink-soft)' }}>{t('keys')}</p>
+            <div className="actions"><button className="btn big" onClick={start} data-testid="start">{u('start')}</button></div>
+          </div>
+        </Overlay>
+      </div>
+    );
+  }
+
+  const h = hud;
+  const myTurn = !!h && h.phase === 'aim' && !h.thinking;
+  const pw = h?.drag?.power ?? 0;
   return (
-    <GameShell
-      gameId="pen-fight" onExit={onExit} title={t('title')} lede={t('lede')}
-      rules={[<b key="r1">{t('r1')}</b>, t('r2'), t('r3'), t('r4')]}
-      modes={['ai', 'local2p']} difficulty={(m) => m === 'ai'}
-      options={[{ key: 'target', label: t('target'), def: 3, choices: [3, 5].map((v) => ({ v, label: t('pts', { n: v }) })) }]}
-      hint={t('keys')}
-      createScene={(cfg: ShellConfig) => new PenScene(cfg, t, createRng())}
-      pads={pads}
-      preferLandscape
-    />
+    <div className="pf-root playing">
+      <div className="pf-host" ref={hostRef} />
+      {glError && <div className="pf-nogl">{t('noGl')}</div>}
+      <div className="pf-hud" aria-live="polite">
+        {[0, 1].map((i) => (
+          <div key={i} className={`pf-chip ${h?.turn === i && h.phase === 'aim' ? 'on' : ''} ${i ? 'right' : ''}`} style={{ ['--cap' as string]: KIT[i].cap }} data-testid={`score-${i}`}>
+            <PenArt id={cfgRef.current.pens[i]} cap={KIT[i].cap} small />
+            <span className="pf-name">{names[i]}</span>
+            <span className="pf-pips">{Array.from({ length: target }, (_, j) => <i key={j} className={j < (h?.scores[i] ?? 0) ? 'on' : ''} />)}</span>
+            <b>{t.n(h?.scores[i] ?? 0)}</b>
+          </div>
+        ))}
+      </div>
+      {h && h.phase === 'aim' && (
+        <div className={`pf-turn ${h.thinking ? 'ai' : ''}`} style={{ ['--cap' as string]: KIT[h.turn].cap }}>
+          {h.thinking ? t('thinking') : mode === 'ai' ? t('yourTurn') : t('turn', { name: names[h.turn] })}
+        </div>
+      )}
+      {myTurn && !h?.drag && <div className="pf-touch" data-testid="touch-hint"><span className="pf-hand" aria-hidden="true">👆</span>{t('touch')}</div>}
+      {h?.drag && (
+        <>
+          {h.drag.x >= 0 && (
+            <div className="pf-power-tag" style={{ left: h.drag.x, top: h.drag.y, ['--pc' as string]: powerColor(pw) }} data-testid="power-tag">
+              <b>{t.n(Math.round(pw * 100))}%</b>
+            </div>
+          )}
+          <div className="pf-power" data-testid="power-bar" style={{ ['--pc' as string]: powerColor(pw) }}>
+            <span>{t('power')}</span>
+            <div className="pf-power-track"><div className="pf-power-fill" style={{ width: `${Math.round(pw * 100)}%` }} /><i style={{ left: '40%' }} /><i style={{ left: '75%' }} /></div>
+            <b>{t.n(Math.round(pw * 100))}%</b>
+          </div>
+        </>
+      )}
+      {h?.phase === 'point' && h.point !== null && (
+        <div className="pf-banner" style={{ ['--cap' as string]: KIT[h.point].cap }}>
+          {h.selfOut && <small>{t('selfOut', { name: names[1 - h.point] })}</small>}
+          <b>{t('point', { name: names[h.point] })}</b>
+        </div>
+      )}
+      {paused && !done && <PauseMenu onResume={() => setPaused(false)} onRestart={start} onQuit={onExit} help={help} />}
+      {done && (
+        <ReportCard
+          outcome={done.outcome}
+          title={t('won', { name: names[done.e.winner] })}
+          rows={[
+            [t('score'), `${t.n(done.e.scores[0])} — ${t.n(done.e.scores[1])}`],
+            [`${names[0]} — ${t('flicks')}`, done.e.flicks[0]],
+            [`${names[1]} — ${t('flicks')}`, done.e.flicks[1]],
+            ...(done.e.selfOuts[0] || done.e.selfOuts[1] ? [[t('selfOuts'), `${t.n(done.e.selfOuts[0])} — ${t.n(done.e.selfOuts[1])}`] as [string, string]] : []),
+          ]}
+          onAgain={start}
+          onSetup={() => { setMatchId(0); setDone(null); }}
+          onQuit={onExit}
+        />
+      )}
+    </div>
+  );
+}
+
+/** A drawing of each pen for the setup sheet and the score chips. */
+function PenArt({ id, cap, small }: { id: PenId; cap: string; small?: boolean }) {
+  return (
+    <svg viewBox="0 0 120 22" className={small ? 'pf-art small' : 'pf-art'} aria-hidden="true">
+      <defs>
+        <linearGradient id={`pfw-${id}-${cap}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffffff" /><stop offset="0.55" stopColor="#ebebe4" /><stop offset="1" stopColor="#c8c8bf" /></linearGradient>
+        <linearGradient id={`pfc-${id}-${cap}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffffff" stopOpacity="0.5" /><stop offset="0.4" stopColor={cap} /><stop offset="1" stopColor={cap} /></linearGradient>
+      </defs>
+      {id === 'classic' ? <>
+        <rect x="4" y="6" width="80" height="10" rx="1.5" fill={`url(#pfw-${id}-${cap})`} stroke="#b9b9b0" strokeWidth="0.6" />
+        <path d="M6 11 H82" stroke="#d2d2ca" strokeWidth="0.8" />
+        <rect x="2" y="7" width="4" height="8" rx="1" fill={cap} />
+        <rect x="80" y="5" width="36" height="12" rx="5" fill={`url(#pfc-${id}-${cap})`} />
+        <rect x="84" y="2.5" width="26" height="3" rx="1.5" fill={cap} />
+      </> : <>
+        <rect x="4" y="5.5" width="70" height="11" rx="4" fill="#dfe6ee" fillOpacity="0.7" stroke="#9aa6b2" strokeWidth="0.6" />
+        <rect x="8" y="9.5" width="70" height="3" rx="1.5" fill={cap} opacity="0.8" />
+        <rect x="58" y="5" width="22" height="12" rx="3" fill="#1d1f23" />
+        {[61, 64, 67, 70, 73, 76].map((x) => <path key={x} d={`M${x} 5 V17`} stroke="#3a3d43" strokeWidth="1" />)}
+        <rect x="80" y="4.5" width="36" height="13" rx="5.5" fill={`url(#pfc-${id}-${cap})`} />
+        <rect x="84" y="2" width="26" height="3" rx="1.5" fill="#dfe3e8" />
+        <rect x="2" y="7" width="4" height="8" rx="1.5" fill={cap} />
+      </>}
+    </svg>
   );
 }
