@@ -56,14 +56,17 @@ export class KeeperAI {
   /** Choose a dive at the moment of the kick. It sees the run-up, not the ball's flight. */
   dive(s: Shot): { x: number; y: number; speed: number } {
     const speed = 1.7 + this.skill * 1.1;
-    const recent = this.sides.slice(-5);
-    const habit = recent.length >= 3 ? recent.reduce((a, b) => a + b, 0) / recent.length : 0;
     const read = this.rng.chance(0.28 + this.skill * 0.32);
     if (read) return { x: s.x + this.rng.gauss() * 0.22, y: s.y + this.rng.gauss() * 0.18, speed };
-    // Guess, leaning toward the kicker's habit.
+    return { ...this.guess(), speed };
+  }
+  /** A guess without seeing the ball, leaning toward the kicker's habit (also the online stand-in's dive). */
+  guess(): { x: number; y: number } {
+    const recent = this.sides.slice(-5);
+    const habit = recent.length >= 3 ? recent.reduce((a, b) => a + b, 0) / recent.length : 0;
     const r = this.rng.next();
     const guessSide = r < 0.18 ? 0 : (this.rng.chance(0.5 + habit * 0.3 * this.skill) ? 1 : -1);
-    return { x: guessSide * this.rng.range(0.4, 0.85), y: this.rng.range(0.15, 0.8), speed };
+    return { x: guessSide * this.rng.range(0.4, 0.85), y: this.rng.range(0.15, 0.8) };
   }
 }
 

@@ -5,8 +5,16 @@ import { BenchFrame, PassScreen, ScoreStrip, useBench } from '../bench-kit/Bench
 import { WordArt } from '../bench-kit/art';
 import { LETTERS, blankAnswers, canReview, knownWord, scoreWords, type Answers, type Letter } from './model';
 import { sfx } from '../../platform/audio';
+import { OnlineButton, useOnlineEntry } from '../../components/online/OnlineButton';
+import { OnlineNaamDesh } from './online';
 
 export default function NaamDesh({ onExit }: GameProps) {
+  const online = useOnlineEntry();
+  if (online.open) return <div className="sport-root ruled"><OnlineNaamDesh onBack={online.close} code={online.code} /></div>;
+  return <NaamDeshLocal onExit={onExit} onOnline={online.show} />;
+}
+
+function NaamDeshLocal({ onExit, onOnline }: GameProps & { onOnline: () => void }) {
   const g = useBench('naam-desh'), t = g.text;
   const [p1, p2] = usePlayerNames();
   const [mode, setMode] = useState<Mode>('solo');
@@ -69,7 +77,7 @@ export default function NaamDesh({ onExit }: GameProps) {
       rows: [...names.map((name, i) => [name, totals[i]] as [string, number]), [t('Rounds', 'রাউন্ড'), rounds], [t('Maximum per player', 'প্রত্যেকের সর্বোচ্চ সম্ভব'), rounds * 40]] });
   }
   return <BenchFrame game={g} title={t('Naam Desh Ful Fol', 'নাম দেশ ফুল ফল')} lede={t('A letter, four columns, and a race against the bell.', 'একটা অক্ষর, চার কলাম, আর ঘণ্টার সাথে পাল্লা।')} rules={rules} onStart={start} onExit={onExit} art={<WordArt />}
-    options={<><ModeSeg value={mode} onChange={setMode} modes={['solo', 'local2p']} /><div className="opt-label">{t('Rounds', 'রাউন্ড')}</div><Seg label={t('Rounds', 'রাউন্ড')} value={rounds} onChange={setRounds} options={[3, 5, 10].map((v) => ({ v, label: g.n(v) }))} />
+    options={<><OnlineButton onClick={onOnline} /><ModeSeg value={mode} onChange={setMode} modes={['solo', 'local2p']} /><div className="opt-label">{t('Rounds', 'রাউন্ড')}</div><Seg label={t('Rounds', 'রাউন্ড')} value={rounds} onChange={setRounds} options={[3, 5, 10].map((v) => ({ v, label: g.n(v) }))} />
       <div className="opt-label">{t('Seconds per turn', 'প্রতি পালায় সেকেন্ড')}</div><Seg label={t('Timer', 'সময়')} value={seconds} onChange={setSeconds} options={[30, 60, 90].map((v) => ({ v, label: g.n(v) }))} /></>}
   ><ScoreStrip names={names} scores={scores} active={step !== 'review' ? player : undefined} n={g.n} /><div className="bench-round">{t('Round', 'রাউন্ড')} {g.n(round)} / {g.n(rounds)}</div>
     {step === 'pass' ? <PassScreen game={g} name={names[player]} onReady={() => { locked.current = false; setStep('write'); }} /> : <>

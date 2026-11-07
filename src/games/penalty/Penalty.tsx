@@ -11,6 +11,8 @@ import { defaultOpponent, getTeam, ratingOf, teamsFor } from '../../shared/teams
 import type { Bi } from '../../platform/i18n';
 import { KeeperAI, decided, goals, nextKicker, type Shootout } from './model';
 import { PenaltyScene, type KickResult } from './scene';
+import { OnlineButton, useOnlineEntry } from '../../components/online/OnlineButton';
+import { OnlinePenalty } from './online';
 import './penalty.css';
 
 const GAME = 'penalty';
@@ -119,6 +121,7 @@ export default function Penalty({ onExit }: GameProps) {
   const [chStars, setChStars] = useState<Record<string, number>>(() => readJSON('pk.ch', {}));
   const [cupNote, setCupNote] = useState<'won' | 'out' | null>(null);
   const [stars, setStars] = useState(0);
+  const online = useOnlineEntry();
   const help = <ol>{rulesList(t).map((r) => <li key={r}>{r}</li>)}</ol>;
   const name = (id: string) => x.bi(getTeam(id).name);
   const chooseMine = (id: string) => { setMine(id); setFavTeam('football', id); if (id === opp) setOpp(defaultOpponent('football', id)); };
@@ -160,6 +163,7 @@ export default function Penalty({ onExit }: GameProps) {
     setScreen('after');
   };
 
+  if (online.open) return <div className="sport-root ruled"><OnlinePenalty onBack={online.close} code={online.code} /></div>;
   if (screen === 'match' && pending) return <ShootoutMatch key={key} p={pending} onDone={done} onQuit={() => setScreen(pending.kind === 'cup' ? 'cup' : 'menu')} onRestart={() => launch({ ...pending, seed: seed() })} />;
   if (screen === 'champion' && cup) return <div className="sport-root ruled"><Championship team={cup.player} title={t('CHAMPIONS!', 'চ্যাম্পিয়ন!')} lines={[t('Nerves of steel from twelve yards.', 'বারো গজ থেকে লোহার স্নায়ু।')]} actionLabel={t('See the bracket', 'ব্র্যাকেট দেখো')} onDone={() => setScreen('cup')} /></div>;
 
@@ -204,6 +208,7 @@ export default function Penalty({ onExit }: GameProps) {
       <h2>{t('Penalty Shootout', 'পেনাল্টি শুটআউট')}</h2>
       <p className="lede">{t('Pick a corner, beat the keeper, then put on the gloves and guess right.', 'কোণ বাছো, গোলকিপারকে হারাও, তারপর গ্লাভস পরে ঠিক দিকে ঝাঁপাও।')}</p>
       <details className="bench-rules"><summary>{t('How to play', 'কীভাবে খেলবে')}</summary>{help}</details>
+      <OnlineButton onClick={online.show} />
       <div className="mode-grid">
         <ModeCard testid="mode-quick" icon="🥅" title={t('Quick Shootout', 'কুইক শুটআউট')} sub={t('Your country against theirs. Shoot and save.', 'তোমার দেশ বনাম ওদের দেশ। শট নাও, সেভ করো।')} onClick={() => setScreen('quick')} />
         <ModeCard testid="mode-challenge" icon="🎯" title={t('Challenges', 'চ্যালেঞ্জ')} sub={t('Corners, perfect fives, sudden death.', 'কোণ, পাঁচে পাঁচ, সাডেন ডেথ।')} badge={`${n(Object.keys(chStars).length)}/${n(CHALLENGES.length)}`} onClick={() => setScreen('challenges')} />

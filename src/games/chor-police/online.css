@@ -1,0 +1,37 @@
+/* Chor Police online: the room's seats and the table */
+.cp-seats { list-style: none; padding: 0; margin: 10px 0 14px; display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); width: 100%; }
+.cp-seats li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: #fffdf6; box-shadow: 0 0 0 1.5px #e4d8b8; min-width: 0; animation: ol-pop .35s ease-out; }
+.cp-seats li b { font: 800 17px var(--font-display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.cp-seats li small { margin-left: auto; color: var(--ink-soft); font-size: 13px; white-space: nowrap; }
+.cp-seats li.empty { background: transparent; box-shadow: 0 0 0 1.5px dashed #d4c69f; color: var(--ink-soft); animation: none; border: 1.5px dashed #d4c69f; box-shadow: none; }
+.cp-seat-empty { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; border: 2px dashed #c2b18b; font-weight: 800; }
+.cp-start { display: grid; gap: 8px; justify-items: start; margin-bottom: 14px; }
+.cp-room .ol-code, .cp-room .ol-share { justify-content: flex-start; }
+
+.cp-online .cp-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; margin-bottom: 6px; }
+.cp-online .cp-top .bench-round { margin: 0; }
+.cp-scores > div { gap: 6px; }
+.cp-scores > div > span { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.cp-scores em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.cp-scores .me em { font-weight: 800; }
+.cp-scores .away { opacity: .7; }
+.cp-scores b { font-size: 22px; }
+.cp-tick { font-style: normal; color: var(--green); font-weight: 800; }
+.cp-banner { margin: 0 0 10px; padding: 8px 12px; border-radius: 10px; background: #1b2433; color: #ffe27a; font-weight: 700; text-align: center; }
+.cp-online .cp-head { font: 800 clamp(22px, 4vw, 30px)/1.2 var(--font-display); color: var(--pen); margin: 8px 0 4px; text-align: center; }
+.cp-babu, .cp-online .bench-note { text-align: center; margin: 4px 0; }
+.cp-table { max-width: 640px; margin: 24px auto; }
+.cp-table .paper-chit:not(:disabled) { cursor: pointer; box-shadow: 3px 6px 0 #d9caab, 0 0 0 3px #f3b61f; }
+.cp-table .paper-chit.caught { outline: 4px solid var(--green); }
+.cp-table .paper-chit.missed { outline: 4px solid var(--pen-red); }
+.cp-final { list-style: none; padding: 0; margin: 8px 0 14px; display: grid; gap: 6px; }
+.cp-final li { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 10px; background: #fffdf6; box-shadow: 0 0 0 1px #e4d8b8; }
+.cp-final li.me { box-shadow: 0 0 0 2px var(--pen); }
+.cp-final li .cp-fname { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.cp-final li b { font: 800 20px var(--font-display); color: var(--pen); }
+@media (max-width: 700px) {
+  .cp-table { margin: 14px 4px; gap: 14px; }
+  .cp-scores b { font-size: 19px; }
+  .cp-seats { grid-template-columns: 1fr; }
+}
+.cp-secret .paper-chit { max-width: 280px; margin: 0 auto; }

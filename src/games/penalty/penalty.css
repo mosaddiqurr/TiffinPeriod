@@ -19,3 +19,15 @@
 .pk-round { display: grid; gap: 8px; }
 .pk-round > small { font-weight: 700; color: var(--ink-soft); }
 @media (max-width: 560px) { .pk-bracket { grid-template-columns: 1fr; } }
+/* Online */
+.pk-online .pk-top { gap: 5px; padding: 6px 8px 4px; }
+.pk-online .ol-oppbar { width: min(520px, 100%); box-sizing: border-box; }
+.pk-ol-board { padding: 5px 8px; }
+.pk-ol-board .pk-row.me .pk-ol-name { text-decoration: underline; text-underline-offset: 3px; }
+.pk-ol-name { flex: 1 1 0; min-width: 3em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+.pk-ol-board .pk-dots { flex: 0 1 auto; justify-content: flex-end; }
+.pk-online .pk-who { min-height: 30px; }
+.pk-online .pk-who .ol-clock { margin-left: 4px; }
+.sheet .pk-ol-board { margin: 6px auto; }
+.pk-ol-board .pk-row > b.pk-ol-name { width: auto; }
+.pk-more { color: #93a495; font-weight: 800; }

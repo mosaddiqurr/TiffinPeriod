@@ -17,10 +17,12 @@ export interface KickPlan {
   skill: number;
   pressure: number;
   keeperAI: KeeperAI;
+  /** Online: this device only chooses (the shot or the dive) and hands it over; the kick is played later with `replay`. */
+  online?: { role: 'shoot' | 'keep'; onShot?: (s: Shot) => void; onDive?: (d: { x: number; y: number }) => void };
 }
 
 export interface KickResult { outcome: Outcome; shot: Shot; keeper: { x: number; y: number } }
-type Phase = 'aim' | 'power' | 'runup' | 'flight' | 'done' | 'idle';
+export type Phase = 'aim' | 'power' | 'runup' | 'flight' | 'done' | 'idle' | 'guess' | 'locked';
 
 const GX = (x: number) => 300 + x * 190;
 const GY = (y: number) => 330 - y * 125;
@@ -50,6 +52,9 @@ export class PenaltyScene implements Scene {
   private bg: HTMLCanvasElement | null = null;
   private flashT = 0;
   private netShake = 0;
+  private forced: Outcome | null = null;
+  /** Online: whose eyes the result text is coloured for. */
+  mineRole: 'shoot' | 'keep' | null = null;
 
   constructor(private rng: Rng, private onResult: (r: KickResult) => void, private onPhase: (p: Phase) => void, homeKits: [string, string]) {
     for (let i = 0; i < 420; i++) this.crowd.push({ x: rng.range(0, 600), y: rng.range(70, 165), c: rng.chance(0.5) ? homeKits[rng.int(0, 1)] : ['#d9d2c0', '#5b6b7a', '#b0473a', '#e0b84a'][rng.int(0, 3)] });
@@ -62,7 +67,9 @@ export class PenaltyScene implements Scene {
     this.kp = { ...KEEPER_HOME };
     this.kTarget = { ...KEEPER_HOME };
     this.shot = null; this.result = null; this.commit = null;
-    this.aim = { x: 0, y: 0.5 }; this.meter = 0; this.meterT = 0; this.t = 0; this.netShake = 0;
+    this.aim = { x: 0, y: 0.5 }; this.meter = 0; this.meterT = 0; this.t = 0; this.netShake = 0; this.forced = null;
+    if (plan.online?.role === 'keep') { this.setPhase('guess'); return; }
+    if (plan.online) { this.setPhase('aim'); return; }
     sfx('whistle');
     if (plan.humanKicks) this.setPhase('aim');
     else {
@@ -74,6 +81,35 @@ export class PenaltyScene implements Scene {
 
   private setPhase(p: Phase) { this.phase = p; this.onPhase(p); }
 
+  /** Online: play a kick both players already chose; the outcome was judged by the duel. */
+  replay(plan: KickPlan, shot: Shot, dive: { x: number; y: number }, outcome: Outcome) {
+    this.plan = { ...plan, humanKicks: false, humanKeeps: false, secretDive: dive };
+    this.kp = { ...KEEPER_HOME }; this.kTarget = { ...KEEPER_HOME };
+    this.result = null; this.commit = null; this.t = 0; this.netShake = 0;
+    this.shot = shot; this.forced = outcome;
+    // The run-up leans honestly toward the shot.
+    this.tell = Math.sign(shot.x) * 0.5;
+    sfx('whistle');
+    this.setPhase('runup');
+  }
+
+  /** Online: lock what is chosen now (time ran out). Shooting: kick at the current power if the bar is running. */
+  lockNow(fallback: { shot?: Shot; dive?: { x: number; y: number } }) {
+    const o = this.plan?.online;
+    if (!o) return;
+    if (this.phase === 'power') { this.kick(); return; }
+    if ((this.phase === 'aim') && fallback.shot) { this.aim = { x: fallback.shot.x, y: fallback.shot.y }; this.shot = fallback.shot; this.setPhase('locked'); o.onShot?.(fallback.shot); return; }
+    if (this.phase === 'guess' && fallback.dive) this.guessAt(fallback.dive.x, fallback.dive.y);
+  }
+
+  private guessAt(x: number, y: number) {
+    if (this.phase !== 'guess') return;
+    this.commit = { x: Math.max(-1, Math.min(1, x)), y: Math.max(0, Math.min(1, y)), at: 0 };
+    sfx('whoosh', { gain: 0.5 });
+    this.setPhase('locked');
+    this.plan?.online?.onDive?.({ x: this.commit.x, y: this.commit.y });
+  }
+
   // ---------- Input ----------
 
   private toGoal(x: number, y: number) {
@@ -81,6 +117,7 @@ export class PenaltyScene implements Scene {
   }
 
   pointerDown(x: number, y: number) {
+    if (this.phase === 'guess') { const g = this.toGoal(x, y); this.guessAt(g.x, g.y); return; }
     if (this.phase === 'aim') { this.aiming = true; this.aim = this.toGoal(x, Math.min(y, 420)); return; }
     if (this.phase === 'power') { this.kick(); return; }
     if ((this.phase === 'runup' || this.phase === 'flight') && this.plan?.humanKeeps && !this.commit) {
@@ -94,6 +131,13 @@ export class PenaltyScene implements Scene {
   pointerUp() { if (this.phase === 'aim' && this.aiming) { this.aiming = false; this.setPhase('power'); this.meterT = 0; sfx('tick'); } }
 
   key(code: string): boolean {
+    if (this.phase === 'guess') {
+      const map: Record<string, [number, number]> = { ArrowLeft: [-0.7, 0.35], ArrowRight: [0.7, 0.35], ArrowUp: [0, 0.8], ArrowDown: [0, 0.2], KeyQ: [-0.7, 0.8], KeyE: [0.7, 0.8], KeyA: [-0.7, 0.2], KeyD: [0.7, 0.2] };
+      const m = map[code];
+      if (!m) return false;
+      this.guessAt(m[0], m[1]);
+      return true;
+    }
     if (this.phase === 'aim') {
       if (code === 'ArrowLeft') this.aim.x = Math.max(-1.1, this.aim.x - 0.08);
       else if (code === 'ArrowRight') this.aim.x = Math.min(1.1, this.aim.x + 0.08);
@@ -117,12 +161,14 @@ export class PenaltyScene implements Scene {
 
   /** Test hooks. */
   testShoot(x: number, y: number, power: number) { if (this.phase !== 'aim' && this.phase !== 'power') return false; this.aim = { x, y }; this.meter = power; this.kick(true); return true; }
+  testGuess(x: number, y: number) { if (this.phase !== 'guess') return false; this.guessAt(x, y); return true; }
   testDive(x: number, y: number) { if (!this.plan?.humanKeeps || this.commit) return false; this.commit = { x, y, at: this.t }; return true; }
 
   private kick(exact = false) {
     const p = this.plan!;
     const power = exact ? this.meter : this.meter;
     this.shot = strike(this.aim.x, this.aim.y, power, this.rng, p.pressure);
+    if (p.online) { sfx('tick'); this.setPhase('locked'); p.online.onShot?.(this.shot); return; }
     this.launch();
   }
 
@@ -175,7 +221,7 @@ export class PenaltyScene implements Scene {
       const kt = Math.max(0, Math.min(this.t, this.flight) - this.kStart);
       this.kp = diveTo(this.kTarget.x, this.kTarget.y, kt, this.kSpeed);
       if (this.t >= this.flight && !this.result) {
-        const out = judge(this.shot!, this.kp);
+        const out = this.forced ?? judge(this.shot!, this.kp);
         this.result = { outcome: out, shot: this.shot!, keeper: { ...this.kp } };
         if (out === 'goal') { this.netShake = 0.6; sfx('fanfare'); setTimeout(() => sfx('clap'), 300); }
         else if (out === 'saved') { sfx('good'); vibrate([20, 30, 20]); }
@@ -242,7 +288,7 @@ export class PenaltyScene implements Scene {
     ctx.beginPath(); ctx.moveTo(GX(-1), GY(0)); ctx.lineTo(GX(-1), GY(1)); ctx.lineTo(GX(1), GY(1)); ctx.lineTo(GX(1), GY(0)); ctx.stroke();
 
     // Aim reticle
-    if (this.phase === 'aim' || this.phase === 'power') {
+    if (this.phase === 'aim' || this.phase === 'power' || (this.phase === 'locked' && p?.online?.role === 'shoot')) {
       const x = GX(this.aim.x), y = GY(this.aim.y);
       ctx.strokeStyle = '#ffe27a'; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.stroke();
@@ -292,7 +338,7 @@ export class PenaltyScene implements Scene {
     }
 
     // Keeper's chosen dive marker (human)
-    if (p?.humanKeeps && this.commit && this.phase !== 'done') {
+    if ((p?.humanKeeps || p?.online?.role === 'keep') && this.commit && this.phase !== 'done') {
       ctx.strokeStyle = '#7CFC9A'; ctx.lineWidth = 3; ctx.setLineDash([6, 6]);
       ctx.beginPath(); ctx.arc(GX(this.commit.x), GY(this.commit.y), 20, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
     }
@@ -301,7 +347,7 @@ export class PenaltyScene implements Scene {
     if (this.result && this.flashT > 0) {
       const o = this.result.outcome;
       const txt = o === 'goal' ? 'GOAL!' : o === 'saved' ? 'SAVED!' : o === 'post' ? 'POST!' : o === 'over' ? 'OVER!' : 'WIDE!';
-      const good = p ? (o === 'goal') === p.humanKicks || (p.humanKeeps && o !== 'goal') : o === 'goal';
+      const good = this.mineRole ? (this.mineRole === 'shoot') === (o === 'goal') : p ? (o === 'goal') === p.humanKicks || (p.humanKeeps && o !== 'goal') : o === 'goal';
       ctx.font = '800 70px "Baloo Da 2", system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.strokeText(txt, 300, 500);
       ctx.fillStyle = good ? '#ffe27a' : '#ff8a80'; ctx.fillText(txt, 300, 500);
