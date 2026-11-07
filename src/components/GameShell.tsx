@@ -4,9 +4,10 @@ import { capturePointer } from '../engine/timing';
 import { useT } from '../platform/i18n';
 import { UI } from '../platform/strings';
 import { useSettings } from '../platform/settings';
+import { StartHub, useStdModes } from './StartHub';
 import { recordResult, type Outcome } from '../platform/scores';
 import { sfx } from '../platform/audio';
-import { DifficultySeg, ModeSeg, Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames, type Difficulty, type Mode } from './ui';
+import { DifficultySeg, Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames, type Difficulty, type Mode } from './ui';
 
 // A reusable frame for canvas games (Phase 2 and later).
 // It owns: the setup sheet, the canvas, touch pads, key bindings, pause,
@@ -71,6 +72,8 @@ export interface ShellConfig {
 export interface GameShellProps {
   gameId: string;
   onExit: () => void;
+  /** Shows the big "Play online" tile on the start screen. */
+  onOnline?: () => void;
   title: string;
   lede: string;
   rules: ReactNode[];
@@ -91,6 +94,7 @@ export function GameShell(p: GameShellProps) {
   const [n1, n2] = usePlayerNames();
   const [mode, setMode] = useState<Mode>(p.modes[0]);
   const [diff, setDiff] = useState<Difficulty>('medium');
+  const stdModes = useStdModes(p.modes);
   const [opts, setOpts] = useState<Record<string, string | number>>(() => Object.fromEntries((p.options ?? []).map((o) => [o.key, o.def])));
   const [phase, setPhase] = useState<'setup' | 'play' | 'result'>('setup');
   const [paused, setPaused] = useState(false);
@@ -166,11 +170,13 @@ export function GameShell(p: GameShellProps) {
     return (
       <div className={`shell-root ${p.rootClass ?? ''}`}>
         <Overlay label={p.title}>
-          <div className="sheet ruled" data-testid="setup">
-            <h2>{p.title}</h2>
-            <p className="lede">{p.lede}</p>
-            <ol>{p.rules.map((r, i) => <li key={i}>{r}</li>)}</ol>
-            {p.modes.length > 1 && <ModeSeg value={mode} onChange={setMode} modes={p.modes} />}
+          <StartHub
+            gameId={p.gameId} title={p.title} lede={p.lede}
+            rules={<ol>{p.rules.map((r, i) => <li key={i}>{r}</li>)}</ol>}
+            online={p.onOnline ? { onClick: p.onOnline } : undefined}
+            modes={stdModes} mode={mode} onMode={(m) => setMode(m as Mode)}
+            onStart={start}
+            options={<>
             {(p.difficulty?.(mode) ?? false) && <DifficultySeg value={diff} onChange={setDiff} />}
             {(p.options ?? []).filter((o) => !o.when || o.when(mode)).map((o) => (
               <div key={o.key}>
@@ -178,9 +184,9 @@ export function GameShell(p: GameShellProps) {
                 <Seg label={o.label} value={opts[o.key]} onChange={(v) => setOpts((s) => ({ ...s, [o.key]: v }))} options={o.choices} />
               </div>
             ))}
-            {p.hint && <p style={{ margin: '10px 0 0', fontSize: 14, color: 'var(--ink-soft)' }}>{p.hint}</p>}
-            <div className="actions"><button className="btn big" onClick={start} data-testid="start">{u('start')}</button></div>
-          </div>
+            {p.hint && <p className="hide-touch" style={{ margin: '10px 0 0', fontSize: 14, color: 'var(--ink-soft)' }}>{p.hint}</p>}
+            </>}
+          />
         </Overlay>
       </div>
     );

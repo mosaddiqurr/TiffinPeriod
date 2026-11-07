@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { MODE_ICON } from '../../components/ui';
 import type { GameProps } from '../../platform/registry';
 import { Seg, usePlayerNames } from '../../components/ui';
 import { BenchFrame, PassScreen, ScoreStrip, useBench } from '../bench-kit/BenchKit';
@@ -7,7 +8,6 @@ import { ChitArt } from '../bench-kit/art';
 import { sfx } from '../../platform/audio';
 import { useOnlineEntry } from '../../components/online/OnlineButton';
 import { OnlineChorPolice } from './online';
-import { PartyButton } from './PartyButton';
 
 export default function ChorPolice({ onExit }: GameProps) {
   const online = useOnlineEntry();
@@ -62,8 +62,13 @@ function ChorPoliceLocal({ onExit, onOnline }: GameProps & { onOnline: () => voi
     g.finish({ title: `${winners.join(' & ')} ${t('wins!', 'জিতেছে!')}`, outcome, rows: names.map((name, i) => [name, scores[i]]), score: mode === 'ai' ? scores[0] : undefined });
   }
   return <BenchFrame game={g} title={t('Chor Police', 'চোর-পুলিশ')} lede={t('Four chits. Two suspects. Who is hiding the Chor?', 'চার কাগজ। দুই সন্দেহভাজন। চোর কে?')} rules={rules} onStart={start} onExit={onExit} art={<ChitArt />}
-    options={<><PartyButton onClick={onOnline} /><div className="opt-label">{g.u('mode')}</div><Seg label={g.u('mode')} value={mode} onChange={setMode} options={[{ v: 'ai', label: g.u('modeAi') }, { v: 'party', label: t('4 friends · pass the device', '৪ বন্ধু · ফোন ঘুরবে') }]} />
-      <div className="opt-label">{t('Rounds', 'রাউন্ড')}</div><Seg label={t('Rounds', 'রাউন্ড')} value={rounds} onChange={setRounds} options={[3, 5, 10].map((v) => ({ v, label: g.n(v) }))} />
+    modes={[
+      { id: 'ai', label: g.u('modeAi'), sub: t('You and three computer players', 'তুমি আর তিনজন কম্পিউটার'), icon: MODE_ICON.ai },
+      { id: 'party', label: t('4 friends', '৪ বন্ধু'), sub: t('Pass one phone round', 'একটা ফোন ঘুরবে'), icon: MODE_ICON.local2p },
+    ]}
+    mode={mode} onMode={(m) => setMode(m as typeof mode)}
+    online={{ onClick: onOnline, label: t('Play online', 'অনলাইনে খেলো'), sub: t('4 players · rooms or quick match', '৪ জন · রুম বা কুইক ম্যাচ') }}
+    options={<><div className="opt-label">{t('Rounds', 'রাউন্ড')}</div><Seg label={t('Rounds', 'রাউন্ড')} value={rounds} onChange={setRounds} options={[3, 5, 10].map((v) => ({ v, label: g.n(v) }))} />
       {mode === 'party' && <div className="bench-name-fields">{custom.map((name, i) => <label key={i}>{t('Player', 'খেলোয়াড়')} {g.n(i + 1)}<input className="text-in" value={name} maxLength={24} onChange={(e) => setCustom(custom.map((s, j) => i === j ? e.target.value : s))} /></label>)}</div>}</>}
   >
     <ScoreStrip names={names} scores={scores} n={g.n} />

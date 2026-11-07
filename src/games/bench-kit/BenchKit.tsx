@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { StartHub, type HubMode } from '../../components/StartHub';
 import { useSettings } from '../../platform/settings';
 import { fmtNum, useT } from '../../platform/i18n';
 import { UI } from '../../platform/strings';
@@ -24,7 +25,7 @@ export function useBench(id: string) {
     return () => document.removeEventListener('visibilitychange', hide);
   }, [phase]);
   return {
-    lang, text, n, u, phase, setPhase, paused, setPaused, result,
+    id, lang, text, n, u, phase, setPhase, paused, setPaused, result,
     start() { finished.current = false; setResult(null); setPaused(false); setPhase('play'); unlockAudio(); sfx('bell'); },
     finish(r: Result) {
       if (finished.current) return;
@@ -37,20 +38,23 @@ export function useBench(id: string) {
 
 export type Bench = ReturnType<typeof useBench>;
 
-export function BenchFrame({ game, title, lede, rules, options, onStart, onExit, art, children }: {
+export function BenchFrame({ game, title, lede, rules, options, onStart, onExit, art, children, modes, mode, onMode, online }: {
   game: Bench; title: string; lede: string; rules: string[]; options: ReactNode;
   onStart: () => void; onExit: () => void; art?: ReactNode; children: ReactNode;
+  /** The ways to play, as big tiles on the start screen. */
+  modes: HubMode[]; mode: string; onMode: (id: string) => void;
+  /** The big "Play online" tile. */
+  online?: { onClick: () => void; label?: string; sub?: string };
 }) {
   const help = <ol>{rules.map((r) => <li key={r}>{r}</li>)}</ol>;
   useGameBar({ onPause: game.phase === 'play' && !game.paused ? () => game.setPaused(true) : undefined, onResume: () => game.setPaused(false), help }, [game.phase, game.paused, game.lang]);
   return <div className="bench-root ruled">
-    {game.phase === 'setup' ? <Overlay label={title}><div className="sheet ruled bench-setup" data-testid="setup">
-      {art && <div className="bench-setup-art" aria-hidden="true">{art}</div>}
-      <div className="bench-eyebrow">{game.text('FROM THE BACK OF THE KHATA', 'খাতার শেষ পাতার খেলা')}</div>
-      <h2>{title}</h2><p className="lede">{lede}</p>
-      <details className="bench-rules"><summary>{game.text('How to play · our household rules', 'কীভাবে খেলবে · আমাদের ঘরোয়া নিয়ম')}</summary>{help}</details>{options}
-      <div className="actions"><button className="btn big" data-testid="start" onClick={onStart}>{game.u('start')}</button><button className="btn secondary" onClick={onExit}>{game.u('back')}</button></div>
-    </div></Overlay> : <div className="bench-content" inert={game.paused || game.phase === 'result'}>{children}</div>}
+    {game.phase === 'setup' ? <Overlay label={title}><StartHub
+      gameId={game.id} title={title} lede={lede} rules={help} art={art}
+      eyebrow={game.text('From the back of the khata', 'খাতার শেষ পাতার খেলা')}
+      online={online} modes={modes} mode={mode} onMode={onMode}
+      options={options} onStart={onStart} onBack={onExit}
+    /></Overlay> : <div className="bench-content" inert={game.paused || game.phase === 'result'}>{children}</div>}
     {game.paused && game.phase === 'play' && <PauseMenu onResume={() => game.setPaused(false)} onRestart={onStart} onQuit={onExit} />}
     {game.phase === 'result' && game.result && <ReportCard {...game.result} onAgain={onStart} onSetup={() => game.setPhase('setup')} onQuit={onExit} />}
   </div>;

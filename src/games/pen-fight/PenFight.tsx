@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { StartHub, useStdModes } from '../../components/StartHub';
 import type { GameProps } from '../../platform/registry';
 import { useT } from '../../platform/i18n';
 import { UI } from '../../platform/strings';
 import { recordResult, type Outcome } from '../../platform/scores';
 import { sfx, unlockAudio } from '../../platform/audio';
 import { readJSON, writeJSON } from '../../platform/storage';
-import { DifficultySeg, ModeSeg, Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames, type Difficulty, type Mode } from '../../components/ui';
+import { DifficultySeg, Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames, type Difficulty, type Mode } from '../../components/ui';
 import { KIT } from './desk3d';
 import { PenFightGame, powerColor, type PFEnd, type PFHud } from './game';
 import type { PenId } from './model';
 import { PenArt, PenPick, S } from './parts';
 import { OnlinePenFight } from './online';
-import { OnlineButton, useOnlineEntry } from '../../components/online/OnlineButton';
+import { useOnlineEntry } from '../../components/online/OnlineButton';
 import './pen-fight.css';
 
 // Pen Fight in 3D: two school pens on an old wooden bench. Touch your pen, pull back, let go.
@@ -90,6 +91,7 @@ function PenFightLocal({ onExit, onOnline }: GameProps & { onOnline: () => void 
 
   useEffect(() => { gameRef.current?.setPaused(paused || !!done); }, [paused, done]);
 
+  const stdModes = useStdModes(['ai', 'local2p']);
   useGameBar({ onPause: matchId > 0 && !done ? () => setPaused(true) : undefined, help }, [matchId, !!done, t.lang]);
 
   if (matchId === 0) {
@@ -100,20 +102,20 @@ function PenFightLocal({ onExit, onOnline }: GameProps & { onOnline: () => void 
     return (
       <div className="pf-root">
         <Overlay label={t('title')}>
-          <div className="sheet ruled" data-testid="setup">
-            <h2>{t('title')}</h2>
-            <p className="lede">{t('lede')}</p>
-            <ol>{rules.map((r, i) => <li key={i}>{i === 0 ? <b>{r}</b> : r}</li>)}</ol>
-            <OnlineButton onClick={onOnline} />
-            <ModeSeg value={mode} onChange={setMode} modes={['ai', 'local2p']} />
+          <StartHub
+            gameId="pen-fight" title={t('title')} lede={t('lede')} rules={<ol>{rules.map((r, i) => <li key={i}>{i === 0 ? <b>{r}</b> : r}</li>)}</ol>}
+            online={{ onClick: onOnline }}
+            modes={stdModes} mode={mode} onMode={(m) => setMode(m as Mode)}
+            onStart={start}
+            options={<>
             {mode === 'ai' && <DifficultySeg value={diff} onChange={setDiff} />}
             {pick(0, mode === 'ai' ? t('yourPen') : t('p2Pen', { name: n1 }))}
             {pick(1, mode === 'ai' ? t('oppPen') : t('p2Pen', { name: n2 }))}
             <div className="opt-label">{t('target')}</div>
             <Seg label={t('target')} value={target} onChange={setTarget} options={[3, 5].map((v) => ({ v, label: t('pts', { n: v }) }))} />
             <p className="hide-touch" style={{ margin: '10px 0 0', fontSize: 14, color: 'var(--ink-soft)' }}>{t('keys')}</p>
-            <div className="actions"><button className="btn big" onClick={start} data-testid="start">{u('start')}</button></div>
-          </div>
+            </>}
+          />
         </Overlay>
       </div>
     );

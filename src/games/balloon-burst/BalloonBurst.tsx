@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
+import { StartHub, useStdModes } from '../../components/StartHub';
 import type { GameProps } from '../../platform/registry';
 import { useT } from '../../platform/i18n';
 import { UI } from '../../platform/strings';
 import { sfx, vibrate } from '../../platform/audio';
 import { recordResult } from '../../platform/scores';
 import { GameCanvas } from '../../engine/GameCanvas';
-import { DifficultySeg, ModeSeg, Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames, type Difficulty, type Mode } from '../../components/ui';
+import { DifficultySeg, Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames, type Difficulty, type Mode } from '../../components/ui';
 import { BalloonScene, type BalloonEvent } from './BalloonScene';
 import type { BColor, Scorer } from './field';
 import { GOLD_BONUS, pelletsFor, type PopStyle } from './gun';
 import { readJSON, writeJSON } from '../../platform/storage';
 import { S } from './strings';
 import { OnlineBalloon } from './online';
-import { OnlineButton, useOnlineEntry } from '../../components/online/OnlineButton';
+import { useOnlineEntry } from '../../components/online/OnlineButton';
 import './balloon-burst.css';
 
 export default function BalloonBurst({ onExit }: GameProps) {
@@ -105,16 +106,20 @@ function BalloonBurstLocal({ onExit, onOnline }: GameProps & { onOnline: () => v
     return () => removeEventListener('keydown', k);
   }, [scene, mode, paused]);
 
+  const stdModes = useStdModes(['solo', 'ai', 'local2p']);
   const onHidden = useCallback(() => { if (phase === 'play') setPaused(true); }, [phase]);
 
   if (phase === 'setup') {
     return (
       <div className="bb-root">
         <Overlay label={t('title')}>
-          <div className="sheet ruled" data-testid="setup">
-            <h2>{t('title')}</h2>
-            <p className="lede">{t('lede')}</p>
-            <OnlineButton onClick={onOnline} />
+          <StartHub
+            gameId="balloon-burst" title={t('title')} lede={t('lede')} rules={<Rules t={t} style={style} length={length} />}
+            online={{ onClick: onOnline }}
+            modes={stdModes} mode={mode} onMode={(m) => setMode(m as Mode)}
+            onStart={start}
+            options={<>
+            {mode === 'ai' && <DifficultySeg value={diff} onChange={setDiff} />}
             <div className="opt-label">{t('how')}</div>
             <div className="bb-style" role="radiogroup" aria-label={t('how')}>
               {(['gun', 'pin'] as PopStyle[]).map((v) => (
@@ -125,13 +130,10 @@ function BalloonBurstLocal({ onExit, onOnline }: GameProps & { onOnline: () => v
                 </button>
               ))}
             </div>
-            <Rules t={t} style={style} length={length} />
-            <ModeSeg value={mode} onChange={setMode} modes={['solo', 'ai', 'local2p']} />
-            {mode === 'ai' && <DifficultySeg value={diff} onChange={setDiff} />}
             <div className="opt-label">{t('length')}</div>
             <Seg label={t('length')} value={length} onChange={setLength} options={[30, 45, 60].map((v) => ({ v, label: t('sec', { n: v }) }))} />
-            <div className="actions"><button className="btn big" onClick={start} data-testid="start">{u('start')}</button></div>
-          </div>
+            </>}
+          />
         </Overlay>
       </div>
     );

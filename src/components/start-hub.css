@@ -1,0 +1,87 @@
+/* ---------- Every game's start screen: big tiles (StartHub) ---------- */
+.sheet.sh-sheet { width: min(560px, 100%); gap: 12px; padding: 18px; }
+
+/* 1. The hub */
+.sh-hero {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 16px 16px 14px; border-radius: 18px;
+  background: color-mix(in srgb, var(--accent, #1f3a93) 13%, #fffaf0);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent, #1f3a93) 22%, #e8dcbc);
+}
+.sh-hero-text { display: grid; gap: 3px; min-width: 0; }
+.sh-chip {
+  justify-self: start; padding: 5px 10px; border-radius: 999px; background: var(--accent, var(--pen)); color: #fff;
+  font: 800 11.5px/1 var(--font-body); letter-spacing: .07em; text-transform: uppercase;
+}
+:lang(bn) .sh-chip { letter-spacing: 0; font-size: 12.5px; }
+.sh-hero h2 { margin: 2px 0 0 !important; font: 800 clamp(28px, 7vw, 36px)/1.08 var(--font-display) !important; color: var(--pen); }
+.sh-hero .lede { margin: 0 !important; font-size: 15px !important; line-height: 1.4 !important; color: var(--ink-soft); }
+.sh-hero-art { width: 92px; height: 82px; display: grid; place-items: center; }
+.sh-hero-art svg { width: 100%; height: 100%; }
+
+.sh-help-btn {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 46px; padding: 8px 14px; border: 0; border-radius: 14px; cursor: pointer;
+  background: #f4ecd6; color: var(--pen); font: 700 16px var(--font-body); text-align: left;
+}
+.sh-q { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--pen); color: #fff; font-weight: 800; flex: none; }
+.sh-caret { margin-left: auto; transition: transform .15s; }
+.sh-help-btn.open .sh-caret { transform: rotate(180deg); }
+.sh-rules { margin-top: -6px; padding: 4px 14px 12px; border-radius: 0 0 14px 14px; background: #f4ecd6; font-size: 15px; line-height: 1.5; }
+.sh-rules ol { margin: 0; padding-left: 20px; line-height: 1.5 !important; display: grid; gap: 6px; }
+
+.sh-online {
+  display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 16px; border: 0; border-radius: 18px; cursor: pointer; text-align: left; color: #fff;
+  background: linear-gradient(140deg, #0b5d43 0%, #13805c 60%, #1d9a6c 100%); box-shadow: 0 5px 0 #073d2c, 0 14px 26px -18px rgba(11, 93, 67, 0.95);
+  transition: transform .08s, box-shadow .08s;
+}
+.sh-online:active { transform: translateY(3px); box-shadow: 0 2px 0 #073d2c; }
+.sh-online-ico { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: #ffd23f; color: #6b4a00; }
+.sh-online-ico svg { width: 26px; height: 26px; }
+.sh-online-text { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.sh-online-text b { font: 800 21px/1.1 var(--font-display); }
+.sh-online-text small { font-size: 13.5px; color: rgba(255,255,255,0.88); }
+.sh-go { font: 800 24px var(--font-display); }
+
+.sh-tiles { display: grid; grid-template-columns: repeat(min(var(--n, 2), 3), 1fr); gap: 10px; }
+.sh-tile {
+  display: grid; justify-items: start; align-content: start; gap: 6px; padding: 14px; min-height: 124px; border: 0; border-radius: 18px; cursor: pointer; text-align: left;
+  background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1.5px #e0d3ad, 0 4px 0 #e0d3ad; transition: transform .08s, box-shadow .08s;
+}
+.sh-tile:hover { box-shadow: inset 0 0 0 2px var(--accent, var(--pen)), 0 4px 0 #e0d3ad; }
+.sh-tile:active { transform: translateY(3px); box-shadow: inset 0 0 0 1.5px #e0d3ad, 0 1px 0 #e0d3ad; }
+.sh-tile-ico {
+  display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; font-size: 24px;
+  background: color-mix(in srgb, var(--accent, #1f3a93) 14%, #fff); color: var(--accent, var(--pen));
+}
+.sh-tile-ico svg { width: 28px; height: 28px; }
+.sh-tile b { font: 800 18px/1.15 var(--font-display); }
+.sh-tile small { font-size: 13px; line-height: 1.35; color: var(--ink-soft); }
+.sh-back-all { justify-self: center; border: 0; background: none; color: var(--ink-soft); font: 700 15px var(--font-body); padding: 6px 12px; cursor: pointer; min-height: 40px; }
+
+/* 2. One mode's settings, then Start */
+.sh-mode-head { display: flex; align-items: center; gap: 12px; padding-bottom: 4px; }
+.sh-back {
+  flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer; font: 800 22px var(--font-display); color: var(--pen);
+  background: #fff; box-shadow: inset 0 0 0 1.5px #e0d3ad, 0 3px 0 #e0d3ad;
+}
+.sh-mode-ico { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; flex: none; background: var(--accent, var(--pen)); color: #fff; font-size: 24px; }
+.sh-mode-ico svg { width: 28px; height: 28px; }
+.sh-mode-ico:empty { display: none; }
+.sh-mode-title { display: grid; min-width: 0; }
+.sh-mode-title small { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
+.sh-mode-title b { font: 800 24px/1.1 var(--font-display); color: var(--pen); }
+.sh-options { display: grid; gap: 2px; }
+.sh-options > .opt-label:first-child, .sh-options > :first-child .opt-label:first-child { margin-top: 0; }
+.sh-start { position: sticky; bottom: -18px; margin: 6px -18px -18px; padding: 12px 18px 18px; background: linear-gradient(rgba(255, 250, 240, 0), #fffaf0 28%); z-index: 2; }
+.sh-start .btn { width: 100%; min-height: 62px; font-size: 25px; border-radius: 16px; }
+
+@media (max-width: 420px) {
+  .sheet.sh-sheet { padding: 14px; gap: 10px; }
+  .sh-hero { padding: 14px 12px 12px 14px; }
+  .sh-hero-art { width: 76px; height: 68px; }
+  .sh-tiles { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .sh-tiles .sh-tile:last-child:nth-child(odd) { grid-column: 1 / -1; min-height: 0; grid-template-columns: auto 1fr; align-items: center; column-gap: 12px; }
+  .sh-tiles .sh-tile:last-child:nth-child(odd) .sh-tile-ico { grid-row: span 2; }
+  .sh-tile { min-height: 116px; padding: 12px; }
+  .sh-tile b { font-size: 17px; }
+  .sh-start { bottom: -14px; margin: 4px -14px -14px; padding: 10px 14px 14px; }
+}

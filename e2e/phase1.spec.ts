@@ -1,5 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 
+/** The start screen shows big mode tiles first: tap one (the given mode, or the one already chosen) to reach its settings and Start. */
+async function pickTile(page: Page, id?: string) {
+  const tile = id ? page.getByTestId(`tile-${id}`) : page.locator('[data-testid^="tile-"][data-current]');
+  if (await tile.count()) await tile.first().click();
+}
+
 // Browser tests for the Phase 1 platform. Each game is played until a real
 // result screen appears (no test-only shortcuts in the game code).
 
@@ -13,6 +19,7 @@ function trackErrors(page: Page) {
 async function openGame(page: Page, id: string) {
   await page.goto(`./#/play/${id}`);
   await expect(page.getByTestId('setup')).toBeVisible();
+  await pickTile(page);
 }
 
 test('hub shows the 17 games, with no coming-soon section after the archive', async ({ page }) => {
@@ -170,6 +177,7 @@ test('every game loads in English with no console errors', async ({ page }) => {
     await page.goto(`./#/play/${id}`);
     await expect(page.getByTestId('setup')).toBeVisible();
     if (id.endsWith('cricket')) await page.getByTestId('mode-quick').click();
+    else await pickTile(page);
     await page.getByTestId('start').click();
     await page.waitForTimeout(600);
     await page.goto('./#/');

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { StartHub } from '../../components/StartHub';
+import { MODE_ICON } from '../../components/ui';
 import type { GameProps } from '../../platform/registry';
 import { useT, type StringTable } from '../../platform/i18n';
 import { UI } from '../../platform/strings';
@@ -9,7 +11,7 @@ import { Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames } from 
 import { DOODLES, PARTY_WORDS } from './words';
 import type { Bi } from '../../platform/i18n';
 import { COLORS, Khata, PAPER, sample, toolState, type Stroke } from './khata';
-import { OnlineButton, useOnlineEntry } from '../../components/online/OnlineButton';
+import { useOnlineEntry } from '../../components/online/OnlineButton';
 import { OnlineNotebook } from './online';
 import './notebook-drawing.css';
 
@@ -205,13 +207,16 @@ function NotebookDrawingLocal({ onExit, onOnline }: GameProps & { onOnline: () =
     return (
       <div className="nd-root">
         <Overlay label={t('title')}>
-          <div className="sheet ruled" data-testid="setup">
-            <h2>{t('title')}</h2>
-            <p className="lede">{t('lede')}</p>
-            <OnlineButton onClick={onOnline} />
-            <Rules t={t} />
-            <div className="opt-label">{t('mode')}</div>
-            <Seg label={t('mode')} value={mode} onChange={setMode} options={[{ v: 'party', label: t('party') }, { v: 'cpu', label: t('cpu') }]} />
+          <StartHub
+            gameId="notebook-drawing" title={t('title')} lede={t('lede')} rules={<Rules t={t} />}
+            online={{ onClick: onOnline }}
+            modes={[
+              { id: 'party', label: t('party'), sub: t.lang === 'bn' ? 'বন্ধুরা মিলে আঁকো আর বোঝো' : 'Draw and guess with friends', icon: MODE_ICON.local2p },
+              { id: 'cpu', label: t('cpu'), sub: t.lang === 'bn' ? 'কম্পিউটার আঁকবে, তুমি বোঝো' : 'The computer draws, you guess', icon: MODE_ICON.ai },
+            ]}
+            mode={mode} onMode={(m) => setMode(m as typeof mode)}
+            onStart={start}
+            options={<>
             {mode === 'party' && (
               <>
                 <div className="opt-label">{t('players')}</div>
@@ -220,8 +225,9 @@ function NotebookDrawingLocal({ onExit, onOnline }: GameProps & { onOnline: () =
                 <Seg label={t('rounds')} value={turnsEach} onChange={setTurnsEach} options={[1, 2].map((v) => ({ v, label: t.n(v) }))} />
               </>
             )}
-            <div className="actions"><button className="btn big" onClick={start} data-testid="start">{u('start')}</button></div>
-          </div>
+            {mode === 'cpu' && <p style={{ margin: 0, color: 'var(--ink-soft)', fontSize: 15 }}>{t.lang === 'bn' ? 'কম্পিউটার আটটা ছবি আঁকবে। যত তাড়াতাড়ি পারো বলো।' : 'The computer draws eight pictures. Guess each one as fast as you can.'}</p>}
+            </>}
+          />
         </Overlay>
       </div>
     );

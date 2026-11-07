@@ -2,10 +2,17 @@ import { expect, test, type Page } from '@playwright/test';
 import { LETTERS } from '../src/games/naam-desh/model';
 import { createRng } from '../src/engine/rng';
 
-async function openGame(page: Page, id: string, lang = 'en') {
+/** The start screen shows big mode tiles first: tap one (the given mode, or the one already chosen) to reach its settings and Start. */
+async function pickTile(page: Page, id?: string) {
+  const tile = id ? page.getByTestId(`tile-${id}`) : page.locator('[data-testid^="tile-"][data-current]');
+  if (await tile.count()) await tile.first().click();
+}
+
+async function openGame(page: Page, id: string, lang = 'en', tile?: string) {
   await page.addInitScript((lang) => localStorage.setItem('tp.v1.settings', JSON.stringify({ lang, sound: false })), lang);
   await page.goto(`./#/play/${id}`);
   await expect(page.getByTestId('setup')).toBeVisible();
+  await pickTile(page, tile);
 }
 async function noOverflow(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
@@ -53,8 +60,7 @@ test('Chor Police: three full computer rounds save a result', async ({ page }) =
 });
 
 test('Chor Police: four local players keep roles private and police can catch the thief', async ({ page }) => {
-  await openGame(page, 'chor-police');
-  await page.getByRole('button', { name: '4 friends · pass the device', exact: true }).click();
+  await openGame(page, 'chor-police', 'en', 'party');
   await page.getByRole('group', { name: 'Rounds', exact: true }).getByRole('button', { name: '3', exact: true }).click();
   await page.getByTestId('start').click();
   for (let round = 0; round < 3; round++) {
@@ -99,7 +105,7 @@ test('Naam Desh: valid words, wrong initials, typing P, pause timer and full pra
 });
 
 test('Naam Desh: local duplicate answers score five each and pages stay private', async ({ page }) => {
-  await openGame(page, 'naam-desh'); await page.getByRole('button', { name: '2 players', exact: true }).click(); await page.getByTestId('start').click();
+  await openGame(page, 'naam-desh', 'en', 'local2p'); await page.getByTestId('start').click();
   for (let round = 0; round < 3; round++) {
     await page.getByTestId('ready').click();
     const letter = (await page.getByTestId('letter').innerText()).trim();

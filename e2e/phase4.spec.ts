@@ -1,5 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 
+/** The start screen shows big mode tiles first: tap one (the given mode, or the one already chosen) to reach its settings and Start. */
+async function pickTile(page: Page, id?: string) {
+  const tile = id ? page.getByTestId(`tile-${id}`) : page.locator('[data-testid^="tile-"][data-current]');
+  if (await tile.count()) await tile.first().click();
+}
+
 // Browser tests for the national-team modes and the seven new games.
 // Canvas games are driven through small test hooks on window (__flikk, __pk, __five, __eraser)
 // after one real drag gesture, so the tests finish in reasonable time.
@@ -26,6 +32,7 @@ async function open(page: Page, id: string, lang = 'en') {
   await page.addInitScript((l) => { if (!localStorage.getItem('tp.v1.settings')) localStorage.setItem('tp.v1.settings', JSON.stringify({ lang: l, sound: false })); }, lang);
   await page.goto(`./#/play/${id}`);
   await expect(page.getByTestId('setup')).toBeVisible();
+  await pickTile(page);
 }
 
 async function loop(page: Page, step: () => Promise<void>, ms = 120_000) {

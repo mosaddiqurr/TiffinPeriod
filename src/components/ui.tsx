@@ -167,7 +167,7 @@ export function DifficultySeg({ value, onChange }: { value: Difficulty; onChange
 }
 
 export type Mode = 'solo' | 'ai' | 'local2p';
-const MODE_ICON: Record<Mode, ReactNode> = {
+export const MODE_ICON: Record<Mode, ReactNode> = {
   solo: <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="11" r="5.5" fill="currentColor" /><path d="M6 27c1.2-6 5.2-9 10-9s8.8 3 10 9z" fill="currentColor" /></svg>,
   ai: <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="4" y="6" width="24" height="16" rx="3" fill="none" stroke="currentColor" strokeWidth="2.6" /><circle cx="12" cy="14" r="2.2" fill="currentColor" /><circle cx="20" cy="14" r="2.2" fill="currentColor" /><path d="M11 27h10M16 22v5" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" /></svg>,
   local2p: <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="10.5" cy="11" r="4.5" fill="currentColor" /><circle cx="21.5" cy="11" r="4.5" fill="currentColor" /><path d="M2 26c.9-5 4-7.5 8.5-7.5S18 21 19 26zM13 26c.9-5 4-7.5 8.5-7.5S29.1 21 30 26z" fill="currentColor" opacity=".85" /></svg>,

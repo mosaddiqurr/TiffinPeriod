@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { StartHub, useStdModes } from '../../components/StartHub';
 import type { GameProps } from '../../platform/registry';
 import { useT } from '../../platform/i18n';
 import { UI } from '../../platform/strings';
@@ -6,14 +7,14 @@ import { sfx, speak, vibrate } from '../../platform/audio';
 import { recordResult } from '../../platform/scores';
 import { createRng } from '../../engine/rng';
 import { HoldPad, LIFT_GRACE_MS, touchExtraMs } from './pad';
-import { DifficultySeg, ModeSeg, Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames, type Difficulty, type Mode } from '../../components/ui';
+import { DifficultySeg, Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames, type Difficulty, type Mode } from '../../components/ui';
 import { ITEMS, artFor, preloadArt } from './items';
 
 preloadArt();
 import { PakhirEngine, type InputStyle } from './engine';
 import { Finger, Rules, S } from './parts';
 import { OnlinePakhirUre } from './online';
-import { OnlineButton, useOnlineEntry } from '../../components/online/OnlineButton';
+import { useOnlineEntry } from '../../components/online/OnlineButton';
 import './pakhir-ure.css';
 
 const KEYS: string[][] = [['Space', 'KeyA'], ['KeyL']];
@@ -42,6 +43,7 @@ function PakhirUreLocal({ onExit, onOnline }: GameProps & { onOnline: () => void
   const pausedAt = useRef(0);
   const now = () => performance.now() - clockOffset.current;
 
+  const stdModes = useStdModes(['solo', 'ai', 'local2p']);
   const names: string[] = mode === 'solo' ? [u('you')] : mode === 'ai' ? [u('you'), t('aiName')] : [n1, n2];
 
   const start = useCallback(() => {
@@ -151,18 +153,18 @@ function PakhirUreLocal({ onExit, onOnline }: GameProps & { onOnline: () => void
     return (
       <div className="pu-root">
         <Overlay label={t('title')}>
-          <div className="sheet ruled" data-testid="setup">
-            <h2>{t('title')}</h2>
-            <p className="lede">{t('lede')}</p>
-            <Rules t={t} />
-            <OnlineButton onClick={onOnline} />
-            <ModeSeg value={mode} onChange={setMode} modes={['solo', 'ai', 'local2p']} />
+          <StartHub
+            gameId="pakhir-ure" title={t('title')} lede={t('lede')} rules={<Rules t={t} />}
+            online={{ onClick: onOnline }}
+            modes={stdModes} mode={mode} onMode={(m) => setMode(m as Mode)}
+            onStart={start}
+            options={<>
             {mode === 'ai' && <DifficultySeg value={diff} onChange={setDiff} />}
             <div className="opt-label">{t('input')}</div>
             <Seg label={t('input')} value={input} onChange={setInput} options={[{ v: 'lift', label: t('lift') }, { v: 'tap', label: t('tap') }]} />
             <p style={{ margin: '6px 0 0', color: 'var(--ink-soft)', fontSize: 14 }}>{input === 'lift' ? t('liftHelp') : t('tapHelp')}</p>
-            <div className="actions"><button className="btn big" onClick={start} data-testid="start">{u('start')}</button></div>
-          </div>
+            </>}
+          />
         </Overlay>
       </div>
     );

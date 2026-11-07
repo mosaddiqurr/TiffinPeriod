@@ -1,7 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { createPortal } from 'react-dom';
 import type { Scene, View } from '../../engine/GameCanvas';
-import { OnlineButton, useOnlineEntry } from '../../components/online/OnlineButton';
+import { useOnlineEntry } from '../../components/online/OnlineButton';
 import { OnlinePaperPlane } from './online';
 import type { GameProps } from '../../platform/registry';
 import { useT, fmtNum, type StringTable } from '../../platform/i18n';
@@ -402,49 +400,17 @@ export default function PaperPlane({ onExit }: GameProps) {
   return <PaperPlaneLocal onExit={onExit} onOnline={online.show} />;
 }
 
-/**
- * Puts the "Play online" button into GameShell's setup sheet, just under the lede.
- * GameShell has no slot for it (it is shared and not ours to change), so this finds the
- * sheet in its own wrapper and renders the button there through a portal.
- */
-function SetupSlot({ wrap, children }: { wrap: RefObject<HTMLDivElement | null>; children: ReactNode }) {
-  const [host, setHost] = useState<HTMLElement | null>(null);
-  useEffect(() => {
-    const root = wrap.current;
-    if (!root) return;
-    let cur: HTMLElement | null = null;
-    const place = () => {
-      if (cur?.isConnected) return;
-      const sheet = root.querySelector<HTMLElement>('[data-testid="setup"]');
-      if (!sheet) { if (cur) { cur = null; setHost(null); } return; }
-      const el = document.createElement('div');
-      el.className = 'pp-online-slot';
-      const lede = sheet.querySelector(':scope > .lede');
-      if (lede) lede.after(el); else sheet.prepend(el);
-      cur = el;
-      setHost(el);
-    };
-    place();
-    const mo = new MutationObserver(place);
-    mo.observe(root, { childList: true, subtree: true });
-    return () => { mo.disconnect(); cur?.remove(); };
-  }, [wrap]);
-  return host ? createPortal(children, host) : null;
-}
 
 function PaperPlaneLocal({ onExit, onOnline }: GameProps & { onOnline: () => void }) {
   const t = useT(S);
-  const wrap = useRef<HTMLDivElement>(null);
   const pads = (): PadDef[] => [
     { player: 0, action: 'up', label: t('up'), sub: t('upSub'), area: 'br', size: 'l', color: 'rgba(31,58,147,0.85)', keys: ['Space', 'ArrowUp', 'KeyW'], keyHint: 'Space' },
     { player: 0, action: 'left', label: '←', area: 'bl', hidden: true, keys: ['ArrowLeft', 'KeyA'] },
     { player: 0, action: 'right', label: '→', area: 'bl', hidden: true, keys: ['ArrowRight', 'KeyD'] },
   ];
   return (
-    <div ref={wrap} style={{ display: 'contents' }}>
-    <SetupSlot wrap={wrap}><OnlineButton onClick={onOnline} /></SetupSlot>
     <GameShell
-      gameId="paper-plane" onExit={onExit} title={t('title')} lede={t('lede')}
+      gameId="paper-plane" onExit={onExit} onOnline={onOnline} title={t('title')} lede={t('lede')}
       rules={[t('r1'), <b key="r2">{t('r2')}</b>, t('r3'), t('r4'), t('r5')]}
       modes={['solo', 'ai', 'local2p']} difficulty={(m) => m === 'ai'}
       options={[
@@ -455,6 +421,5 @@ function PaperPlaneLocal({ onExit, onOnline }: GameProps & { onOnline: () => voi
       createScene={(cfg: ShellConfig) => new PlaneScene(cfg, t, createRng())}
       pads={pads}
     />
-    </div>
   );
 }

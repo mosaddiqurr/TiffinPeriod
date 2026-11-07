@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useStdModes } from '../../components/StartHub';
 import type { GameProps } from '../../platform/registry';
-import { DifficultySeg, ModeSeg, Seg, usePlayerNames, type Difficulty, type Mode } from '../../components/ui';
+import { DifficultySeg, Seg, usePlayerNames, type Difficulty, type Mode } from '../../components/ui';
 import { BenchFrame, ScoreStrip, useBench } from '../bench-kit/BenchKit';
 import { createRng } from '../../engine/rng';
 import { sfx, vibrate } from '../../platform/audio';
@@ -8,7 +9,7 @@ import { unlockAchievement } from '../../platform/scores';
 import { aiMove, apply, newGame, type DBState } from './model';
 import { DBBoard, INK } from './Board';
 import { OnlineDotsBoxes } from './online';
-import { OnlineButton, useOnlineEntry } from '../../components/online/OnlineButton';
+import { useOnlineEntry } from '../../components/online/OnlineButton';
 import './dots-boxes.css';
 
 const SIZES = [3, 4, 5, 6];
@@ -23,6 +24,7 @@ function DotsBoxesLocal({ onExit, onOnline }: GameProps & { onOnline: () => void
   const g = useBench('dots-boxes'), t = g.text;
   const [p1, p2] = usePlayerNames();
   const [mode, setMode] = useState<Mode>('ai');
+  const stdModes = useStdModes(['ai', 'local2p']);
   const [diff, setDiff] = useState<Difficulty>('medium');
   const [size, setSize] = useState(4);
   const [st, setSt] = useState<DBState>(() => newGame(4, 4));
@@ -85,9 +87,8 @@ function DotsBoxesLocal({ onExit, onOnline }: GameProps & { onOnline: () => void
   return (
     <BenchFrame game={g} title={t('Dots and Boxes', 'ঘর কাটা')} lede={t('The last page of every khata was a grid of dots.', 'প্রতিটা খাতার শেষ পাতায় থাকত বিন্দুর ছক।')} rules={rules} onStart={start} onExit={onExit}
       art={<svg viewBox="0 0 110 88"><g stroke="#1f3a93" strokeWidth="4" strokeLinecap="round"><path d="M20 20h30v30h-30z" fill="#e8edfb" /><path d="M50 20h30" stroke="#c62f2f" /></g>{[20, 50, 80].map((x) => [20, 50, 80].map((y) => <circle key={`${x}-${y}`} cx={x} cy={y} r="5" fill="#23253a" />))}<text x="35" y="42" fontSize="18" fontWeight="800" fill="#1f3a93" textAnchor="middle">A</text></svg>}
+      modes={stdModes} mode={mode} onMode={(m) => setMode(m as Mode)} online={{ onClick: onOnline }}
       options={<>
-        <OnlineButton onClick={onOnline} />
-        <ModeSeg value={mode} onChange={setMode} modes={['ai', 'local2p']} />
         {mode === 'ai' && <DifficultySeg value={diff} onChange={setDiff} />}
         <div className="opt-label">{t('Board size (boxes)', 'বোর্ডের মাপ (ঘর)')}</div>
         <Seg label={t('Board size', 'বোর্ডের মাপ')} value={size} onChange={setSize} options={SIZES.map((v) => ({ v, label: `${g.n(v)}×${g.n(v)}` }))} />

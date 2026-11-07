@@ -1,5 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 
+/** The start screen shows big mode tiles first: tap one (the given mode, or the one already chosen) to reach its settings and Start. */
+async function pickTile(page: Page, id?: string) {
+  const tile = id ? page.getByTestId(`tile-${id}`) : page.locator('[data-testid^="tile-"][data-current]');
+  if (await tile.count()) await tile.first().click();
+}
+
 // Phase 2 browser tests. On desktop each game is played to a real result.
 // On the phone profile every game is opened and started (smoke test).
 
@@ -15,6 +21,7 @@ function trackErrors(page: Page) {
 async function open(page: Page, id: string, option?: string) {
   await page.goto(`./#/play/${id}`);
   await expect(page.getByTestId('setup')).toBeVisible();
+  await pickTile(page);
   if (option) await page.getByRole('button', { name: option }).first().click();
   await page.getByTestId('start').click();
 }
@@ -96,7 +103,7 @@ test.describe('desktop full plays', () => {
   test('Notebook Drawing: the computer draws eight pictures', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('./#/play/notebook-drawing');
-    await page.getByRole('button', { name: 'কম্পিউটার আঁকবে' }).click();
+    await pickTile(page, 'cpu');
     await page.getByTestId('start').click();
     for (let i = 0; i < 40 && !(await result(page).isVisible()); i++) {
       const opt = page.getByTestId('option').first();
@@ -110,6 +117,7 @@ test.describe('desktop full plays', () => {
   test('Notebook Drawing: party mode, one turn each, with real drawing', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('./#/play/notebook-drawing');
+    await pickTile(page, 'party');
     await page.getByRole('group', { name: 'খেলোয়াড়' }).getByRole('button', { name: '২' }).click();
     await page.getByTestId('start').click();
     for (let turn = 0; turn < 2; turn++) {
