@@ -31,7 +31,16 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // The page itself (index.html) is not kept: it is always fetched fresh when online, so a
+        // refresh shows the newest version at once. Offline, the last page fetched is used.
+        // Code, styles and pictures have hashed names, so they are safe to keep.
+        globPatterns: ['**/*.{js,css,svg,png,woff2}'],
+        navigateFallback: null,
+        runtimeCaching: [{
+          urlPattern: ({ request }) => request.mode === 'navigate',
+          handler: 'NetworkFirst',
+          options: { cacheName: 'pages', networkTimeoutSeconds: 4, expiration: { maxEntries: 4 } },
+        }],
         // A new version takes over straight away and old files are dropped, so a page
         // never asks for game files that no longer exist after a deploy.
         cleanupOutdatedCaches: true,
