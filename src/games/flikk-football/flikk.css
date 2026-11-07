@@ -21,3 +21,28 @@
 .ff-form[aria-pressed='true'] { border-color: var(--pen); background: #e8edfb; box-shadow: inset 0 0 0 1px var(--pen); }
 .ff-form b { font: 800 16px var(--font-display); }
 .ff-form-svg { width: 100%; max-width: 110px; height: auto; display: block; }
+
+.ff-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 20px; background: #eef1fa; color: #1f3a93; font: 700 14px var(--font-body); white-space: nowrap; }
+.ff-chip b { font: 800 16px var(--font-display); }
+
+.ff-style { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 6px; }
+.ff-style-opt {
+  position: relative; display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 12px; min-height: 64px;
+  border-radius: 14px; border: 0; background: #fffdf6; color: inherit;
+  box-shadow: 0 0 0 1.5px #e4d8b8, 0 3px 0 #e4d8b8; transition: transform .12s, box-shadow .12s;
+}
+.ff-style-opt:hover { transform: translateY(-1px); }
+.ff-style-opt[aria-checked='true'] { background: linear-gradient(160deg, #fff7d6, #fffdf6); box-shadow: 0 0 0 2.5px #f3b61f, 0 6px 14px -8px rgba(0,0,0,0.45); }
+.ff-style-opt span { display: grid; gap: 2px; min-width: 0; }
+.ff-style-opt b { font: 800 16px/1.15 var(--font-display); }
+.ff-style-opt small { font-size: 12.5px; line-height: 1.3; color: var(--ink-soft); }
+.ff-style-opt i { position: absolute; top: 6px; right: 8px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: #f3b61f; color: #3a2a00; font: 900 12px/1 var(--font-body); font-style: normal; }
+.ff-style-svg { width: 64px; height: 44px; flex: none; display: block; }
+.ff-style.compact .ff-style-opt { min-height: 52px; padding: 7px 10px; }
+.ff-style.compact .ff-style-svg { width: 48px; height: 33px; }
+@media (max-width: 640px) {
+  .ff-style-opt { flex-direction: column; align-items: flex-start; gap: 6px; padding: 9px 10px; }
+  .ff-style.compact .ff-style-opt { flex-direction: row; align-items: center; }
+  .ff-style-opt b { font-size: 15px; }
+  .ff-style-opt small { font-size: 12px; }
+}

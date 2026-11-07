@@ -11,6 +11,7 @@ import { graphemes, guess, lettersOf, newRound, validWord } from '../src/games/h
 import { CATEGORIES } from '../src/games/hangman/words';
 import { PITCH, ball, cloneWorld, flick, settle, discsOf } from '../src/games/flikk-football/physics';
 import { aiChoose, kickoff, judge as ffJudge } from '../src/games/flikk-football/match';
+import { aiChooseFixed, fixedKickoff, flickBall, judgeFixed, placeBall, powerFor, ballReach, previewFixed, receiver } from '../src/games/flikk-football/fixed';
 import { decided, nextKicker, judge as pkJudge, type Shootout } from '../src/games/penalty/model';
 import { GROUPS, advance, backHandCatch, newProgress } from '../src/games/five-stones/model';
 import { flick as efFlick, newEraser, settle as efSettle, type World } from '../src/games/eraser-flip/model';
@@ -219,6 +220,97 @@ describe('Flikk Football', () => {
     settle(sim);
     expect(Math.hypot(ball(sim).x - 300, ball(sim).y - PITCH.midY)).toBeGreaterThan(20);
   });
+});
+
+describe('Flikk Football, fixed players', () => {
+  const teams = [{ formation: '4-3-3', mentality: 'balanced' }, { formation: '4-4-2', mentality: 'balanced' }] as const;
+  it('pins 22 players over the whole pitch with room for the ball between them', () => {
+    const { w, holder } = fixedKickoff([teams[0], teams[1]], 0, [200, 200]);
+    expect(w.pinned).toBe(true);
+    const ds = w.bodies.filter((b) => b.kind === 'disc');
+    expect(ds).toHaveLength(20);
+    for (const a of ds) for (const b of ds) if (a !== b) expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThan(a.r + b.r + 20);
+    // Each team has players in the other half (forwards), not just its own.
+    expect(discsOf(w, 0).some((d) => d.y < PITCH.midY - 120)).toBe(true);
+    expect(discsOf(w, 1).some((d) => d.y > PITCH.midY + 120)).toBe(true);
+    expect(w.bodies.find((b) => b.id === holder)!.side).toBe(0);
+  });
+  it('players never move, only the ball, and the same flick gives the same result', () => {
+    const a = fixedKickoff([teams[0], teams[1]], 0, [200, 200]).w;
+    const b = fixedKickoff([teams[0], teams[1]], 0, [200, 200]).w;
+    const before = a.bodies.filter((x) => x.kind === 'disc').map((x) => [x.x, x.y]);
+    flickBall(a, -1.2, 0.8); flickBall(b, -1.2, 0.8);
+    settle(a); settle(b);
+    expect(a.bodies.filter((x) => x.kind === 'disc').map((x) => [x.x, x.y])).toEqual(before);
+    expect(ball(a).x).toBe(ball(b).x);
+    expect(ball(a).y).toBe(ball(b).y);
+  });
+  it('the guide power matches how far the ball really rolls', () => {
+    const { w } = fixedKickoff([teams[0], teams[1]], 0, [0, 0]);
+    w.bodies = w.bodies.filter((b) => b.kind === 'ball');
+    const bl = ball(w); bl.x = 100; bl.y = 850;
+    flickBall(w, -Math.PI / 2, powerFor(300));
+    settle(w);
+    expect(Math.abs((850 - ball(w).y) - 300)).toBeLessThan(30);
+    expect(ballReach(0)).toBe(0);
+  });
+  it('a pass that stops by a team-mate keeps the ball; one by an opponent loses it', () => {
+    const { w, holder } = fixedKickoff([teams[0], teams[1]], 0, [200, 200]);
+    const mate = discsOf(w, 0).find((d) => d.id !== holder)!;
+    const bl = ball(w); bl.x = mate.x; bl.y = mate.y - mate.r - 12;
+    expect(judgeFixed(w, 0, holder)).toMatchObject({ keep: true, pass: true, holder: mate.id });
+    const opp = discsOf(w, 1)[3];
+    bl.x = opp.x; bl.y = opp.y + opp.r + 12;
+    expect(judgeFixed(w, 0, holder)).toMatchObject({ keep: false, holder: opp.id });
+    placeBall(w, opp.id);
+    for (const o of w.bodies) if (o.kind !== 'ball') expect(Math.hypot(o.x - ball(w).x, o.y - ball(w).y)).toBeGreaterThan(o.r + bl.r);
+  });
+  it('the aim guide shows exactly where the ball goes and who gets it', () => {
+    const { w, holder } = fixedKickoff([teams[0], teams[1]], 0, [230, 230]);
+    for (let i = 0; i < 24; i++) {
+      const angle = (i / 24) * Math.PI * 2, power = 0.2 + (i % 4) * 0.2;
+      const pv = previewFixed(w, holder, angle, power);
+      const sim = cloneWorld(w);
+      flickBall(sim, angle, power);
+      if (pv.end === 'rest') {
+        settle(sim, 7);
+        const [ex, ey] = pv.path[pv.path.length - 1];
+        expect(Math.hypot(ball(sim).x - ex, ball(sim).y - ey)).toBeLessThan(0.001);
+        expect(receiver(sim).id).toBe(pv.who!.id);
+      } else if (pv.end === 'touch') {
+        settle(sim, 7);
+        expect(sim.touches.filter((id) => id !== holder)[0]).toBe(pv.who!.id);
+      }
+    }
+  });
+  it('computer against computer: a whole match runs, with passes, turnovers and goals', () => {
+    const rng = createRng(11);
+    let goals = 0, passes = 0, turnovers = 0;
+    for (let game = 0; game < 3; game++) {
+      let kicking: 0 | 1 = 0;
+      let { w, holder } = fixedKickoff([teams[0], teams[1]], kicking, [230, 230]);
+      for (let flickNo = 0; flickNo < 40; flickNo++) {
+        const side = w.bodies.find((b) => b.id === holder)!.side as 0 | 1;
+        const m = aiChooseFixed(w, side, holder, 0.8, rng);
+        flickBall(w, m.angle, m.power);
+        settle(w, 7);
+        if (w.goal !== null) {
+          goals++;
+          kicking = w.goal === 0 ? 1 : 0;
+          ({ w, holder } = fixedKickoff([teams[0], teams[1]], kicking, [230, 230]));
+          continue;
+        }
+        const r = judgeFixed(w, side, holder);
+        if (r.pass) passes++;
+        if (!r.keep) turnovers++;
+        holder = r.holder;
+        placeBall(w, holder);
+      }
+    }
+    expect(passes).toBeGreaterThan(10);
+    expect(turnovers).toBeGreaterThan(3);
+    expect(goals).toBeGreaterThan(0);
+  }, 60000);
 });
 
 describe('Penalty Shootout', () => {

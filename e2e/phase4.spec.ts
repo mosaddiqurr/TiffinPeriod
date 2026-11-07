@@ -112,10 +112,11 @@ test('Book Cricket: the Daily Challenge saves a score', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('Flikk Football: a real drag flicks a piece, and a quick match finishes', async ({ page }) => {
+test('Flikk Football (roaming players): a real drag flicks a piece, and a quick match finishes', async ({ page }) => {
   test.setTimeout(240_000);
   const errors = trackErrors(page);
   await open(page, 'flikk-football');
+  await page.getByTestId('style-free').click();
   await page.getByTestId('mode-quick').click();
   await page.getByTestId('form-4-4-2').click();
   await page.getByTestId('start').click();
@@ -137,6 +138,39 @@ test('Flikk Football: a real drag flicks a piece, and a quick match finishes', a
       const m = s.w.bodies.filter((x) => x.kind === 'disc' && x.side === 0).sort((p, q) => Math.hypot(p.x - b.x, p.y - b.y) - Math.hypot(q.x - b.x, q.y - b.y))[0];
       const gx = 300 - b.x, gy = 40 - b.y, l = Math.hypot(gx, gy);
       s.testFlick(Math.atan2(b.y - (gy / l) * 28 - m.y, b.x - (gx / l) * 28 - m.x), 0.85, m.id);
+    });
+  }, 220_000);
+  expect(errors).toEqual([]);
+});
+
+test('Flikk Football (fixed players): pull back anywhere to flick the ball, players stay put, a match finishes', async ({ page }) => {
+  test.setTimeout(240_000);
+  const errors = trackErrors(page);
+  await open(page, 'flikk-football');
+  await expect(page.getByTestId('style-fixed')).toHaveAttribute('aria-checked', 'true');
+  await page.getByTestId('mode-quick').click();
+  await page.getByTestId('start').click();
+  await expect(page.getByTestId('chain')).toBeVisible();
+  await expect(page.getByTestId('regroup')).toHaveCount(0);
+  await page.waitForTimeout(2200);
+  const spots = () => page.evaluate(() => window.__flikk!.w.bodies.filter((x) => x.kind === 'disc').map((x) => `${x.x.toFixed(1)},${x.y.toFixed(1)}`).join(' '));
+  const before = await spots();
+  // Press in empty space below the ball, pull further down and let go: the ball goes up the pitch.
+  const box = (await page.locator('.ff-canvas canvas').boundingBox())!;
+  const scale = Math.min(box.width / 600, box.height / 960);
+  const ox = box.x + (box.width - 600 * scale) / 2, oy = box.y + (box.height - 960 * scale) / 2;
+  await page.mouse.move(ox + 560 * scale, oy + 700 * scale);
+  await page.mouse.down();
+  await page.mouse.move(ox + 560 * scale, oy + 790 * scale, { steps: 8 });
+  await page.mouse.up();
+  await expect.poll(() => page.evaluate(() => Math.round(window.__flikk!.w.bodies.find((x) => x.kind === 'ball')!.y)), { timeout: 8000 }).toBeLessThan(440);
+  await page.waitForTimeout(3000);
+  expect(await spots()).toBe(before);
+  await loop(page, async () => {
+    await page.evaluate(() => {
+      const s = window.__flikk; if (!s) return;
+      const b = s.w.bodies.find((x) => x.kind === 'ball')!;
+      s.testFlick(Math.atan2(40 - b.y, 300 - b.x) + (Math.random() - 0.5) * 0.3, 0.6 + Math.random() * 0.4);
     });
   }, 220_000);
   expect(errors).toEqual([]);

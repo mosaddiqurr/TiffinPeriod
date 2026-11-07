@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { GameProps } from '../../platform/registry';
 import { GameCanvas } from '../../engine/GameCanvas';
 import { recordResult, getStats, unlockAchievement } from '../../platform/scores';
+import { readJSON, writeJSON } from '../../platform/storage';
 import { sfx } from '../../platform/audio';
 import { PauseMenu, Seg, useGameBar, usePlayerNames, type Difficulty } from '../../components/ui';
 import { Championship, CupBoard, Flag, FlagScore, MatchUp, ModeCard, TeamGrid, favTeam, setFavTeam, stageName, useTx } from '../../components/sport/SportKit';
@@ -11,6 +12,7 @@ import { FORMATIONS, FORMATION_IDS, type FormationId, type Mentality, type TeamS
 import { FlikkScene, type FlikkConfig, type FlikkEnd, type FlikkHud, type Say } from './scene';
 import { CHALLENGES, achieved, loadChStars, saveChStars, starsOf, type FChallenge } from './challenges';
 import type { Side } from './physics';
+import type { Style } from './fixed';
 import './flikk.css';
 
 const GAME = 'flikk-football';
@@ -18,6 +20,10 @@ type Screen = 'menu' | 'quick' | 'local' | 'challenges' | 'cup' | 'match' | 'aft
 type Kind = 'quick' | 'local' | 'challenge' | 'cup';
 const LENGTHS = { short: 12, normal: 18, long: 26 } as const;
 type Len = keyof typeof LENGTHS;
+/** Fixed style: every flick is a step of the clock, so a match has more of them. */
+const FIXED_CLOCK = 2.5;
+const clock = (style: Style, turns: number) => (style === 'fixed' ? Math.round(turns * FIXED_CLOCK) : turns);
+const loadStyle = (): Style => (readJSON<string>('ff.style', 'fixed') === 'free' ? 'free' : 'fixed');
 
 interface Pending { kind: Kind; cfg: FlikkConfig; names: [string, string]; ch?: FChallenge; occasion?: string }
 interface AfterInfo { p: Pending; e: FlikkEnd; stars?: number; cupNote?: 'won' | 'out' }
@@ -58,7 +64,15 @@ function Tactics({ value, onChange, kit, label }: { value: TeamSetup; onChange: 
   );
 }
 
-function rulesList(t: (en: string, bn: string) => string) {
+function rulesList(t: (en: string, bn: string) => string, style: Style = 'free') {
+  if (style === 'fixed') return [
+    t('Fixed players: everyone stays on their spot, like table football. Only the ball moves.', 'স্থির খেলোয়াড়: টেবিল ফুটবলের মতো সবাই নিজের জায়গায় থাকে। শুধু বল চলে।'),
+    t('Press anywhere, pull back and let go: the ball flies the other way. Pull further for more power; hook the pull to curl it.', 'যেকোনো জায়গায় চেপে পেছনে টানো, ছেড়ে দাও: বল উল্টো দিকে যাবে। বেশি টানলে বেশি জোর; বাঁকা করে টানলে বল বাঁক খাবে।'),
+    t('Wherever the ball stops, the nearest player gets it. Green ring: your team-mate will get it. Red ring: the other team will.', 'বল যেখানে থামে, সবচেয়ে কাছের খেলোয়াড় বল পায়। সবুজ দাগ: তোমার দলের কেউ পাবে। লাল দাগ: অন্য দল পাবে।'),
+    t('Keep passing while the ball stays with your team. Lose it and it is their turn.', 'বল তোমার দলে থাকলে পাস দিয়ে যাও। হারালে ওদের পালা।'),
+    t('Keepers slide along their lines by themselves. Every flick moves the clock on.', 'গোলকিপার নিজে নিজে গোললাইনে সরে। প্রতিটা টোকায় ঘড়ি এগোয়।'),
+    t('Keys: arrows aim and set power, Space flicks.', 'কী-বোর্ড: তীর দিয়ে দিক আর জোর, স্পেসে টোকা।'),
+  ];
   return [
     t('Teams take turns. Press on one of your pieces, pull back and let go to flick it into the ball.', 'পালা করে খেলা। নিজের একটা গুটি চেপে পেছনে টানো, ছেড়ে দিলেই টোকা লেগে বলে যাবে।'),
     t('The dotted guide shows where your piece meets the ball and where the ball will go. Pull further for more power.', 'ডটেড দাগ দেখায় গুটি কোথায় বলে লাগবে আর বল কোন দিকে যাবে। বেশি টানলে বেশি জোর।'),
@@ -81,20 +95,22 @@ export default function FlikkFootball({ onExit }: GameProps) {
   const [setup2, setSetup2] = useState<TeamSetup>({ formation: '4-4-2', mentality: 'balanced' });
   const [diff, setDiff] = useState<Difficulty | 'auto'>('auto');
   const [len, setLen] = useState<Len>('short');
+  const [style, setStyleState] = useState<Style>(loadStyle);
+  const setStyle = (s: Style) => { setStyleState(s); writeJSON('ff.style', s); };
   const [pending, setPending] = useState<Pending | null>(null);
   const [matchKey, setMatchKey] = useState(0);
   const [after, setAfter] = useState<AfterInfo | null>(null);
   const [cup, setCup] = useState<Tournament | null>(() => loadTournament(GAME));
   const [chStars, setChStars] = useState(loadChStars);
   const sim = useMemo(() => footballSimulator(), []);
-  const help = <ol>{rulesList(t).map((r) => <li key={r}>{r}</li>)}</ol>;
+  const help = <ol>{rulesList(t, style).map((r) => <li key={r}>{r}</li>)}</ol>;
   const name = (id: string) => x.bi(getTeam(id).name);
   const chooseMine = (id: string) => { setMine(id); setFavTeam('football', id); if (id === opp) setOpp(defaultOpponent('football', id)); };
 
   const aiSetup = (o: string, seed: number): TeamSetup => ({ formation: FORMATION_IDS[(seed >> 3) % FORMATION_IDS.length], mentality: ratingOf(getTeam(o), 'football') >= 8 ? 'attack' : 'balanced' });
   const base = (o: string, d: Difficulty): FlikkConfig => {
     const seed = (Math.random() * 2 ** 31) >>> 0;
-    return { teams: [mine, o], setups: [setup, aiSetup(o, seed)], vsAI: true, skill: skillFor(d, o), totalTurns: LENGTHS[len], score: [0, 0], turnsDone: 0, startMinute: 0, kicking: 0, setup: 'kickoff', knockout: false, seed };
+    return { style, teams: [mine, o], setups: [setup, aiSetup(o, seed)], vsAI: true, skill: skillFor(d, o), totalTurns: clock(style, LENGTHS[len]), score: [0, 0], turnsDone: 0, startMinute: 0, kicking: 0, setup: 'kickoff', knockout: false, seed };
   };
   const launch = (p: Pending) => { setPending(p); setMatchKey((k) => k + 1); setScreen('match'); sfx('bell'); };
 
@@ -107,7 +123,7 @@ export default function FlikkFootball({ onExit }: GameProps) {
     const seed = (Math.random() * 2 ** 31) >>> 0;
     launch({
       kind: 'challenge', ch, names: [name(mine), name(ch.opp)], occasion: x.bi(ch.title),
-      cfg: { teams: [mine, ch.opp], setups: [setup, aiSetup(ch.opp, seed)], vsAI: true, skill: ch.skill, totalTurns: ch.turns, score: [...ch.score] as [number, number], turnsDone: 0, startMinute: ch.minute, kicking: ch.kicking, setup: ch.setup, knockout: false, stopAtGoals: ch.goal === 'score' ? ch.score[0] + (ch.n ?? 1) : undefined, seed },
+      cfg: { style, teams: [mine, ch.opp], setups: [setup, aiSetup(ch.opp, seed)], vsAI: true, skill: ch.skill, totalTurns: clock(style, ch.turns), score: [...ch.score] as [number, number], turnsDone: 0, startMinute: ch.minute, kicking: ch.kicking, setup: ch.setup, knockout: false, stopAtGoals: ch.goal === 'score' ? ch.score[0] + (ch.n ?? 1) : undefined, seed },
     });
   };
   const startCup = (tour: Tournament) => {
@@ -115,7 +131,7 @@ export default function FlikkFootball({ onExit }: GameProps) {
     if (!f) return;
     const o = f.home === tour.player ? f.away : f.home;
     const c = base(o, autoDiff(o));
-    launch({ kind: 'cup', cfg: { ...c, teams: [tour.player, o], totalTurns: LENGTHS.short, knockout: f.stage !== 'group' }, names: [name(tour.player), name(o)], occasion: stageName(x, f) });
+    launch({ kind: 'cup', cfg: { ...c, teams: [tour.player, o], totalTurns: clock(style, LENGTHS.short), knockout: f.stage !== 'group' }, names: [name(tour.player), name(o)], occasion: stageName(x, f) });
   };
 
   const done = (e: FlikkEnd) => {
@@ -200,6 +216,7 @@ export default function FlikkFootball({ onExit }: GameProps) {
       <div className="sport-eyebrow">{t('Desk football', 'ডেস্কের ফুটবল')}</div>
       <h2>{t('Flikk Football', 'ফ্লিক ফুটবল')}</h2>
       <p className="lede">{t('Eleven bottle caps a side on a green desk. Pull, aim, flick: pass, curl and score.', 'সবুজ ডেস্কে প্রতি দলে এগারোটা গুটি। টানো, নিশানা করো, টোকা দাও: পাস, বাঁক আর গোল।')}</p>
+      <StylePick value={style} onChange={setStyle} />
       <details className="bench-rules"><summary>{t('How to play', 'কীভাবে খেলবে')}</summary>{help}</details>
       <div className="mode-grid">
         <ModeCard testid="mode-quick" icon="⚽" title={t('Quick Match', 'কুইক ম্যাচ')} sub={t('Pick two countries, a formation and go.', 'দুই দেশ আর ফরমেশন বাছো, খেলা শুরু।')} onClick={() => setScreen('quick')} />
@@ -213,6 +230,7 @@ export default function FlikkFootball({ onExit }: GameProps) {
     body = <>
       {back}
       <h2>{local ? t('With a friend', 'বন্ধুর সাথে') : t('Quick Match', 'কুইক ম্যাচ')}</h2>
+      <StylePick value={style} onChange={setStyle} compact />
       <MatchUp sport="football" mine={mine} opp={opp} onMine={chooseMine} onOpp={setOpp} mineLabel={local ? p1 : undefined} oppLabel={local ? p2 : undefined} />
       <Tactics value={setup} onChange={setSetup} kit={kit} label={local ? t(`${p1}: formation`, `${p1}: ফরমেশন`) : undefined} />
       {local && <Tactics value={setup2} onChange={setSetup2} kit={getTeam(opp).kit[0]} label={t(`${p2}: formation`, `${p2}: ফরমেশন`)} />}
@@ -221,7 +239,9 @@ export default function FlikkFootball({ onExit }: GameProps) {
         <Seg label={t('Computer', 'কম্পিউটার')} value={diff} onChange={setDiff} options={[{ v: 'auto', label: t('By team', 'দল অনুযায়ী') }, { v: 'easy', label: t('Easy', 'সহজ') }, { v: 'medium', label: t('Medium', 'মাঝারি') }, { v: 'hard', label: t('Hard', 'কঠিন') }]} />
       </>}
       <div className="opt-label">{t('Match length', 'ম্যাচের দৈর্ঘ্য')}</div>
-      <Seg label={t('Match length', 'ম্যাচের দৈর্ঘ্য')} value={len} onChange={setLen} options={[{ v: 'short', label: t(`Short (${LENGTHS.short / 2} turns each)`, `ছোট (প্রতি দলে ${n(LENGTHS.short / 2)} পালা)`) }, { v: 'normal', label: t(`Normal (${LENGTHS.normal / 2})`, `মাঝারি (${n(LENGTHS.normal / 2)})`) }, { v: 'long', label: t(`Long (${LENGTHS.long / 2})`, `লম্বা (${n(LENGTHS.long / 2)})`) }]} />
+      <Seg label={t('Match length', 'ম্যাচের দৈর্ঘ্য')} value={len} onChange={setLen} options={style === 'fixed'
+        ? [{ v: 'short', label: t(`Short (${clock('fixed', LENGTHS.short)} flicks)`, `ছোট (${n(clock('fixed', LENGTHS.short))} টোকা)`) }, { v: 'normal', label: t(`Normal (${clock('fixed', LENGTHS.normal)})`, `মাঝারি (${n(clock('fixed', LENGTHS.normal))})`) }, { v: 'long', label: t(`Long (${clock('fixed', LENGTHS.long)})`, `লম্বা (${n(clock('fixed', LENGTHS.long))})`) }]
+        : [{ v: 'short', label: t(`Short (${LENGTHS.short / 2} turns each)`, `ছোট (প্রতি দলে ${n(LENGTHS.short / 2)} পালা)`) }, { v: 'normal', label: t(`Normal (${LENGTHS.normal / 2})`, `মাঝারি (${n(LENGTHS.normal / 2)})`) }, { v: 'long', label: t(`Long (${LENGTHS.long / 2})`, `লম্বা (${n(LENGTHS.long / 2)})`) }]} />
       <div className="sport-actions"><button className="btn big" data-testid="start" onClick={local ? startLocal : startQuick}>{t('Kick off', 'কিক-অফ')}</button></div>
     </>;
   } else if (screen === 'challenges') {
@@ -280,6 +300,48 @@ export default function FlikkFootball({ onExit }: GameProps) {
   );
 }
 
+/** Fixed players (table football) or roaming players (flick your players into the ball). */
+function StylePick({ value, onChange, compact }: { value: Style; onChange: (s: Style) => void; compact?: boolean }) {
+  const { t } = useTx();
+  const opts: Array<{ v: Style; icon: ReactNode; title: string; sub: string }> = [
+    { v: 'fixed', icon: <StyleIcon fixed />, title: t('Fixed players', 'স্থির খেলোয়াড়'), sub: t('Players stay on their spots. Flick the ball between them.', 'খেলোয়াড় জায়গায় থাকে। বলে টোকা দিয়ে পাস দাও।') },
+    { v: 'free', icon: <StyleIcon />, title: t('Roaming players', 'চলমান খেলোয়াড়'), sub: t('Flick your players into the ball. They move around the pitch.', 'নিজের খেলোয়াড়কে টোকা দিয়ে বলে মারো। ওরা মাঠে ঘোরে।') },
+  ];
+  return (
+    <div className={`ff-style ${compact ? 'compact' : ''}`} role="radiogroup" aria-label={t('How the players move', 'খেলোয়াড় কীভাবে চলবে')}>
+      {opts.map((o) => (
+        <button key={o.v} type="button" role="radio" aria-checked={value === o.v} className="ff-style-opt" data-testid={`style-${o.v}`}
+          onClick={() => { if (value !== o.v) { sfx('click'); onChange(o.v); } }}>
+          {o.icon}
+          <span><b>{o.title}</b>{!compact && <small>{o.sub}</small>}</span>
+          {value === o.v && <i aria-hidden="true">✓</i>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function StyleIcon({ fixed }: { fixed?: boolean }) {
+  return (
+    <svg viewBox="0 0 64 44" className="ff-style-svg" aria-hidden="true">
+      <rect x="1" y="1" width="62" height="42" rx="5" fill="#2f8a4a" stroke="#fff" strokeWidth="1.5" />
+      <path d="M32 1 V43" stroke="rgba(255,255,255,0.6)" strokeWidth="1" />
+      {fixed ? <>
+        {[[12, 12], [12, 32], [26, 22], [40, 10], [40, 34], [52, 22]].map(([cx, cy], i) => <circle key={i} cx={cx} cy={cy} r="4" fill={i % 2 ? '#e94b3c' : '#2a6fdb'} stroke="#fff" strokeWidth="1" />)}
+        <path d="M17 29 L23 24 M30 20 L37 12" stroke="#ffe27a" strokeWidth="1.6" strokeDasharray="2 2" />
+        <circle cx="34" cy="16" r="2.6" fill="#fff" stroke="#222" strokeWidth="0.6" />
+      </> : <>
+        <circle cx="18" cy="26" r="4" fill="#2a6fdb" stroke="#fff" strokeWidth="1" />
+        <path d="M8 34 L15 28" stroke="#ffe27a" strokeWidth="1.6" strokeDasharray="2 2" />
+        <path d="M21 23 Q30 14 40 18" stroke="#fff" strokeWidth="1.2" fill="none" strokeDasharray="2 2" />
+        <circle cx="26" cy="20" r="2.6" fill="#fff" stroke="#222" strokeWidth="0.6" />
+        <circle cx="46" cy="14" r="4" fill="#e94b3c" stroke="#fff" strokeWidth="1" />
+        <circle cx="48" cy="30" r="4" fill="#e94b3c" stroke="#fff" strokeWidth="1" />
+      </>}
+    </svg>
+  );
+}
+
 function FlikkMatch({ p, onDone, onQuit, onRestart }: { p: Pending; onDone: (e: FlikkEnd) => void; onQuit: () => void; onRestart: () => void }) {
   const x = useTx();
   const { t, n } = x;
@@ -293,6 +355,7 @@ function FlikkMatch({ p, onDone, onQuit, onRestart }: { p: Pending; onDone: (e: 
     switch (k) {
       case 'goal': return t(`GOAL! ${nm}`, `গোল! ${nm}`);
       case 'pass': return t(`Pass! Flick again (${v?.n})`, `পাস! আবার টোকা (${n(v?.n ?? '')})`);
+      case 'chain': return v?.n === '1' ? t('Pass!', 'পাস!') : t(`${v?.n} passes in a row!`, `টানা ${n(v?.n ?? '')}টা পাস!`);
       case 'turn': return t(`${nm}: your turn`, `${nm}-এর পালা`);
       case 'yourTurn': return t('Your turn', 'তোমার পালা');
       case 'theirTurn': return t('Computer’s turn', 'কম্পিউটারের পালা');
@@ -306,7 +369,7 @@ function FlikkMatch({ p, onDone, onQuit, onRestart }: { p: Pending; onDone: (e: 
     return '';
   }, [x.lang]); // eslint-disable-line react-hooks/exhaustive-deps
   const scene = useMemo(() => new FlikkScene(p.cfg, say, setHud, onDone), []); // eslint-disable-line react-hooks/exhaustive-deps
-  const help = <ol>{rulesList(t).map((r) => <li key={r}>{r}</li>)}</ol>;
+  const help = <ol>{rulesList(t, p.cfg.style).map((r) => <li key={r}>{r}</li>)}</ol>;
   useGameBar({ onPause: () => setPaused(true), onResume: () => setPaused(false), help }, [x.lang]);
   useEffect(() => { (window as unknown as { __flikk?: FlikkScene }).__flikk = scene; return () => { delete (window as unknown as { __flikk?: FlikkScene }).__flikk; }; }, [scene]);
 
@@ -340,8 +403,13 @@ function FlikkMatch({ p, onDone, onQuit, onRestart }: { p: Pending; onDone: (e: 
           <Flag id={p.cfg.teams[h?.turnSide ?? 0]} size={22} />
           {h?.thinking ? t('Computer is thinking…', 'কম্পিউটার ভাবছে…') : h?.phase === 'moving' ? t('…', '…') : `${p.names[h?.turnSide ?? 0]}`}
         </span>
-        <span className="ff-flicks" aria-label={t('Flicks this turn', 'এই পালার টোকা')}>{[1, 2, 3].map((i) => <i key={i} className={(h?.flick ?? 1) > i ? 'used' : (h?.flick ?? 1) === i ? 'now' : ''} />)}</span>
-        <button className="btn secondary ff-regroup" disabled={!h?.canRegroup} onClick={() => scene.regroupNow()} data-testid="regroup">{t('Regroup', 'সাজাও')}</button>
+        {p.cfg.style === 'fixed' ? <>
+          <span className="ff-chip" data-testid="chain" title={t('Passes in a row', 'টানা পাস')}>{t('Passes', 'পাস')} <b>{n(h?.chain ?? 0)}</b></span>
+          {!so && <span className="ff-chip" data-testid="left" title={t('Flicks left in the match', 'ম্যাচে বাকি টোকা')}>⏱ <b>{n(h?.left ?? 0)}</b></span>}
+        </> : <>
+          <span className="ff-flicks" aria-label={t('Flicks this turn', 'এই পালার টোকা')}>{[1, 2, 3].map((i) => <i key={i} className={(h?.flick ?? 1) > i ? 'used' : (h?.flick ?? 1) === i ? 'now' : ''} />)}</span>
+          <button className="btn secondary ff-regroup" disabled={!h?.canRegroup} onClick={() => scene.regroupNow()} data-testid="regroup">{t('Regroup', 'সাজাও')}</button>
+        </>}
       </div>
       {cover !== null && (
         <div className="overlay" role="dialog" aria-modal="true" aria-label={t('Pass the device', 'ফোন দাও')}>

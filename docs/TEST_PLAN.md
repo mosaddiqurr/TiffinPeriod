@@ -2,7 +2,7 @@
 
 ## Phase 4 — 7 November 2026
 
-- Unit tests: 168 pass (`npm test`), including 29 new ones in `tests/phase4.test.ts` (teams and flags, tournaments, ladders, daily seed, Number Cricket rules and computer, Dots and Boxes levels, Bangla Hangman, Flikk physics and computer, shootout rules, Five Stones, Eraser Flip landings and every challenge, plane challenges).
+- Unit tests: 174 pass (`npm test`), including 29 new ones in `tests/phase4.test.ts` (teams and flags, tournaments, ladders, daily seed, Number Cricket rules and computer, Dots and Boxes levels, Bangla Hangman, Flikk physics and computer (both styles, and the fixed-style guide matching real play), shootout rules, Five Stones, Eraser Flip landings and every challenge, plane challenges).
 - Browser tests: the whole suite (`npm run build && npx playwright test`) gave 84 passed, 14 skipped, 0 failed on the phone and desktop profiles. `e2e/phase4.spec.ts` plays every new game and mode to a result. The old Hand and Book Cricket flows were updated for the new mode menu.
 - The team-choice redesign (match poster and nation tiles) was checked by screenshots on phone and desktop, in English and Bangla, after the suite ran.
 - Not tested: real phones and tablets, sound by ear, native-speaker review of the new Bangla text.

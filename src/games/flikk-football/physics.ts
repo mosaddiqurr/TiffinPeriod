@@ -28,6 +28,8 @@ export interface World {
   touches: number[];
   goal: Side | null;
   t: number;
+  /** Fixed mode: the players are pinned to their spots and only the ball moves. */
+  pinned?: boolean;
 }
 
 export const ball = (w: World) => w.bodies.find((b) => b.kind === 'ball')!;
@@ -39,7 +41,7 @@ export const ownLine = (s: Side) => (s === 0 ? PITCH.bottom : PITCH.top);
 const keeperY = (s: Side) => (s === 0 ? PITCH.bottom - 24 : PITCH.top + 24);
 
 export function cloneWorld(w: World): World {
-  return { bodies: w.bodies.map((b) => ({ ...b })), keeperSpeed: [...w.keeperSpeed] as [number, number], touches: [...w.touches], goal: w.goal, t: w.t };
+  return { bodies: w.bodies.map((b) => ({ ...b })), keeperSpeed: [...w.keeperSpeed] as [number, number], touches: [...w.touches], goal: w.goal, t: w.t, pinned: w.pinned };
 }
 
 export function moving(w: World): boolean {
@@ -122,8 +124,9 @@ function collide(w: World, a: Body, b: Body) {
   const d2 = dx * dx + dy * dy;
   if (d2 >= min * min || d2 === 0) return;
   const d = Math.sqrt(d2), nx = dx / d, ny = dy / d;
-  const ka = a.kind === 'keeper' ? 0 : 1 / a.m;
-  const kb = b.kind === 'keeper' ? 0 : 1 / b.m;
+  const fixed = (x: Body) => x.kind === 'keeper' || (!!w.pinned && x.kind === 'disc');
+  const ka = fixed(a) ? 0 : 1 / a.m;
+  const kb = fixed(b) ? 0 : 1 / b.m;
   if (ka + kb === 0) return;
   // Separate
   const over = min - d;
@@ -168,14 +171,21 @@ export function step(w: World, dt = 1 / 120) {
   for (let s = 0; s < sub; s++) {
     for (const b of w.bodies) {
       if (b.kind === 'keeper') { moveKeeper(w, b, h); continue; }
+      if (w.pinned && b.kind === 'disc') continue;
       friction(b, h);
       const sp = Math.hypot(b.vx, b.vy);
       if (sp > MAX_SPEED * 1.2) { b.vx *= (MAX_SPEED * 1.2) / sp; b.vy *= (MAX_SPEED * 1.2) / sp; }
       b.x += b.vx * h; b.y += b.vy * h;
     }
     const n = w.bodies.length;
-    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) collide(w, w.bodies[i], w.bodies[j]);
-    for (const b of w.bodies) if (b.kind !== 'keeper') walls(b);
+    if (w.pinned) {
+      // Only the ball moves: check it against everything else.
+      const bl = w.bodies.find((b) => b.kind === 'ball')!;
+      for (const o of w.bodies) if (o !== bl) collide(w, bl, o);
+    } else {
+      for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) collide(w, w.bodies[i], w.bodies[j]);
+    }
+    for (const b of w.bodies) if (b.kind !== 'keeper' && !(w.pinned && b.kind === 'disc')) walls(b);
   }
   w.t += dt;
   const bl = ball(w);

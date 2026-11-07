@@ -12,7 +12,11 @@
 //   generators, so both players can derive the same sequence from one seed.
 // - Turn-based physics games (Flikk Football, Eraser Flip) send only the flick
 //   (piece, angle, power); the fixed-step simulation gives the same result on
-//   both devices.
+//   both devices. Flikk Football has two styles: 'free' (flick a player into the
+//   ball) and 'fixed' (players pinned to their spots, the ball is flicked between
+//   them; no piece is sent). Fixed is the one to put online first: only the ball
+//   moves, so a turn is tiny and quick to check. The player who flicked also sends
+//   where the ball stopped, so the other device can correct any rounding drift.
 //
 // A later phase adds a Transport (WebRTC data channel with a free signalling
 // service, or a free-tier websocket host) behind this interface.
@@ -61,4 +65,16 @@ export function loopback<M>(): [Transport<M>, Transport<M>] {
     close: () => mine.clear(),
   });
   return [make(a, b), make(b, a)];
+}
+
+/** One Flikk Football flick as it travels online. */
+export interface FlikkMove {
+  style: 'free' | 'fixed';
+  /** Free style: the piece flicked. Fixed style: left out (the ball is flicked from whoever has it). */
+  piece?: number;
+  angle: number;
+  power: number;
+  spin: number;
+  /** Where the ball came to rest on the sender's device, for a drift check. */
+  rest?: { x: number; y: number };
 }

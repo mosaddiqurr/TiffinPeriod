@@ -4,8 +4,11 @@ import { sfx, vibrate } from '../../platform/audio';
 import { flagImage, getTeam } from '../../shared/teams';
 import { MAX_SPEED, PITCH, R_BALL, R_DISC, ball, discsOf, flick, keeperOf, moving, step, stopAll, type Body, type Side, type World } from './physics';
 import { aiChoose, judge, kickoff, regroup, separate, type TeamSetup } from './match';
+import { aiChooseFixed, fixedKickoff, flickBall, judgeFixed, placeBall, previewFixed, type Preview, type Style } from './fixed';
 
 export interface FlikkConfig {
+  /** 'free': flick your players into the ball. 'fixed': players stay on their spots, flick the ball between them. */
+  style?: Style;
   teams: [string, string];
   setups: [TeamSetup, TeamSetup];
   vsAI: boolean;
@@ -36,6 +39,11 @@ export interface FlikkHud {
   canRegroup: boolean;
   shootout: { kicks: [boolean[], boolean[]] } | null;
   golden: boolean;
+  style: Style;
+  /** Fixed mode: completed passes in a row. */
+  chain: number;
+  /** Clock steps left (turns in free mode, flicks in fixed mode). */
+  left: number;
 }
 
 export interface FlikkEnd {
@@ -48,7 +56,7 @@ export interface FlikkEnd {
 
 type Phase = 'aim' | 'moving' | 'goal' | 'ai' | 'wait' | 'over';
 
-export type Say = (key: 'goal' | 'pass' | 'turn' | 'half' | 'golden' | 'pens' | 'saved' | 'missed' | 'scored' | 'yourTurn' | 'theirTurn', vars?: Record<string, string>) => string;
+export type Say = (key: 'goal' | 'pass' | 'chain' | 'turn' | 'half' | 'golden' | 'pens' | 'saved' | 'missed' | 'scored' | 'yourTurn' | 'theirTurn', vars?: Record<string, string>) => string;
 
 const FLICKS = 3;
 
@@ -85,6 +93,12 @@ export class FlikkScene implements Scene {
   private flags: [HTMLImageElement | null, HTMLImageElement | null];
   private kits: [[string, string], [string, string]];
   private bg: HTMLCanvasElement | null = null;
+  private style: Style;
+  /** Fixed mode: the player who has the ball. */
+  private holder = -1;
+  private chain = 0;
+  private glide: { fx: number; fy: number; tx: number; ty: number; t: number } | null = null;
+  private preview: { key: string; p: Preview } | null = null;
 
   constructor(private cfg: FlikkConfig, private say: Say, private onHud: (h: FlikkHud) => void, private onEnd: (e: FlikkEnd) => void) {
     this.rng = createRng(cfg.seed);
@@ -92,7 +106,8 @@ export class FlikkScene implements Scene {
     this.score = [...cfg.score] as [number, number];
     this.turnSide = cfg.kicking;
     this.firstKick = cfg.kicking;
-    this.w = kickoff(cfg.setups, cfg.kicking, this.keeperSpeeds());
+    this.style = cfg.style ?? 'free';
+    this.w = this.freshWorld(cfg.kicking);
     if (cfg.setup === 'attack') this.attackSetup();
     this.flags = [flagImage(cfg.teams[0]), flagImage(cfg.teams[1])];
     this.kits = [getTeam(cfg.teams[0]).kit, getTeam(cfg.teams[1]).kit];
@@ -105,7 +120,25 @@ export class FlikkScene implements Scene {
     return this.cfg.vsAI ? [230, ai] : [230, 230];
   }
 
+  private get fixed() { return this.style === 'fixed'; }
+
+  /** A new kick-off world for either style (fixed mode also sets who has the ball). */
+  private freshWorld(kicking: Side): World {
+    if (!this.fixed) return kickoff(this.cfg.setups, kicking, this.keeperSpeeds());
+    const k = fixedKickoff(this.cfg.setups, kicking, this.keeperSpeeds());
+    this.holder = k.holder;
+    this.chain = 0;
+    return k.w;
+  }
+
   private attackSetup() {
+    if (this.fixed) {
+      // Ball with your most advanced central player.
+      const mine = discsOf(this.w, 0).sort((a, b) => (a.y + Math.abs(a.x - 300) * 0.8) - (b.y + Math.abs(b.x - 300) * 0.8));
+      this.holder = mine[0].id;
+      placeBall(this.w, this.holder);
+      return;
+    }
     const bl = ball(this.w);
     bl.x = 300 + this.rng.range(-80, 80); bl.y = 330;
     const mine = discsOf(this.w, 0).sort((a, b) => Math.hypot(a.x - bl.x, a.y - bl.y) - Math.hypot(b.x - bl.x, b.y - bl.y));
@@ -126,6 +159,7 @@ export class FlikkScene implements Scene {
   private startTurn(side: Side) {
     this.turnSide = side;
     this.flicks = 0;
+    this.chain = 0;
     this.sel = null;
     this.flash(this.cfg.vsAI ? (side === 0 ? this.say('yourTurn') : this.say('theirTurn')) : this.say('turn', { id: this.cfg.teams[side] }));
     this.nextFlick();
@@ -152,13 +186,20 @@ export class FlikkScene implements Scene {
   private aiFlick() {
     this.phase = 'ai';
     this.emit();
+    if (this.fixed) {
+      const f = aiChooseFixed(this.w, this.turnSide, this.holder, this.cfg.skill, this.rng);
+      this.doFlick(this.holder, f.angle, f.power, 0);
+      return;
+    }
     const m = aiChoose(this.w, this.turnSide, this.cfg.skill, this.rng, FLICKS - this.flicks);
     this.doFlick(m.piece, m.angle, m.power, 0);
   }
 
   private doFlick(piece: number, angle: number, power: number, spin: number) {
     this.piece = piece;
-    flick(this.w, piece, angle, power, spin);
+    this.preview = null;
+    if (this.fixed) flickBall(this.w, angle, power, spin);
+    else flick(this.w, piece, angle, power, spin);
     this.phase = 'moving';
     this.drag = null;
     this.kb.on = false;
@@ -171,6 +212,7 @@ export class FlikkScene implements Scene {
   }
 
   private resolve() {
+    if (this.fixed) { this.resolveFixed(); return; }
     const r = judge(this.w, this.turnSide, this.piece);
     stopAll(this.w);
     this.flicks++;
@@ -185,12 +227,38 @@ export class FlikkScene implements Scene {
     this.endTurn();
   }
 
-  private endTurn() {
+  /** Fixed mode: whoever reaches the ball has it; keep flicking while it stays with your team. */
+  private resolveFixed() {
+    stopAll(this.w);
+    this.flicks++;
+    if (this.shootout) { this.shootoutKick(false); return; }
+    const r = judgeFixed(this.w, this.turnSide, this.holder);
+    const nextSide = receiverSide(this.w, r.holder);
+    if (r.pass) {
+      this.passes[this.turnSide]++;
+      this.chain++;
+      sfx('good', { gain: 0.6 });
+      this.flash(this.say('chain', { n: String(this.chain) }), 0.9);
+    } else if (!r.keep) {
+      sfx('bad', { gain: 0.4 });
+    }
+    this.holder = r.holder;
+    const bl = ball(this.w);
+    const fx = bl.x, fy = bl.y;
+    placeBall(this.w, this.holder);
+    this.glide = { fx, fy, tx: bl.x, ty: bl.y, t: 0 };
+    bl.x = fx; bl.y = fy;
+    this.later(0.32, () => this.endTurn(nextSide));
+    this.emit();
+  }
+
+  private endTurn(nextOverride?: Side) {
     this.turnsDone++;
-    const next: Side = this.turnSide === 0 ? 1 : 0;
+    const next: Side = nextOverride ?? (this.turnSide === 0 ? 1 : 0);
+    const go = () => { if (this.fixed && next === this.turnSide) this.nextFlick(); else this.startTurn(next); };
     if (this.golden) {
-      if (this.turnsDone >= this.cfg.totalTurns + 6) { this.startShootout(); return; }
-      this.startTurn(next);
+      if (this.turnsDone >= this.cfg.totalTurns + (this.fixed ? 12 : 6)) { this.startShootout(); return; }
+      go();
       return;
     }
     if (this.turnsDone >= this.cfg.totalTurns) { this.fullTime(); return; }
@@ -200,11 +268,11 @@ export class FlikkScene implements Scene {
       this.flash(this.say('half'));
       const k: Side = this.firstKick === 0 ? 1 : 0;
       this.regroupUsed = [false, false];
-      this.later(1.6, () => { this.w = kickoff(this.cfg.setups, k, this.keeperSpeeds()); this.startTurn(k); });
+      this.later(1.6, () => { this.w = this.freshWorld(k); this.startTurn(k); });
       this.emit();
       return;
     }
-    this.startTurn(next);
+    go();
   }
 
   private onGoal(side: Side) {
@@ -227,7 +295,7 @@ export class FlikkScene implements Scene {
       if (this.cfg.stopAtGoals !== undefined && this.score[0] >= this.cfg.stopAtGoals) { this.finish(); return; }
       this.turnsDone++;
       if (this.turnsDone >= this.cfg.totalTurns) { this.fullTime(); return; }
-      this.w = kickoff(this.cfg.setups, conceding, this.keeperSpeeds());
+      this.w = this.freshWorld(conceding);
       this.startTurn(conceding);
     });
   }
@@ -237,7 +305,7 @@ export class FlikkScene implements Scene {
     if (this.cfg.knockout && this.score[0] === this.score[1] && !this.golden) {
       this.golden = true;
       this.flash(this.say('golden'), 2);
-      this.later(1.8, () => { this.w = kickoff(this.cfg.setups, this.firstKick, this.keeperSpeeds()); this.startTurn(this.firstKick); });
+      this.later(1.8, () => { this.w = this.freshWorld(this.firstKick); this.startTurn(this.firstKick); });
       this.emit();
       return;
     }
@@ -265,6 +333,8 @@ export class FlikkScene implements Scene {
     bl.x = 300; bl.y = spotY;
     shooter.x = 300 + this.rng.range(-30, 30); shooter.y = spotY + (s === 0 ? 70 : -70);
     keeperOf(w, keeperSide).x = 300;
+    w.pinned = this.fixed;
+    this.holder = shooter.id;
     this.w = w;
     this.turnSide = s;
     this.flicks = 0;
@@ -310,7 +380,7 @@ export class FlikkScene implements Scene {
   }
 
   regroupNow() {
-    if (this.phase !== 'aim' || this.flicks > 0 || this.regroupUsed[this.turnSide] || this.shootout) return;
+    if (this.fixed || this.phase !== 'aim' || this.flicks > 0 || this.regroupUsed[this.turnSide] || this.shootout) return;
     this.regroupUsed[this.turnSide] = true;
     regroup(this.w, this.turnSide, this.cfg.setups[this.turnSide]);
     sfx('whoosh');
@@ -323,6 +393,14 @@ export class FlikkScene implements Scene {
 
   pointerDown(x: number, y: number) {
     if (!this.humanTurn()) return;
+    if (this.fixed) {
+      // Press anywhere, pull back and let go: the ball goes the other way.
+      this.sel = this.holder;
+      this.kb.on = false;
+      this.drag = { sx: x, sy: y, x, y, path: [[x, y]] };
+      sfx('tick', { gain: 0.4 });
+      return;
+    }
     const ds = discsOf(this.w, this.turnSide);
     let best: Body | null = null, bd = 64;
     for (const d of ds) { const dd = Math.hypot(d.x - x, d.y - y); if (dd < bd) { bd = dd; best = d; } }
@@ -352,7 +430,13 @@ export class FlikkScene implements Scene {
   key(code: string) {
     if (!this.humanTurn()) return false;
     const ds = discsOf(this.w, this.turnSide);
-    if (code === 'Tab') {
+    if (this.fixed && this.sel !== this.holder) {
+      this.sel = this.holder;
+      const bl = ball(this.w);
+      const g = this.turnSide === 0 ? PITCH.top : PITCH.bottom;
+      this.kb.angle = Math.atan2(g - bl.y, 300 - bl.x);
+    }
+    if (code === 'Tab' && !this.fixed) {
       const bl = ball(this.w);
       const sorted = ds.sort((a, b) => Math.hypot(a.x - bl.x, a.y - bl.y) - Math.hypot(b.x - bl.x, b.y - bl.y));
       const i = sorted.findIndex((d) => d.id === this.sel);
@@ -372,6 +456,7 @@ export class FlikkScene implements Scene {
   /** Test hook: flick the selected (or a given) piece. */
   testFlick(angle: number, power: number, piece?: number) {
     if (!this.humanTurn()) return false;
+    if (this.fixed) { this.doFlick(this.holder, angle, power, 0); return true; }
     const id = piece ?? this.sel;
     if (id === null) return false;
     this.doFlick(id, angle, power, 0);
@@ -412,6 +497,9 @@ export class FlikkScene implements Scene {
       canRegroup: this.humanTurn() && this.flicks === 0 && !this.regroupUsed[this.turnSide] && !this.shootout,
       shootout: this.shootout ? { kicks: [[...this.shootout.kicks[0]], [...this.shootout.kicks[1]]] } : null,
       golden: this.golden,
+      style: this.style,
+      chain: this.chain,
+      left: Math.max(0, this.cfg.totalTurns - this.turnsDone),
     });
   }
 
@@ -421,12 +509,21 @@ export class FlikkScene implements Scene {
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt);
     for (const p of this.particles) { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.97; p.vy *= 0.97; p.life -= dt; }
     this.particles = this.particles.filter((p) => p.life > 0);
+    if (this.glide) {
+      const g = this.glide;
+      g.t = Math.min(1, g.t + dt / 0.26);
+      const e = 1 - (1 - g.t) * (1 - g.t);
+      const bl = ball(this.w);
+      bl.x = g.fx + (g.tx - g.fx) * e; bl.y = g.fy + (g.ty - g.fy) * e;
+      this.ballSpin += dt * 6;
+      if (g.t >= 1) this.glide = null;
+    }
     if (this.phase === 'wait' && this.after) {
       this.wait -= dt;
       if (this.wait <= 0) { const f = this.after; this.after = null; f(); }
       return;
     }
-    if (this.phase === 'moving' || this.phase === 'aim' || this.phase === 'ai') {
+    if (this.phase === 'moving' || (!this.fixed && (this.phase === 'aim' || this.phase === 'ai'))) {
       const before = ball(this.w);
       const sp0 = Math.hypot(before.vx, before.vy);
       step(this.w, dt);
@@ -510,7 +607,7 @@ export class FlikkScene implements Scene {
       if (b.kind === 'ball') continue;
       const s = b.side as Side;
       const kit = this.kits[s];
-      const mine = human && b.side === this.turnSide && b.kind === 'disc';
+      const mine = this.fixed ? b.id === this.holder && this.phase === 'aim' : human && b.side === this.turnSide && b.kind === 'disc';
       ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
       ctx.fillStyle = b.kind === 'keeper' ? shade(kit[1], -0.15) : kit[0]; ctx.fill();
       ctx.lineWidth = 4; ctx.strokeStyle = b.kind === 'keeper' ? kit[0] : kit[1]; ctx.stroke();
@@ -538,7 +635,8 @@ export class FlikkScene implements Scene {
     ctx.beginPath(); ctx.arc(bl.x, bl.y, 2.6, 0, Math.PI * 2); ctx.fill();
 
     // Aim guide
-    if (aim && selBody && aim.power > 0.02) this.drawAim(ctx, selBody, aim);
+    if (aim && this.fixed && aim.power > 0.02) this.drawAimFixed(ctx, aim);
+    else if (aim && selBody && aim.power > 0.02) this.drawAim(ctx, selBody, aim);
 
     // Particles
     for (const p of this.particles) { ctx.globalAlpha = Math.min(1, p.life * 1.5); ctx.fillStyle = p.c; ctx.fillRect(p.x - 3, p.y - 2, 6, 4); }
@@ -556,6 +654,44 @@ export class FlikkScene implements Scene {
       ctx.fillStyle = big ? '#ffe27a' : '#1f3a93';
       ctx.fillText(this.banner.text, 300, y + 2);
     }
+    ctx.restore();
+  }
+
+  /** Fixed mode guide: the ball's real path up to the first player it meets, or where it stops and who gets it. */
+  private drawAimFixed(ctx: CanvasRenderingContext2D, aim: { angle: number; power: number; spin: number }) {
+    const bl = ball(this.w);
+    const ux = Math.cos(aim.angle), uy = Math.sin(aim.angle);
+    const col = aim.power < 0.5 ? '#7CFC9A' : aim.power < 0.8 ? '#ffd34d' : '#ff6b5a';
+    const key = `${aim.angle.toFixed(3)}|${aim.power.toFixed(3)}|${aim.spin.toFixed(2)}|${this.holder}`;
+    if (!this.preview || this.preview.key !== key) this.preview = { key, p: previewFixed(this.w, this.holder, aim.angle, aim.power, aim.spin) };
+    const pv = this.preview.p;
+    const [ex, ey] = pv.path[pv.path.length - 1];
+    ctx.save();
+    ctx.setLineDash([8, 8]); ctx.lineDashOffset = -this.time * 40;
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(pv.path[0][0], pv.path[0][1]);
+    for (const [px, py] of pv.path) ctx.lineTo(px, py);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(ex, ey, R_BALL, 0, Math.PI * 2); ctx.stroke();
+    if (pv.who && !this.shootout) {
+      // Green: one of yours gets it. Red: the other team does. Solid when it hits them, dashed when it stops by them.
+      const r = pv.who;
+      ctx.strokeStyle = r.side === this.turnSide ? '#7CFC9A' : '#ff6b5a'; ctx.lineWidth = 3;
+      if (pv.end === 'rest') ctx.setLineDash([4, 5]);
+      ctx.beginPath(); ctx.arc(r.x, r.y, r.r + 7, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    if (pv.end === 'goal') {
+      ctx.fillStyle = '#ffe27a';
+      ctx.beginPath(); ctx.arc(ex, ey, 6, 0, Math.PI * 2); ctx.fill();
+    }
+    // Power arrow from the ball.
+    const L = 22 + aim.power * 70;
+    ctx.strokeStyle = col; ctx.lineWidth = 7; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(bl.x + ux * (R_BALL + 4), bl.y + uy * (R_BALL + 4)); ctx.lineTo(bl.x + ux * (R_BALL + L), bl.y + uy * (R_BALL + L)); ctx.stroke();
+    arrowHead(ctx, bl.x + ux * (R_BALL + L), bl.y + uy * (R_BALL + L), aim.angle, col);
     ctx.restore();
   }
 
@@ -601,6 +737,10 @@ export class FlikkScene implements Scene {
     arrowHead(ctx, d.x + ux * (R_DISC + L), d.y + uy * (R_DISC + L), aim.angle, col);
     ctx.restore();
   }
+}
+
+function receiverSide(w: World, id: number): Side {
+  return w.bodies.find((b) => b.id === id)!.side as Side;
 }
 
 function arrowHead(ctx: CanvasRenderingContext2D, x: number, y: number, a: number, c: string) {
