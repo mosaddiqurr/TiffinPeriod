@@ -6,6 +6,8 @@ import { readJSON, writeJSON } from '../../platform/storage';
 import { flagUrl, getTeam, ratingOf, teamsFor, type Sport, type Team } from '../../shared/teams';
 import { standings, type Fixture, type Tournament } from '../../shared/tournament';
 import type { BallEvent } from '../../shared/cricket';
+import { DOODLES } from '../Doodles';
+import { getGame } from '../../platform/registry';
 import './sport.css';
 
 // Shared parts for the national-team games: flags, team choice, the cup board,
@@ -139,6 +141,22 @@ export function MatchUp({ sport, mine, opp, onMine, onOpp, oppLocked, oppMystery
 }
 
 /** A big mode card on a game's menu. */
+/** The top of a game's menu: its drawing, a small label, the title and one line. */
+export function HubHero({ id, eyebrow, title, lede }: { id: string; eyebrow: string; title: string; lede: string }) {
+  const Doodle = DOODLES[id];
+  const accent = getGame(id)?.accent;
+  return (
+    <header className="hub-hero" style={accent ? { ['--accent' as string]: accent } : undefined}>
+      <div className="hub-hero-text">
+        <span className="hub-chip">{eyebrow}</span>
+        <h2>{title}</h2>
+        <p className="lede">{lede}</p>
+      </div>
+      {Doodle && <div className="hub-hero-art" aria-hidden="true"><Doodle accent={accent} /></div>}
+    </header>
+  );
+}
+
 export function ModeCard({ icon, title, sub, onClick, badge, testid }: { icon: ReactNode; title: string; sub: string; onClick: () => void; badge?: string; testid?: string }) {
   return (
     <button type="button" className="mode-card" onClick={() => { sfx('click'); onClick(); }} data-testid={testid}>

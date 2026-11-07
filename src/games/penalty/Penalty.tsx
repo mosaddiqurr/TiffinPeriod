@@ -6,7 +6,7 @@ import { readJSON, writeJSON } from '../../platform/storage';
 import { getStats, recordResult } from '../../platform/scores';
 import { sfx } from '../../platform/audio';
 import { PauseMenu, Seg, useGameBar, usePlayerNames, type Difficulty } from '../../components/ui';
-import { Championship, Flag, MatchUp, ModeCard, TeamGrid, favTeam, setFavTeam, useTx } from '../../components/sport/SportKit';
+import { Championship, Flag, HubHero, MatchUp, ModeCard, TeamGrid, favTeam, setFavTeam, useTx } from '../../components/sport/SportKit';
 import { defaultOpponent, getTeam, ratingOf, teamsFor } from '../../shared/teams';
 import type { Bi } from '../../platform/i18n';
 import { KeeperAI, decided, goals, nextKicker, type Shootout } from './model';
@@ -203,9 +203,7 @@ export default function Penalty({ onExit }: GameProps) {
   let body: ReactNode;
   if (screen === 'menu') {
     body = <>
-      <div className="sport-eyebrow">{t('Twelve yards', 'বারো গজ')}</div>
-      <h2>{t('Penalty Shootout', 'পেনাল্টি শুটআউট')}</h2>
-      <p className="lede">{t('Pick a corner, beat the keeper, then put on the gloves and guess right.', 'কোণ বাছো, গোলকিপারকে হারাও, তারপর গ্লাভস পরে ঠিক দিকে ঝাঁপাও।')}</p>
+      <HubHero id="penalty" eyebrow={t('Twelve yards', 'বারো গজ')} title={t('Penalty Shootout', 'পেনাল্টি শুটআউট')} lede={t('Pick a corner, beat the keeper, then put on the gloves and guess right.', 'কোণ বাছো, গোলকিপারকে হারাও, তারপর গ্লাভস পরে ঠিক দিকে ঝাঁপাও।')} />
       <details className="bench-rules"><summary>{t('How to play', 'কীভাবে খেলবে')}</summary>{help}</details>
       <OnlineButton onClick={online.show} />
       <div className="mode-grid">

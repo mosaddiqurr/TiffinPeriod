@@ -297,3 +297,79 @@
 /* Bangla labels: no caps spacing, a little larger */
 .mu-tag:lang(bn), .ttile-tag:lang(bn) { letter-spacing: 0; font-size: 12.5px; }
 .ttile-meta:lang(bn) { letter-spacing: 0; }
+
+/* ---------- A game's menu: hero header, how to play, mode cards ---------- */
+.hub-hero {
+  position: relative; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; margin: 4px 0 14px; padding: 20px 20px 18px;
+  border-radius: 22px; overflow: hidden; color: var(--ink);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent, #1f3a93) 16%, #fffaf0) 0%, #fffaf0 70%);
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--accent, #1f3a93) 22%, #e8dcbc), 0 14px 30px -24px rgba(40, 25, 5, 0.7);
+}
+.hub-hero-text { min-width: 0; display: grid; gap: 4px; }
+.hub-chip {
+  justify-self: start; font: 800 12px/1 var(--font-body); letter-spacing: .08em; text-transform: uppercase; padding: 6px 10px; border-radius: 999px;
+  color: #fff; background: var(--accent, var(--pen));
+}
+:lang(bn) .hub-chip { letter-spacing: 0; font-size: 13px; }
+.hub-hero h2 { margin: 4px 0 0 !important; font-size: clamp(30px, 6vw, 44px) !important; }
+.hub-hero .lede { margin: 0 !important; font-size: 16px; line-height: 1.45; max-width: 46ch; }
+.hub-hero-art { width: clamp(96px, 22vw, 150px); aspect-ratio: 1; display: grid; place-items: center; }
+.hub-hero-art svg { width: 100%; height: 100%; filter: drop-shadow(0 8px 10px rgba(40, 25, 5, 0.18)); }
+
+.hub-hero ~ .bench-rules {
+  border: 0; padding: 0; margin: 0 0 14px; border-radius: 14px; background: #fffaf0; box-shadow: 0 0 0 1.5px #e8dcbc;
+}
+.hub-hero ~ .bench-rules > summary {
+  list-style: none; display: flex; align-items: center; gap: 10px; padding: 12px 16px; font: 700 16px var(--font-body); color: var(--pen); min-height: 48px; cursor: pointer;
+}
+.hub-hero ~ .bench-rules > summary::-webkit-details-marker { display: none; }
+.hub-hero ~ .bench-rules > summary::before {
+  content: '?'; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--pen); color: #fff; font-weight: 800; font-size: 15px; flex: none;
+}
+.hub-hero ~ .bench-rules > summary::after { content: '▾'; margin-left: auto; transition: transform .15s; }
+.hub-hero ~ .bench-rules[open] > summary::after { transform: rotate(180deg); }
+.hub-hero ~ .bench-rules > :not(summary) { margin: 0 16px 14px; line-height: 1.55; }
+
+/* mode cards */
+.hub-hero ~ .mode-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 4px; }
+.hub-hero ~ .mode-grid .mode-card {
+  flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px; border-radius: 18px; min-height: 150px; text-align: left;
+  box-shadow: 0 0 0 1.5px #e8dcbc, 0 4px 0 #e8dcbc; border: 0; background: #fffaf0;
+}
+.hub-hero ~ .mode-grid .mode-card:hover { box-shadow: 0 0 0 2px var(--accent, var(--pen)), 0 4px 0 #e8dcbc; }
+.hub-hero ~ .mode-grid .mc-icon { width: 52px; height: 52px; border-radius: 14px; font-size: 28px; }
+.hub-hero ~ .mode-grid .mc-text b { font-size: 19px; }
+/* Quick match: the featured card */
+.hub-hero ~ .mode-grid .mode-card[data-testid='mode-quick'] {
+  grid-column: span 2; flex-direction: row; align-items: center; min-height: 0; color: #fff;
+  background: linear-gradient(135deg, var(--accent, var(--pen)), color-mix(in srgb, var(--accent, var(--pen)) 70%, #000));
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--accent, var(--pen)) 55%, #000), 0 16px 28px -18px rgba(0,0,0,0.7);
+}
+.hub-hero ~ .mode-grid .mode-card[data-testid='mode-quick'] .mc-text b { color: #fff; font-size: 23px; }
+.hub-hero ~ .mode-grid .mode-card[data-testid='mode-quick'] .mc-text small { color: rgba(255,255,255,0.88); }
+.hub-hero ~ .mode-grid .mode-card[data-testid='mode-quick'] .mc-icon { background: rgba(255,255,255,0.92); width: 64px; height: 64px; }
+.hub-hero ~ .mode-grid .mode-card[data-testid='mode-quick']::after { content: '→'; margin-left: auto; font: 800 26px var(--font-display); }
+/* Online: the green banner, full width */
+.hub-hero ~ .mode-grid .mode-card[data-testid='mode-online'] {
+  grid-column: 1 / -1; flex-direction: row; align-items: center; min-height: 0; color: #fff;
+  background: linear-gradient(140deg, #0b5d43, #13805c 60%, #1d9a6c); box-shadow: 0 5px 0 #073d2c, 0 16px 28px -18px rgba(11, 93, 67, 0.95);
+}
+.hub-hero ~ .mode-grid .mode-card[data-testid='mode-online'] .mc-text b { color: #fff; }
+.hub-hero ~ .mode-grid .mode-card[data-testid='mode-online'] .mc-text small { color: rgba(255,255,255,0.88); }
+.hub-hero ~ .mode-grid .mode-card[data-testid='mode-online'] .mc-icon { background: rgba(255,255,255,0.18); }
+.hub-hero ~ .mode-grid .mode-card[data-testid='mode-online']::after { content: '→'; margin-left: auto; font: 800 24px var(--font-display); }
+.hub-hero ~ .mode-grid .mc-badge { top: 10px; right: 12px; transform: none; font-size: 12px; padding: 3px 9px; }
+.hub-hero ~ .mode-grid .mode-card[data-testid='mode-quick'] .mc-badge,
+.hub-hero ~ .mode-grid .mode-card[data-testid='mode-online'] .mc-badge { position: static; order: 2; margin-left: auto; }
+.hub-hero ~ .ol-entry { margin: 0 0 12px; border-radius: 18px; padding: 16px 18px; }
+
+@media (max-width: 700px) {
+  .hub-hero { padding: 16px; border-radius: 18px; }
+  .hub-hero-art { width: 84px; }
+  .hub-hero ~ .mode-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .hub-hero ~ .mode-grid .mode-card { padding: 14px; min-height: 140px; gap: 8px; }
+  .hub-hero ~ .mode-grid .mc-text b { font-size: 17px; }
+  .hub-hero ~ .mode-grid .mc-text small { font-size: 13px; }
+  .hub-hero ~ .mode-grid .mode-card[data-testid='mode-quick'] { grid-column: 1 / -1; min-height: 0; }
+  .hub-hero ~ .mode-grid .mode-card[data-testid='mode-quick'] .mc-icon { width: 54px; height: 54px; }
+}

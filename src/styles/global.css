@@ -571,3 +571,35 @@ a { color: var(--pen); }
 @media (max-width: 420px) { .sheet[data-testid='setup'] > .actions { bottom: -16px; margin: 12px -16px -16px; padding: 12px 16px 14px; } }
 .sheet[data-testid='setup'] > .actions:has(> .btn.secondary) { grid-template-columns: 2fr 1fr; }
 .sheet[data-testid='setup'] > .actions:has(> .btn.secondary) .btn.secondary { min-height: 60px; font-size: 18px; }
+
+/* Khata games' start sheet: the drawing sits beside the title, "How to play" is a card */
+.sheet[data-testid='setup'].bench-setup { position: relative; }
+.sheet[data-testid='setup'] > .bench-setup-art { position: absolute; top: 18px; right: 18px; width: 96px; height: 78px; margin: 0; float: none; }
+.sheet[data-testid='setup'] > .bench-eyebrow {
+  align-self: flex-start; margin: 0 0 6px; padding: 5px 10px; border-radius: 999px; background: var(--accent, var(--pen)); color: #fff;
+  font: 800 11.5px/1 var(--font-body); letter-spacing: .07em; text-transform: uppercase;
+}
+:lang(bn) .sheet[data-testid='setup'] > .bench-eyebrow { letter-spacing: 0; font-size: 12.5px; }
+.sheet[data-testid='setup'].bench-setup > .bench-eyebrow,
+.sheet[data-testid='setup'].bench-setup > h2,
+.sheet[data-testid='setup'].bench-setup > .lede { margin-right: 108px; }
+.sheet[data-testid='setup'] > .bench-rules { border: 0; padding: 0; margin: 4px 0 12px; border-radius: 14px; background: #f4ecd6; font-size: 15px; }
+.sheet[data-testid='setup'] > .bench-rules > summary {
+  list-style: none; display: flex; align-items: center; gap: 10px; padding: 12px 14px; min-height: 48px; font-weight: 700; color: var(--pen); cursor: pointer;
+}
+.sheet[data-testid='setup'] > .bench-rules > summary::-webkit-details-marker { display: none; }
+.sheet[data-testid='setup'] > .bench-rules > summary::before {
+  content: '?'; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--pen); color: #fff; font-weight: 800; flex: none;
+}
+.sheet[data-testid='setup'] > .bench-rules > summary::after { content: '▾'; margin-left: auto; transition: transform .15s; }
+.sheet[data-testid='setup'] > .bench-rules[open] > summary::after { transform: rotate(180deg); }
+.sheet[data-testid='setup'] > .bench-rules > :not(summary) { margin: 0 14px 12px; line-height: 1.55; }
+@media (max-width: 420px) {
+  .sheet[data-testid='setup'] > .bench-setup-art { display: block; width: 72px; height: 60px; top: 14px; right: 14px; }
+  .sheet[data-testid='setup'].bench-setup > .bench-eyebrow,
+  .sheet[data-testid='setup'].bench-setup > h2 { margin-right: 80px; }
+  .sheet[data-testid='setup'].bench-setup > .lede { margin-right: 0; }
+}
+.sheet[data-testid='setup'] > .actions .btn.secondary { white-space: nowrap; font-size: 17px; padding-inline: 10px; }
+.sheet[data-testid='setup'] .seg:has(> button:nth-child(5)) { display: flex; flex-wrap: wrap; }
+.sheet[data-testid='setup'] .seg:has(> button:nth-child(5)) > button { flex: 1 1 auto; min-width: 64px; white-space: nowrap; }

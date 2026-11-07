@@ -10,7 +10,7 @@ import { createTournament, cricketSimulator, loadTournament, nextFixture, player
 import { dailyChase, dailyScore, difficultyFor, isUnlocked, ladder, loadStars, saveStars, starsFor, type Chase, type CricketMode, type Difficulty } from '../../shared/cricketModes';
 import { dailyRecord, dailyStreak, saveDaily, shareOrCopy } from '../../shared/daily';
 import { ResultHero, ScoreDuel } from '../Result';
-import { Championship, CupBoard, Flag, MatchUp, ModeCard, TeamGrid, favTeam, setFavTeam, stageName, useTx } from './SportKit';
+import { Championship, CupBoard, Flag, HubHero, MatchUp, ModeCard, TeamGrid, favTeam, setFavTeam, stageName, useTx } from './SportKit';
 
 // The menu and modes for the three bench cricket games.
 // Each game gives a Match component; this hub picks the teams and the mode,
@@ -252,9 +252,7 @@ export function CricketHub({ game, onExit }: { game: CricketAdapter; onExit: () 
     const cupF = cup && nextFixture(cup);
     body = (
       <>
-        <div className="sport-eyebrow">{t('Tiffin cricket', 'টিফিনের ক্রিকেট')}</div>
-        <h2>{x.bi(game.title)}</h2>
-        <p className="lede">{x.bi(game.lede)}</p>
+        <HubHero id={game.id} eyebrow={t('Tiffin cricket', 'টিফিনের ক্রিকেট')} title={x.bi(game.title)} lede={x.bi(game.lede)} />
         <details className="bench-rules"><summary>{t('How to play', 'কীভাবে খেলবে')}</summary>{help}</details>
         <div className="mode-grid">
           {game.Online && <ModeCard testid="mode-online" icon="🌐" title={t('Play online · 1v1', 'অনলাইনে খেলো · ১ বনাম ১')} sub={t('Quick match, or a room with a code or link for a friend.', 'কুইক ম্যাচ, অথবা বন্ধুর জন্য কোড বা লিংকসহ রুম।')} badge={t('New', 'নতুন')} onClick={() => setScreen('online')} />}

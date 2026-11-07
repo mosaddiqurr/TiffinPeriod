@@ -5,7 +5,7 @@ import { recordResult, getStats, unlockAchievement } from '../../platform/scores
 import { readJSON, writeJSON } from '../../platform/storage';
 import { sfx } from '../../platform/audio';
 import { PauseMenu, Seg, useGameBar, usePlayerNames, type Difficulty } from '../../components/ui';
-import { Championship, CupBoard, Flag, FlagScore, MatchUp, ModeCard, TeamGrid, favTeam, setFavTeam, stageName, useTx } from '../../components/sport/SportKit';
+import { Championship, CupBoard, Flag, FlagScore, HubHero, MatchUp, ModeCard, TeamGrid, favTeam, setFavTeam, stageName, useTx } from '../../components/sport/SportKit';
 import { defaultOpponent, getTeam, ratingOf } from '../../shared/teams';
 import { createTournament, footballSimulator, loadTournament, nextFixture, playerResult, saveTournament, type Tournament } from '../../shared/tournament';
 import { FORMATION_IDS, type TeamSetup } from './match';
@@ -173,9 +173,7 @@ export default function FlikkFootball({ onExit }: GameProps) {
   if (screen === 'menu') {
     const done = CHALLENGES.filter((c) => chStars[c.id]).length;
     body = <>
-      <div className="sport-eyebrow">{t('Desk football', 'ডেস্কের ফুটবল')}</div>
-      <h2>{t('Flikk Football', 'ফ্লিক ফুটবল')}</h2>
-      <p className="lede">{t('Eleven bottle caps a side on a green desk. Pull, aim, flick: pass, curl and score.', 'সবুজ ডেস্কে প্রতি দলে এগারোটা গুটি। টানো, নিশানা করো, টোকা দাও: পাস, বাঁক আর গোল।')}</p>
+      <HubHero id="flikk-football" eyebrow={t('Desk football', 'ডেস্কের ফুটবল')} title={t('Flikk Football', 'ফ্লিক ফুটবল')} lede={t('Eleven bottle caps a side on a green desk. Pull, aim, flick: pass, curl and score.', 'সবুজ ডেস্কে প্রতি দলে এগারোটা গুটি। টানো, নিশানা করো, টোকা দাও: পাস, বাঁক আর গোল।')} />
       <OnlineButton onClick={online.show} />
       <StylePick value={style} onChange={setStyle} />
       <details className="bench-rules"><summary>{t('How to play', 'কীভাবে খেলবে')}</summary>{help}</details>
