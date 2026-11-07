@@ -45,7 +45,8 @@ export interface EngineConfig {
   aiDifficulty: Difficulty;
 }
 
-const AI_PROFILE: Record<Difficulty, { mean: number; sd: number; err: number; trickyErr: number }> = {
+/** How the computer player answers at each level (also used by the online stand-in). */
+export const AI_PROFILE: Record<Difficulty, { mean: number; sd: number; err: number; trickyErr: number }> = {
   easy: { mean: 640, sd: 110, err: 0.08, trickyErr: 0.35 },
   medium: { mean: 520, sd: 85, err: 0.05, trickyErr: 0.2 },
   hard: { mean: 430, sd: 65, err: 0.02, trickyErr: 0.1 },

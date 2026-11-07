@@ -62,3 +62,37 @@
 
 /* Banners sit below the opponent's bar, never over their name */
 .ol-match .hc-banner { top: 64px; max-width: calc(100% - 24px); white-space: normal; text-align: center; }
+
+/* The 10-second clock: a ring that empties */
+.ol-clock {
+  --p: 1; position: relative; display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; flex: none; vertical-align: middle;
+  background: conic-gradient(#0b5d43 calc(var(--p) * 360deg), rgba(0,0,0,0.12) 0);
+}
+.ol-clock::before { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: #fffdf6; }
+.ol-clock b { position: relative; font: 800 15px var(--font-display); color: #0b5d43; }
+.ol-clock.low { background: conic-gradient(#c62f2f calc(var(--p) * 360deg), rgba(0,0,0,0.12) 0); animation: ol-throb .5s ease-in-out infinite alternate; }
+.ol-clock.low b { color: #c62f2f; }
+@keyframes ol-throb { to { transform: scale(1.12); } }
+.reduced-motion .ol-clock.low { animation: none; }
+
+/* The other player's bar in a match */
+.ol-oppbar {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(255, 250, 235, 0.96);
+  box-shadow: 0 4px 14px -6px rgba(0,0,0,0.4); font-size: 16px; position: relative; z-index: 3;
+}
+.ol-oppbar b { font-family: var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45vw; }
+.ol-oppstate { margin-left: auto; color: var(--ink-soft); font-size: 14px; white-space: nowrap; }
+
+/* "Play online" on a game's setup screen */
+.ol-entry {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; margin: 4px 0 12px; padding: 12px 14px; border: 0; border-radius: 14px; cursor: pointer;
+  background: linear-gradient(150deg, #0b5d43, #13805c); color: #fff; box-shadow: 0 10px 22px -12px rgba(11, 93, 67, 0.9); transition: transform .12s;
+}
+.ol-entry:hover { transform: translateY(-1px); }
+.ol-entry span { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.ol-entry b { font: 800 17px/1.15 var(--font-display); }
+.ol-entry small { font-size: 13px; color: rgba(255,255,255,0.85); }
+.ol-entry i { font-style: normal; font-size: 20px; }
+.ol-entry > .ol-ico { flex: none; }
+.ol-join input { width: 0; min-width: 0; flex: 1 1 auto; }
+.ol-join .btn { flex: none; }

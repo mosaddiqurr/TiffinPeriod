@@ -7,38 +7,22 @@ import { sfx, vibrate } from '../../platform/audio';
 import { unlockAchievement } from '../../platform/scores';
 import { guess, hint, isShown, keyboard, livesLeft, newRound, roundPoints, validWord, type HMState, type Script } from './model';
 import { CATEGORIES } from './words';
+import { Gallows, PARTS } from './Gallows';
+import { OnlineHangman } from './online';
+import { OnlineButton, useOnlineEntry } from '../../components/online/OnlineButton';
 import './hangman.css';
 
 const LIVES: Record<Difficulty, number> = { easy: 10, medium: 8, hard: 6 };
-const PARTS = 11;
 const SOLO_WORDS = 5;
 const DUEL_ROUNDS = 4;
 
-/** The chalk drawing. The head is a plain circle: no face. */
-function Gallows({ parts, saved }: { parts: number; saved: boolean }) {
-  const show = (i: number) => parts > i;
-  return (
-    <svg viewBox="0 0 200 220" className={`hm-gallows ${saved ? 'saved' : ''}`} aria-hidden="true">
-      <g stroke="#f4f1e6" strokeWidth="5" strokeLinecap="round" fill="none">
-        {show(0) && <path d="M20 205 H130" />}
-        {show(1) && <path d="M50 205 V20" />}
-        {show(2) && <path d="M50 20 H140" />}
-        {show(3) && <path d="M50 55 L85 20" />}
-        {show(4) && !saved && <path d="M140 20 V48" strokeWidth="3" />}
-        <g className="hm-person">
-          {show(5) && <circle cx="140" cy="66" r="18" />}
-          {show(6) && <path d="M140 84 V140" />}
-          {show(7) && <path d="M140 98 L114 122" />}
-          {show(8) && <path d="M140 98 L166 122" />}
-          {show(9) && <path d="M140 140 L118 178" />}
-          {show(10) && <path d="M140 140 L162 178" />}
-        </g>
-      </g>
-    </svg>
-  );
+export default function Hangman({ onExit }: GameProps) {
+  const online = useOnlineEntry();
+  if (online.open) return <div className="sport-root ruled"><OnlineHangman onBack={online.close} code={online.code} /></div>;
+  return <HangmanLocal onExit={onExit} onOnline={online.show} />;
 }
 
-export default function Hangman({ onExit }: GameProps) {
+function HangmanLocal({ onExit, onOnline }: GameProps & { onOnline: () => void }) {
   const g = useBench('hangman'), t = g.text;
   const [p1, p2] = usePlayerNames();
   const [mode, setMode] = useState<Mode>('solo');
@@ -142,6 +126,7 @@ export default function Hangman({ onExit }: GameProps) {
     <BenchFrame game={g} title={t('Hangman', 'হ্যাংম্যান')} lede={t('Chalk on the blackboard while the teacher is out.', 'স্যার ক্লাসের বাইরে, ব্ল্যাকবোর্ডে চকের খেলা।')} rules={rules} onStart={start} onExit={onExit}
       art={<svg viewBox="0 0 110 88"><rect width="110" height="88" rx="6" fill="#24392d" /><g stroke="#f4f1e6" strokeWidth="3" fill="none" strokeLinecap="round"><path d="M14 78h44M26 78V12h40v10" /><circle cx="66" cy="30" r="8" /><path d="M66 38v20M66 44l-9 9M66 44l9 9" /></g><text x="88" y="72" fill="#f3b61f" fontSize="20" fontWeight="800" textAnchor="middle">অ</text></svg>}
       options={<>
+        <OnlineButton onClick={onOnline} />
         <ModeSeg value={mode} onChange={setMode} modes={['solo', 'local2p']} />
         <div className="opt-label">{t('Word language', 'শব্দের ভাষা')}</div>
         <Seg label={t('Word language', 'শব্দের ভাষা')} value={script} onChange={setScript} options={[{ v: 'bn', label: 'বাংলা' }, { v: 'en', label: 'English' }]} />

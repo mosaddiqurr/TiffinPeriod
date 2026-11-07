@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GameProps } from '../../platform/registry';
 import { useT, type StringTable } from '../../platform/i18n';
 import { UI } from '../../platform/strings';
@@ -8,6 +8,9 @@ import { createRng } from '../../engine/rng';
 import { Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames } from '../../components/ui';
 import { DOODLES, PARTY_WORDS } from './words';
 import type { Bi } from '../../platform/i18n';
+import { COLORS, Khata, PAPER, sample, toolState, type Stroke } from './khata';
+import { OnlineButton, useOnlineEntry } from '../../components/online/OnlineButton';
+import { OnlineNotebook } from './online';
 import './notebook-drawing.css';
 
 const S: StringTable<
@@ -34,73 +37,13 @@ const S: StringTable<
   },
 };
 
-type Stroke = { color: string; w: number; pts: Array<[number, number]> };
-const COLORS = ['#1f3a93', '#1b1b1b', '#c62f2f', '#127a59'];
-const PAPER = '#fbf7ea';
-
-/** A ruled khata page canvas. It draws the given strokes; it can also accept drawing. */
-function Khata({ strokes, onStroke, enabled }: { strokes: Stroke[]; onStroke?: (s: Stroke) => void; enabled: boolean; }) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  const live = useRef<Stroke | null>(null);
-  const tool = currentTool();
-  const paint = useCallback(() => {
-    const c = ref.current;
-    if (!c) return;
-    const r = c.getBoundingClientRect();
-    const dpr = Math.min(2, devicePixelRatio || 1);
-    if (c.width !== Math.round(r.width * dpr)) { c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr); }
-    const g = c.getContext('2d')!;
-    g.setTransform(dpr * r.width / 200, 0, 0, dpr * r.height / 200, 0, 0);
-    g.fillStyle = PAPER; g.fillRect(0, 0, 200, 200);
-    g.strokeStyle = '#c2d3e4'; g.lineWidth = 0.6;
-    for (let y = 14; y < 200; y += 10) { g.beginPath(); g.moveTo(0, y); g.lineTo(200, y); g.stroke(); }
-    g.strokeStyle = '#d9534f'; g.lineWidth = 0.8; g.beginPath(); g.moveTo(16, 0); g.lineTo(16, 200); g.stroke();
-    g.lineCap = 'round'; g.lineJoin = 'round';
-    for (const s of [...strokes, ...(live.current ? [live.current] : [])]) {
-      g.strokeStyle = s.color; g.lineWidth = s.w;
-      g.beginPath();
-      s.pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
-      if (s.pts.length === 1) g.lineTo(s.pts[0][0] + 0.1, s.pts[0][1]);
-      g.stroke();
-    }
-  }, [strokes]);
-  useEffect(() => {
-    paint();
-    const ro = new ResizeObserver(paint);
-    if (ref.current) ro.observe(ref.current);
-    return () => ro.disconnect();
-  }, [paint]);
-  const pos = (e: RPointerEvent): [number, number] => {
-    const r = ref.current!.getBoundingClientRect();
-    return [((e.clientX - r.left) / r.width) * 200, ((e.clientY - r.top) / r.height) * 200];
-  };
-  return (
-    <canvas
-      ref={ref}
-      className="nd-canvas"
-      data-testid="khata"
-      onPointerDown={(e) => { if (!enabled) return; (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId); live.current = { color: tool.color, w: tool.w, pts: [pos(e)] }; paint(); }}
-      onPointerMove={(e) => { if (!live.current) return; live.current.pts.push(pos(e)); paint(); }}
-      onPointerUp={() => { if (live.current) { onStroke?.(live.current); live.current = null; } }}
-      onPointerCancel={() => { live.current = null; paint(); }}
-    />
-  );
-}
-
-// A tiny shared "current tool" (colour and width), set by the toolbar.
-const toolState = { color: COLORS[0], w: 2.2 };
-function currentTool() { return toolState; }
-
-/** Turn SVG path data into point lists (using the browser's SVG geometry). */
-function sample(d: string): Array<[number, number]> {
-  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  p.setAttribute('d', d);
-  const len = p.getTotalLength();
-  const n = Math.max(2, Math.round(len / 3));
-  return Array.from({ length: n + 1 }, (_, i) => { const q = p.getPointAtLength((len * i) / n); return [q.x, q.y] as [number, number]; });
-}
-
 export default function NotebookDrawing({ onExit }: GameProps) {
+  const online = useOnlineEntry();
+  if (online.open) return <div className="sport-root ruled"><OnlineNotebook onBack={online.close} code={online.code} /></div>;
+  return <NotebookDrawingLocal onExit={onExit} onOnline={online.show} />;
+}
+
+function NotebookDrawingLocal({ onExit, onOnline }: GameProps & { onOnline: () => void }) {
   const t = useT(S);
   const u = useT(UI);
   const [n1, n2] = usePlayerNames();
@@ -265,6 +208,7 @@ export default function NotebookDrawing({ onExit }: GameProps) {
           <div className="sheet ruled" data-testid="setup">
             <h2>{t('title')}</h2>
             <p className="lede">{t('lede')}</p>
+            <OnlineButton onClick={onOnline} />
             <Rules t={t} />
             <div className="opt-label">{t('mode')}</div>
             <Seg label={t('mode')} value={mode} onChange={setMode} options={[{ v: 'party', label: t('party') }, { v: 'cpu', label: t('cpu') }]} />

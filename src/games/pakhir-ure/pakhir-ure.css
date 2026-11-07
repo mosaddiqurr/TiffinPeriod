@@ -42,3 +42,13 @@
 .pu-finger .f { transition: transform 0.08s ease-out; transform: translateY(14px); }
 .pu-finger.up .f { transform: translateY(-6px); }
 @media (max-height: 640px) { .pu-board { min-height: 170px; } .pu-art { width: 72px; height: 72px; } .pu-pad { min-height: 100px; } }
+
+/* Online race */
+.pu-online { padding-top: 8px; }
+.pu-online .ol-oppbar { width: min(720px, calc(100% - 24px)); margin: 0 auto; box-sizing: border-box; }
+.pu-opp-score { font-family: var(--font-display); font-weight: 800; font-size: 20px; color: var(--pen); margin-left: auto; }
+.pu-online .ol-oppstate { margin-left: 10px; }
+.pu-online .pu-board { margin-top: 8px; }
+.pu-wait-row { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.pu-done { font-size: clamp(20px, 4.4vw, 28px); max-width: 90%; }
+.pu-pad:disabled { opacity: 0.7; }

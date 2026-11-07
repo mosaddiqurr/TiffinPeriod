@@ -1,221 +1,65 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { sfx, vibrate } from '../../platform/audio';
 import { recordResult } from '../../platform/scores';
-import { readJSON, writeJSON } from '../../platform/storage';
-import { clearHashQuery } from '../../platform/router';
-import { NetError, cleanCode, createRoom, isCode, joinRoom, quickMatch, roomLink, CODE_LEN, type Peer, type Profile } from '../../platform/net/rooms';
-import { Overlay, Seg, useGameBar, usePlayerNames } from '../../components/ui';
-import { ChaseHud, Flag, TeamGrid, favTeam, setFavTeam, useTx } from '../../components/sport/SportKit';
+import type { Peer } from '../../platform/net/rooms';
+import { Overlay, Seg, useGameBar } from '../../components/ui';
+import { OnlineLobby, useRealUnmount, type MatchProps } from '../../components/online/OnlineLobby';
+import { ChaseHud, Flag, useTx } from '../../components/sport/SportKit';
 import { ballsLeft, currentOver, oversText } from '../../shared/cricket';
 import { getTeam } from '../../shared/teams';
 import { Hand } from './Hand';
 import { makeHandCricketBot, QUICK_SETUP } from './bot';
 import { HCDuel, type DuelEvent, type DuelSetup, type DuelView } from './duel';
 import { battingSide, limitsOf, other, targetOf, type Side } from './logic';
-import './online.css';
 
 // Online 1v1 Hand Cricket: quick match, create a room (code + link), or join with a code.
 // The match itself is HCDuel; the other end is a real player through InsForge, or, in quick
 // match when nobody is waiting, the stand-in (bot.ts) on the same protocol.
 
 const GAME = 'hand-cricket';
-type Stage = 'lobby' | 'room' | 'joining' | 'search' | 'found' | 'match';
+/** Seconds for each pick, call or choice. */
+export const PICK_SECONDS = 10;
 
-export function OnlineHandCricket({ onBack, code: linkCode }: { onBack: () => void; code?: string }) {
-  const x = useTx();
-  const { t, n } = x;
-  const [p1] = usePlayerNames();
-  const [name, setNameState] = useState(() => readJSON<string>('online.name', '') || p1);
-  const [team, setTeam] = useState(() => favTeam('cricket'));
-  const [pickTeam, setPickTeam] = useState(false);
-  const [stage, setStage] = useState<Stage>('lobby');
-  const [joinCode, setJoinCode] = useState(linkCode ?? '');
-  const [err, setErr] = useState('');
-  const [room, setRoom] = useState<{ code: string; cancel: () => void } | null>(null);
-  const [setup, setSetup] = useState<DuelSetup>(QUICK_SETUP);
-  const [waited, setWaited] = useState(0);
-  const [peer, setPeer] = useState<Peer | null>(null);
-  const [copied, setCopied] = useState('');
-  const signal = useRef({ cancelled: false });
-  const me: Profile = { name: name.trim().slice(0, 16) || p1, team };
-  const setName = (v: string) => { setNameState(v); writeJSON('online.name', v); };
-  const help = <ol>{[
-    t('Quick match finds another player who is waiting.', 'কুইক ম্যাচ অপেক্ষারত আরেকজন খেলোয়াড় খুঁজে দেয়।'),
-    t('Create a room to get a code. Send the code or the link to a friend.', 'রুম খুললে একটা কোড পাবে। কোড বা লিংক বন্ধুকে পাঠাও।'),
-    t('Both players lock a number at the same time. Nobody can see or change it before both have picked.', 'দুজনেই একসাথে সংখ্যা ঠিক করে। দুজনের বাছাই শেষ হওয়ার আগে কেউ দেখতে বা বদলাতে পারে না।'),
-  ].map((r) => <li key={r}>{r}</li>)}</ol>;
-  useGameBar({ help }, [x.lang]);
-
-  // Leaving the screen ends any search or room.
-  useEffect(() => () => { signal.current.cancelled = true; }, []);
-  useEffect(() => () => { room?.cancel(); }, [room]);
-  // A link opened with ?room=CODE: join straight away (after the name is known).
-  const autoJoined = useRef(false);
-  useEffect(() => {
-    if (linkCode && !autoJoined.current && isCode(cleanCode(linkCode))) { autoJoined.current = true; clearHashQuery(); void join(cleanCode(linkCode)); }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const errText = (e: unknown) => {
-    const c = e instanceof NetError ? e.code : 'offline';
-    if (c === 'not-found') return t('No room with that code. Check the code, or ask your friend to open the room again.', 'এই কোডের কোনো রুম নেই। কোডটা দেখো, বা বন্ধুকে আবার রুম খুলতে বলো।');
-    if (c === 'full') return t('That room already has two players.', 'ওই রুমে আগেই দুজন আছে।');
-    if (c === 'cancelled') return '';
-    return t('Could not connect. Check the internet and try again.', 'সংযোগ হলো না। ইন্টারনেট দেখে আবার চেষ্টা করো।');
-  };
-
-  const begin = (p: Peer) => {
-    setPeer(p);
-    setStage('found');
-    sfx('good');
-    vibrate([20, 40, 20]);
-    window.setTimeout(() => setStage('match'), 1600);
-  };
-
-  const fresh = () => { signal.current = { cancelled: false }; setErr(''); return signal.current; };
-
-  async function quick() {
-    const sig = fresh();
-    setStage('search'); setWaited(0); sfx('click');
-    try {
-      const p = await quickMatch(GAME, me, { waitMs: 10000, signal: sig, onTick: setWaited, makeBot: () => makeHandCricketBot(me) });
-      if (!sig.cancelled) begin(p);
-    } catch (e) { if (!sig.cancelled) { setErr(errText(e)); setStage('lobby'); } }
-  }
-
-  async function create() {
-    fresh(); sfx('click');
-    try {
-      const w = await createRoom(GAME, me);
-      setRoom({ code: w.code, cancel: w.cancel });
-      setStage('room');
-      const p = await w.peer;
-      setRoom(null);
-      begin(p);
-    } catch (e) { const m = errText(e); if (m) setErr(m); setRoom(null); setStage('lobby'); }
-  }
-
-  async function join(c = cleanCode(joinCode)) {
-    if (!isCode(c)) { setErr(t(`A room code has ${CODE_LEN} letters and numbers.`, `রুম কোডে ${n(CODE_LEN)}টা অক্ষর আর সংখ্যা থাকে।`)); return; }
-    const sig = fresh();
-    setStage('joining'); sfx('click');
-    try {
-      const p = await joinRoom(GAME, c, me, sig);
-      if (!sig.cancelled) begin(p);
-    } catch (e) { if (!sig.cancelled) { setErr(errText(e)); setStage('lobby'); } }
-  }
-
-  const cancel = () => { signal.current.cancelled = true; room?.cancel(); setRoom(null); setStage('lobby'); };
-
-  const share = async (code: string) => {
-    const url = roomLink(GAME, code);
-    const text = t(`Play Hand Cricket with me! Room ${code}`, `আমার সাথে হ্যান্ড ক্রিকেট খেলো! রুম ${code}`);
-    try {
-      if (navigator.share) { await navigator.share({ title: 'Hand Cricket', text, url }); return; }
-    } catch { /* closed the share sheet */ }
-    try { await navigator.clipboard.writeText(`${text}\n${url}`); setCopied('link'); } catch { setCopied('fail'); }
-  };
-  const copyCode = async (code: string) => { try { await navigator.clipboard.writeText(code); setCopied('code'); } catch { setCopied('fail'); } };
-
-  if (stage === 'match' && peer) {
-    return <OnlineMatch peer={peer} setup={peer.host ? setup : null} onLeave={() => { peer.close(); setPeer(null); setStage('lobby'); }} />;
-  }
-
-  const youCard = (
-    <div className="ol-you">
-      <label className="ol-name">
-        <span>{t('Your name', 'তোমার নাম')}</span>
-        <input value={name} maxLength={16} onChange={(e) => setName(e.target.value)} placeholder={t('Name', 'নাম')} data-testid="online-name" autoComplete="nickname" />
-      </label>
-      <button className="btn secondary ol-team" onClick={() => setPickTeam(!pickTeam)} aria-expanded={pickTeam} data-testid="online-team">
-        <Flag id={team} size={26} /> {x.bi(getTeam(team).name)} <small>{t('change', 'বদলাও')}</small>
-      </button>
-      {pickTeam && <TeamGrid sport="cricket" value={team} onChange={(id) => { setTeam(id); setFavTeam('cricket', id); setPickTeam(false); }} label={t('Your team', 'তোমার দল')} />}
-    </div>
+export function OnlineHandCricket({ onBack, code }: { onBack: () => void; code?: string }) {
+  const { t, n } = useTx();
+  return (
+    <OnlineLobby<DuelSetup>
+      game={GAME}
+      title={t('Hand Cricket', 'হ্যান্ড ক্রিকেট')}
+      onBack={onBack}
+      code={code}
+      sport="cricket"
+      defaultSettings={QUICK_SETUP}
+      quickSettings={QUICK_SETUP}
+      describe={(s) => t(`${s.overs} over${s.overs > 1 ? 's' : ''} · ${s.wickets} wicket${s.wickets > 1 ? 's' : ''}`, `${n(s.overs)} ওভার · ${n(s.wickets)} উইকেট`)}
+      Options={HCOptions}
+      makeBot={(me, s, seed) => makeHandCricketBot(me, seed, 1, s)}
+      Match={HCMatch}
+      help={[t('Both players lock a number at the same time. Nobody can see or change it before both have picked. You have 10 seconds.', 'দুজনেই একসাথে সংখ্যা ঠিক করে। দুজনের বাছাই শেষ হওয়ার আগে কেউ দেখতে বা বদলাতে পারে না। সময় ১০ সেকেন্ড।')]}
+    />
   );
+}
 
-  let body;
-  if (stage === 'room' && room) {
-    body = (
-      <div className="ol-wait" data-testid="room-wait">
-        <h2>{t('Your room is open', 'তোমার রুম খোলা হয়েছে')}</h2>
-        <p className="lede">{t('Send this code or link to your friend. The match starts when they join.', 'এই কোড বা লিংক বন্ধুকে পাঠাও। সে ঢুকলেই খেলা শুরু।')}</p>
-        <div className="ol-code" data-testid="room-code" aria-label={room.code}>{room.code.split('').map((c, i) => <span key={i}>{c}</span>)}</div>
-        <div className="ol-share">
-          <button className="btn big" onClick={() => void share(room.code)} data-testid="share-link">🔗 {t('Share link', 'লিংক পাঠাও')}</button>
-          <button className="btn secondary" onClick={() => void copyCode(room.code)}>{t('Copy code', 'কোড কপি')}</button>
-        </div>
-        {copied && <p className="ol-note">{copied === 'fail' ? t('Could not copy here: tell your friend the code.', 'এখানে কপি হলো না: বন্ধুকে কোডটা বলে দাও।') : copied === 'code' ? t('Code copied.', 'কোড কপি হয়েছে।') : t('Link copied. Paste it in a message to your friend.', 'লিংক কপি হয়েছে। বন্ধুকে মেসেজে পাঠাও।')}</p>}
-        <p className="ol-meta">{t(`${setup.overs} over${setup.overs > 1 ? 's' : ''} · ${setup.wickets} wicket${setup.wickets > 1 ? 's' : ''}`, `${n(setup.overs)} ওভার · ${n(setup.wickets)} উইকেট`)}</p>
-        <div className="ol-pulse"><i /><i /><i /> {t('Waiting for your friend…', 'বন্ধুর জন্য অপেক্ষা…')}</div>
-        <button className="btn secondary" onClick={cancel} data-testid="cancel">{t('Close the room', 'রুম বন্ধ করো')}</button>
-      </div>
-    );
-  } else if (stage === 'search' || stage === 'joining') {
-    body = (
-      <div className="ol-wait" data-testid="searching">
-        <div className="ol-radar" aria-hidden="true"><span /><span /><Flag id={team} size={40} /></div>
-        <h2>{stage === 'search' ? t('Finding a player…', 'খেলোয়াড় খোঁজা হচ্ছে…') : t('Joining the room…', 'রুমে ঢুকছি…')}</h2>
-        {stage === 'search' && <p className="ol-meta">{t(`${waited}s`, `${n(waited)} সেকেন্ড`)} · {t('2 overs · 2 wickets', '২ ওভার · ২ উইকেট')}</p>}
-        <button className="btn secondary" onClick={cancel} data-testid="cancel">{t('Cancel', 'বাতিল')}</button>
-      </div>
-    );
-  } else if (stage === 'found' && peer) {
-    body = (
-      <div className="ol-found" data-testid="found">
-        <div className="ol-found-row">
-          <div className="ol-player"><Flag id={me.team} size={64} /><b>{me.name}</b></div>
-          <span className="ol-vs">VS</span>
-          <div className="ol-player"><Flag id={peer.them.team} size={64} /><b data-testid="opp-name">{peer.them.name}</b></div>
-        </div>
-        <h2>{t('Player found!', 'খেলোয়াড় পাওয়া গেছে!')}</h2>
-      </div>
-    );
-  } else {
-    body = (
-      <>
-        <button className="btn secondary sport-back" onClick={onBack}>← {t('Modes', 'খেলার ধরন')}</button>
-        <div className="sport-eyebrow">{t('Online · 1v1', 'অনলাইন · ১ বনাম ১')}</div>
-        <h2>{t('Play online', 'অনলাইনে খেলো')}</h2>
-        {youCard}
-        {err && <p className="ol-err" role="alert" data-testid="online-error">{err}</p>}
-        <div className="ol-ways">
-          <button className="ol-way main" onClick={() => void quick()} data-testid="quick-match">
-            <span className="ol-ico" aria-hidden="true">⚡</span>
-            <b>{t('Quick match', 'কুইক ম্যাচ')}</b>
-            <small>{t('Play the next player who is looking for a game.', 'যে এখন খেলা খুঁজছে, তার সাথে খেলো।')}</small>
-          </button>
-          <div className="ol-way">
-            <span className="ol-ico" aria-hidden="true">🔑</span>
-            <b>{t('Create a room', 'রুম খোলো')}</b>
-            <small>{t('Get a code and a link for a friend.', 'বন্ধুর জন্য একটা কোড আর লিংক পাও।')}</small>
-            <div className="ol-opts">
-              <Seg label={t('Overs', 'ওভার')} value={setup.overs} onChange={(v) => setSetup({ ...setup, overs: v })} options={[1, 2, 5].map((v) => ({ v, label: t(`${v} ov`, `${n(v)} ওভার`) }))} />
-              <Seg label={t('Wickets', 'উইকেট')} value={setup.wickets} onChange={(v) => setSetup({ ...setup, wickets: v })} options={[1, 2, 3].map((v) => ({ v, label: t(`${v} wkt`, `${n(v)} উইকেট`) }))} />
-            </div>
-            <button className="btn" onClick={() => void create()} data-testid="create-room">{t('Create room', 'রুম খোলো')}</button>
-          </div>
-          <div className="ol-way">
-            <span className="ol-ico" aria-hidden="true">🎟️</span>
-            <b>{t('Join a room', 'রুমে ঢোকো')}</b>
-            <small>{t('Type the code your friend sent.', 'বন্ধুর পাঠানো কোড লেখো।')}</small>
-            <form className="ol-join" onSubmit={(e) => { e.preventDefault(); void join(); }}>
-              <input value={joinCode} onChange={(e) => setJoinCode(cleanCode(e.target.value))} placeholder="AB7K3" maxLength={CODE_LEN + 4} inputMode="text" autoCapitalize="characters" autoComplete="off" spellCheck={false} aria-label={t('Room code', 'রুম কোড')} data-testid="join-code" />
-              <button className="btn" type="submit" disabled={!isCode(joinCode)} data-testid="join-room">{t('Join', 'ঢোকো')}</button>
-            </form>
-          </div>
-        </div>
-      </>
-    );
-  }
-  return <div className="sport-page ol-page" data-testid="online">{body}</div>;
+function HCOptions({ value, onChange }: { value: DuelSetup; onChange: (v: DuelSetup) => void }) {
+  const { t, n } = useTx();
+  return (
+    <>
+      <Seg label={t('Overs', 'ওভার')} value={value.overs} onChange={(v) => onChange({ ...value, overs: v })} options={[1, 2, 5].map((v) => ({ v, label: t(`${v} ov`, `${n(v)} ওভার`) }))} />
+      <Seg label={t('Wickets', 'উইকেট')} value={value.wickets} onChange={(v) => onChange({ ...value, wickets: v })} options={[1, 2, 3].map((v) => ({ v, label: t(`${v} wkt`, `${n(v)} উইকেট`) }))} />
+    </>
+  );
+}
+
+function HCMatch({ peer, settings, onLeave }: MatchProps<DuelSetup>) {
+  return <OnlineMatch peer={peer} setup={settings} onLeave={onLeave} />;
 }
 
 // ---------- The match ----------
 
-function OnlineMatch({ peer, setup, onLeave }: { peer: Peer; setup: DuelSetup | null; onLeave: () => void }) {
+function OnlineMatch({ peer, setup, onLeave }: { peer: Peer; setup: DuelSetup; onLeave: () => void }) {
   const x = useTx();
   const { t, n } = x;
-  const duel = useMemo(() => new HCDuel(peer, peer.host ? 0 : 1, setup ?? undefined), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const duel = useMemo(() => new HCDuel(peer, peer.host ? 0 : 1, setup), []); // eslint-disable-line react-hooks/exhaustive-deps
   const [v, setV] = useState<DuelView>(duel.view);
   const [show, setShow] = useState<{ picks: [number, number]; text: string; kind: 'out' | 'six' | 'runs' } | null>(null);
   const [shaking, setShaking] = useState(false);
@@ -253,8 +97,9 @@ function OnlineMatch({ peer, setup, onLeave }: { peer: Peer; setup: DuelSetup | 
       }, 550);
     });
     const offC = peer.onGone(() => { setGone(true); sfx('bad'); });
-    return () => { offA(); offB(); offC(); duel.dispose(); timers.current.forEach(clearTimeout); delete (window as unknown as { __hcOnline?: HCDuel }).__hcOnline; };
+    return () => { offA(); offB(); offC(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useRealUnmount(() => { duel.dispose(); peer.close(); timers.current.forEach(clearTimeout); delete (window as unknown as { __hcOnline?: HCDuel }).__hcOnline; });
 
   // Record each finished game once.
   useEffect(() => {
@@ -267,6 +112,31 @@ function OnlineMatch({ peer, setup, onLeave }: { peer: Peer; setup: DuelSetup | 
   const busy = shaking || !!show || !!breakNote;
   const canPick = !gone && !v.cheat && ((v.phase === 'tossPick') || (v.phase === 'play' && !busy)) && v.myPick === null;
   const pick = (num: number) => { if (!canPick) return; sfx('click', { pitch: 1.2 }); vibrate(10); void duel.pick(num); };
+
+  // Ten seconds for each decision; when time runs out a random choice is made for you.
+  const decide = !gone && !v.cheat && (canPick || (v.phase === 'call' && duel.iCall) || (v.phase === 'choose' && duel.iChoose));
+  const clockKey = decide ? `${v.game}|${v.phase}|${v.step}` : '';
+  const [left, setLeft] = useState(PICK_SECONDS);
+  useEffect(() => {
+    if (!clockKey) return;
+    const t0 = Date.now();
+    setLeft(PICK_SECONDS);
+    const iv = window.setInterval(() => {
+      const rest = PICK_SECONDS - (Date.now() - t0) / 1000;
+      setLeft(Math.max(0, rest));
+      if (rest <= 3 && rest > 2.9) sfx('tick', { gain: 0.5 });
+      if (rest <= 0) {
+        window.clearInterval(iv);
+        const d = duel.view;
+        if (d.phase === 'call') duel.callToss(Math.random() < 0.5 ? 'odd' : 'even');
+        else if (d.phase === 'choose') duel.choose(Math.random() < 0.5);
+        else if (d.myPick === null) { sfx('click'); void duel.pick(1 + Math.floor(Math.random() * 6)); setAuto(true); window.setTimeout(() => setAuto(false), 1600); }
+      }
+    }, 100);
+    return () => window.clearInterval(iv);
+  }, [clockKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [auto, setAuto] = useState(false);
+  const clock = decide ? <span className={`ol-clock ${left <= 3 ? 'low' : ''}`} data-testid="clock" style={{ ['--p' as string]: String(left / PICK_SECONDS) }}><b>{n(Math.ceil(left))}</b></span> : null;
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => { const i = ['1', '2', '3', '4', '5', '6'].indexOf(e.key); if (i >= 0 && !e.repeat) pick(i + 1); };
@@ -323,7 +193,8 @@ function OnlineMatch({ peer, setup, onLeave }: { peer: Peer; setup: DuelSetup | 
       <div className="hc-pad bottom" data-testid="pad-0">
         <div className="hc-pad-head">
           <Flag id={teams[mySide]} size={24} /><b>{names[mySide]}</b> <span className={`role ${mySide === bat ? 'bat' : 'bowl'}`}>{role(mySide)}</span>
-          <span className="hc-pad-state">{v.myPick !== null ? t('Locked ✓ · waiting', 'বাছাই হয়েছে ✓ · অপেক্ষা') : canPick ? t('Pick your number', 'সংখ্যা বাছো') : ''}</span>
+          <span className="hc-pad-state">{auto ? t('Time up: picked for you', 'সময় শেষ: তোমার হয়ে বাছা হলো') : v.myPick !== null ? t('Locked ✓ · waiting', 'বাছাই হয়েছে ✓ · অপেক্ষা') : canPick ? t('Pick your number', 'সংখ্যা বাছো') : ''}</span>
+          {canPick && clock}
         </div>
         <div className="hc-buttons n6">
           {[1, 2, 3, 4, 5, 6].map((num) => (
@@ -339,7 +210,7 @@ function OnlineMatch({ peer, setup, onLeave }: { peer: Peer; setup: DuelSetup | 
         duel.iCall ? (
           <Overlay label={t('Toss: odd or even?', 'টস: জোড় না বিজোড়?')}>
             <div className="sheet ruled" data-testid="toss">
-              <h2>{t('Toss: odd or even?', 'টস: জোড় না বিজোড়?')}</h2>
+              <h2>{t('Toss: odd or even?', 'টস: জোড় না বিজোড়?')} {clock}</h2>
               <p className="lede">{t('Call it. Then you both show a number; the sum decides.', 'তুমি বলো। তারপর দুজনেই সংখ্যা দেখাবে, যোগফলে ফয়সালা।')}</p>
               <div className="actions">
                 <button className="btn big" onClick={() => { duel.callToss('odd'); sfx('click'); }} data-testid="call-odd">{t('Odd', 'বিজোড়')}</button>
@@ -357,6 +228,7 @@ function OnlineMatch({ peer, setup, onLeave }: { peer: Peer; setup: DuelSetup | 
           <div className="sheet ruled" data-testid="toss-result">
             <h2>{v.tossWin === mySide ? t('You won the toss!', 'তুমি টস জিতেছ!') : t(`${names[oppSide]} won the toss`, `${names[oppSide]} টস জিতেছে`)}</h2>
             <p className="lede">{n(v.tossNums[0])} + {n(v.tossNums[1])} = {n(v.tossNums[0] + v.tossNums[1])} — {(v.tossNums[0] + v.tossNums[1]) % 2 ? t('odd', 'বিজোড়') : t('even', 'জোড়')}</p>
+            {v.tossWin === mySide && <p>{t('Choose within the time:', 'সময়ের মধ্যে বেছে নাও:')} {clock}</p>}
             {v.tossWin === mySide ? (
               <div className="actions">
                 <button className="btn big" onClick={() => duel.choose(true)} data-testid="bat-first">{t('Bat first', 'আগে ব্যাট')}</button>

@@ -1,0 +1,18 @@
+/* Paper Airplane online: two bars over the sky, the ▲ pad bottom right. */
+.pp-online { background: #8fc9ea; }
+.pp-ol-top { position: absolute; left: 0; right: 0; top: 0; z-index: 4; pointer-events: none; }
+.pp-ol-top > * { pointer-events: auto; }
+.pp-ol-top .ol-oppbar { min-width: 0; }
+.pp-ol-top .ol-oppbar b { max-width: 30vw; }
+.pp-ol-top .ol-oppstate { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.pp-ol-me {
+  display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 12px; background: rgba(31, 58, 147, 0.9); color: #fff;
+  font-weight: 700; font-size: 15px;
+}
+.pp-ol-chal { flex: none; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,0.18); font-size: 13px; }
+.pp-ol-line { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pp-ol-me .ol-clock { flex: none; }
+.pp-ol-res p { margin: 4px 0; font-size: 17px; }
+.pp-online-slot:empty { display: none; }
+/* The shared .ol-entry span rule also stretches the icon; keep it its own size here. */
+.pp-online-slot .ol-entry > .ol-ico { flex: none; }

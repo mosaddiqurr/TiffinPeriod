@@ -1,0 +1,18 @@
+/* Paper Boat online match */
+.pb-online { position: absolute; inset: 0; display: flex; flex-direction: column; background: #7b7b7b; overflow: hidden; }
+.pb-online .ol-oppbar { flex: none; }
+.pb-stage { position: relative; flex: 1; min-height: 0; }
+.pb-opp-prog { flex: 1 1 60px; max-width: 160px; height: 8px; border-radius: 4px; background: rgba(31, 78, 156, 0.18); overflow: hidden; }
+.pb-opp-prog i { display: block; height: 100%; background: #1f4e9c; border-radius: 4px; transition: width 0.25s linear; }
+.pb-chip {
+  position: absolute; left: 50%; top: 58px; translate: -50% 0; z-index: 4; max-width: calc(100% - 32px);
+  background: rgba(255, 253, 246, 0.95); color: var(--ink); padding: 8px 16px; border-radius: 18px;
+  font-weight: 700; font-size: 15px; text-align: center; box-shadow: var(--shadow); pointer-events: none;
+}
+.pb-end-lines { display: grid; gap: 4px; margin: 4px 0 10px; }
+.pb-end-lines p { margin: 0; display: flex; justify-content: space-between; gap: 12px; font-size: 17px; }
+.pb-end-lines b { font-family: var(--font-display); }
+.pb-setup-online { margin: 6px 0 10px; }
+/* The icon keeps its own width (the shared .ol-entry span rule would give it half the button). */
+.pb-setup-online .ol-entry .ol-ico { flex: none; display: block; }
+.pb-setup-online .ol-entry { margin: 0; }

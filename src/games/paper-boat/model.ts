@@ -24,9 +24,10 @@ export function current(x: number, y: number): { vx: number; vy: number } {
 export type ObKind = 'brick' | 'leaf' | 'sandal' | 'whirl';
 export interface Obstacle { kind: ObKind; x: number; y: number; r: number; vx: number; vy: number }
 
-export function makeObstacles(rng: Rng): Obstacle[] {
+/** `gap` is the spacing range between obstacles (the online "wild stream" packs them closer). */
+export function makeObstacles(rng: Rng, gap: [number, number] = [110, 190]): Obstacle[] {
   const list: Obstacle[] = [];
-  for (let y = RIVER.len - 500; y > 250; y -= rng.range(110, 190)) {
+  for (let y = RIVER.len - 500; y > 250; y -= rng.range(gap[0], gap[1])) {
     const [l, r] = banks(y);
     const roll = rng.next();
     const kind: ObKind = roll < 0.4 ? 'brick' : roll < 0.62 ? 'leaf' : roll < 0.8 ? 'sandal' : 'whirl';

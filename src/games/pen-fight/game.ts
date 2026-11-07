@@ -3,16 +3,23 @@ import { createRng, type Rng } from '../../engine/rng';
 import { sfx, vibrate } from '../../platform/audio';
 import { DeskView } from './desk3d';
 import { DESK, PENS, PenAI, PenWorld, STEP, startPoses, type Flick, type PenId } from './model';
+import type { AimMsg, FlickMsg, StateMsg } from './duel';
 
 // Pen Fight match: turns, the drag-to-flick control, the aiming marks, the computer,
 // falls and points. Drawing is DeskView (Three.js); physics is PenWorld.
 
 export interface PFConfig {
-  mode: 'ai' | 'local2p';
+  mode: 'ai' | 'local2p' | 'online';
   diff: 'easy' | 'medium' | 'hard';
   pens: [PenId, PenId];
   target: number;
   seed?: number;
+  /**
+   * Online: side `me` is played here, the other side by messages (`remote`). The mover is
+   * authoritative: it sends its flick, and once its own physics settles, the snapshot of
+   * both pens. The other device animates the flick, then adopts the snapshot.
+   */
+  net?: { me: 0 | 1; g: number; starter: 0 | 1; send: (type: 'flick' | 'aim' | 'state', data: FlickMsg | AimMsg | StateMsg) => void };
 }
 
 export interface PFHud {
@@ -25,6 +32,8 @@ export interface PFHud {
   point: number | null;
   selfOut: boolean;
   round: number;
+  /** Flicks so far this game (online: a new clock for each). */
+  seq: number;
 }
 
 export interface PFEnd { scores: [number, number]; winner: number; flicks: [number, number]; selfOuts: [number, number] }
@@ -64,10 +73,22 @@ export class PenFightGame {
   private ro: ResizeObserver;
   private lastHud = '';
   private hitCool = 0;
+  // Online
+  private seq = 0;
+  private auto: PenAI | null = null;
+  private pendingFlicks = new Map<number, FlickMsg>();
+  private snaps = new Map<number, StateMsg>();
+  private snapped = false;
+  private stateSent = false;
+  private remoteAim: Flick | null = null;
+  private shown: Flick | null = null;
+  private sentKey = '';
+  private sendT = 0;
 
   constructor(host: HTMLElement, private cfg: PFConfig, private cb: { onHud: (h: PFHud) => void; onOver: (e: PFEnd) => void; onHidden: () => void }) {
     this.rng = createRng(cfg.seed ?? (Math.random() * 2 ** 31) >>> 0);
     this.ai = cfg.mode === 'ai' ? new PenAI(1, cfg.diff, this.rng) : null;
+    if (cfg.net) this.starter = cfg.net.starter;
     this.view = new DeskView(host);
     cfg.pens.forEach((id, i) => this.view.addPen(id, i, PENS[id].len, PENS[id].r));
     this.newRound(true);
@@ -88,7 +109,7 @@ export class PenFightGame {
 
   // ---------- Flow ----------
 
-  private isHuman(i: number) { return !(this.ai && i === 1); }
+  private isHuman(i: number) { return this.cfg.net ? i === this.cfg.net.me : !(this.ai && i === 1); }
 
   private newRound(first = false) {
     this.w = new PenWorld(this.cfg.pens.map((id) => PENS[id]), startPoses(this.rng));
@@ -110,12 +131,22 @@ export class PenFightGame {
     this.kb = { dir: Math.atan2(op.y - me.y, op.x - me.x), t: 0, power: 0, charging: false, used: false };
     this.selfOut = false;
     this.pointTo = null;
+    this.auto = null;
+    this.remoteAim = null;
     this.emit();
   }
 
   private doFlick(f: Flick) {
+    const net = this.cfg.net;
+    if (net && this.turn === net.me) net.send('flick', { g: net.g, n: this.seq, t: f.t, dir: f.dir, power: f.power });
     this.w.flick(this.turn, f);
     this.flicks[this.turn]++;
+    this.seq++;
+    this.snapped = false;
+    this.stateSent = false;
+    this.remoteAim = null;
+    this.auto = null;
+    this.aiPlan = null;
     this.phase = 'moving';
     this.phaseT = 0;
     this.drag = null;
@@ -137,7 +168,8 @@ export class PenFightGame {
     this.pointTo = winner;
     this.phase = 'point';
     this.phaseT = 0;
-    sfx(this.isHuman(winner) && this.cfg.mode === 'ai' ? 'fanfare' : this.cfg.mode === 'ai' ? 'bad' : 'good');
+    const vs = this.cfg.mode !== 'local2p';
+    sfx(vs && this.isHuman(winner) ? 'fanfare' : vs ? 'bad' : 'good');
     this.emit();
   }
 
@@ -150,7 +182,7 @@ export class PenFightGame {
 
   // ---------- Input ----------
 
-  private canAim() { return this.phase === 'aim' && this.isHuman(this.turn) && !this.paused; }
+  private canAim() { return this.phase === 'aim' && this.isHuman(this.turn) && !this.paused && !this.auto; }
 
   private onDown = (e: PointerEvent) => {
     if (!this.canAim() || this.drag) return;
@@ -228,10 +260,72 @@ export class PenFightGame {
     if (!p && !this.disposed) { this.last = performance.now(); cancelAnimationFrame(this.raf); this.raf = requestAnimationFrame(this.frame); }
   }
 
+  // ---------- Online ----------
+
+  /** A message from the other device. Out-of-turn or stale messages are ignored; early ones wait. */
+  remote(type: string, d: FlickMsg | AimMsg | StateMsg) {
+    const net = this.cfg.net;
+    if (!net || this.disposed || !d || d.g !== net.g) return;
+    if (type === 'flick') { const m = d as FlickMsg; if (m.n >= this.seq) this.pendingFlicks.set(m.n, m); }
+    else if (type === 'state') { const m = d as StateMsg; if (m.n >= this.seq - 1) this.snaps.set(m.n, m); }
+    else if (type === 'aim') {
+      const m = d as AimMsg;
+      if (m.n !== this.seq || this.phase !== 'aim' || this.turn === net.me) return;
+      this.remoteAim = m.power >= 0 ? { t: m.t, dir: m.dir, power: m.power } : null;
+    }
+  }
+
+  /** The move clock ran out: flick the pull you are holding, or let a quick plan flick for you. */
+  autoFlick() {
+    if (!this.cfg.net || this.phase !== 'aim' || !this.isHuman(this.turn) || this.auto || this.paused) return;
+    const f = this.drag ? this.dragFlick() : null;
+    this.drag = null;
+    this.kb.charging = false;
+    this.view.zoom = 0;
+    if (f) { this.doFlick(f); return; }
+    this.auto = new PenAI(this.turn, 'easy', createRng((Math.random() * 2 ** 31) >>> 0));
+    this.aiPlanning = false;
+    this.aiPlan = null;
+    this.emit();
+  }
+
+  /** Send what we are aiming a few times a second, so the other side sees the pull-back. */
+  private sendAim(dt: number) {
+    this.sendT += dt;
+    if (this.sendT < 0.15) return;
+    this.sendT = 0;
+    const net = this.cfg.net!;
+    const f = this.shown;
+    const key = f ? `${this.seq}|${f.t.toFixed(2)}|${f.dir.toFixed(2)}|${f.power.toFixed(2)}` : `${this.seq}|none`;
+    if (key === this.sentKey) return;
+    this.sentKey = key;
+    net.send('aim', f ? { g: net.g, n: this.seq, t: f.t, dir: f.dir, power: f.power } : { g: net.g, n: this.seq, t: 0, dir: 0, power: -1 });
+  }
+
+  /** Adopt the mover's settled pens (floating point may differ a hair between devices). */
+  private applySnap(m: StateMsg) {
+    m.pens.forEach((s, i) => {
+      const p = this.w.pens[i];
+      if (!p) return;
+      p.vx = 0; p.vy = 0; p.w = 0;
+      if (s.out && !p.out) {
+        p.x = s.x; p.y = s.y; p.a = s.a; p.out = true;
+        const hx = DESK.w / 2, hy = DESK.d / 2;
+        p.fallN = Math.abs(p.x) - hx > Math.abs(p.y) - hy ? [Math.sign(p.x) || 1, 0] : [0, Math.sign(p.y) || 1];
+        this.startFall(i);
+      } else if (!s.out && p.out) {
+        p.out = false;
+        this.falls = this.falls.filter((f) => f.i !== i);
+        this.view.pens[i].root.visible = true;
+      }
+      if (!s.out) { p.x = s.x; p.y = s.y; p.a = s.a; }
+    });
+  }
+
   /** For tests: flick the current human pen. */
   testFlick(t: number, dir: number, power: number) { if (this.canAim()) { this.doFlick({ t, dir, power }); return true; } return false; }
   /** For tests: where things are. */
-  get state() { return { phase: this.phase, turn: this.turn, scores: [...this.scores], pens: this.w.pens.map((p) => ({ x: p.x, y: p.y, a: p.a, out: p.out })) }; }
+  get state() { return { phase: this.phase, turn: this.turn, seq: this.seq, scores: [...this.scores], pens: this.w.pens.map((p) => ({ x: p.x, y: p.y, a: p.a, out: p.out })) }; }
   /** For tests: screen point of a spot on pen i. */
   screenOf(i: number, t: number) { const [x, y] = this.w.pointOn(i, t); return this.view.screenPoint(x, y); }
   screenOfDesk(x: number, y: number) { return this.view.screenPoint(x, y); }
@@ -254,7 +348,14 @@ export class PenFightGame {
     this.hitCool = Math.max(0, this.hitCool - dt);
     if (this.phase === 'aim') {
       if (this.kb.charging) this.kb.power = Math.min(1, this.kb.power + dt * 0.85);
-      if (!this.isHuman(this.turn) && this.ai) this.aiTurn(dt);
+      if (!this.isHuman(this.turn) && this.ai) this.aiTurn(this.ai, dt, 0.5);
+      if (this.auto) this.aiTurn(this.auto, dt, 0);
+      const net = this.cfg.net;
+      const m = net && this.turn !== net.me ? this.pendingFlicks.get(this.seq) : undefined;
+      if (m) {
+        this.pendingFlicks.delete(this.seq);
+        this.doFlick({ t: m.t, dir: m.dir, power: m.power });
+      } else if (net && this.turn === net.me && this.phase === 'aim') this.sendAim(dt);
       this.view.zoom += ((this.drag ? 1 : 0) - this.view.zoom) * Math.min(1, dt * 6);
     }
     if (this.phase === 'moving') {
@@ -271,8 +372,21 @@ export class PenFightGame {
         }
       }
       this.w.out.forEach((o, i) => { if (o && !before[i]) this.startFall(i); });
-      if ((this.phaseT > 0.25 && this.w.settled()) || this.phaseT > 7) {
+      const localDone = (this.phaseT > 0.25 && this.w.settled()) || this.phaseT > 7;
+      const net = this.cfg.net;
+      if (net && this.turn !== net.me) {
+        // The mover's snapshot decides; animate our own copy of the flick until it is here.
+        const snap = this.snaps.get(this.seq - 1);
+        if (snap && (localDone || this.phaseT > 9)) {
+          if (!this.snapped) { this.snapped = true; this.applySnap(snap); }
+          if (this.falls.every((f) => f.t > 0.5)) this.resolve();
+        }
+      } else if (localDone) {
         for (const p of this.w.pens) if (!p.out) { p.vx = 0; p.vy = 0; p.w = 0; }
+        if (net && !this.stateSent) {
+          this.stateSent = true;
+          net.send('state', { g: net.g, n: this.seq - 1, pens: this.w.pens.map((p) => ({ x: p.x, y: p.y, a: p.a, out: p.out })) });
+        }
         if (this.falls.every((f) => f.t > 0.5)) this.resolve();
       }
     }
@@ -284,11 +398,10 @@ export class PenFightGame {
   }
 
   /** The computer thinks for a moment, then is seen pulling its pen back before the flick. */
-  private aiTurn(dt: number) {
-    if (!this.ai) return;
-    if (!this.aiPlanning && !this.aiPlan && this.phaseT > 0.5) { this.ai.start(this.w); this.aiPlanning = true; }
+  private aiTurn(ai: PenAI, dt: number, delay: number) {
+    if (!this.aiPlanning && !this.aiPlan && this.phaseT > delay) { ai.start(this.w); this.aiPlanning = true; }
     if (this.aiPlanning) {
-      const f = this.ai.work(14);
+      const f = ai.work(14);
       if (f) { this.aiPlanning = false; this.aiPlan = { f, t: 0 }; this.emit(); }
       return;
     }
@@ -341,8 +454,10 @@ export class PenFightGame {
         const k = Math.min(1, this.aiPlan.t / 0.6);
         flick = { ...this.aiPlan.f, power: this.aiPlan.f.power * k };
         t = this.aiPlan.f.t;
-      } else if (this.kb.used && this.isHuman(this.turn)) { flick = { t: this.kb.t, dir: this.kb.dir, power: this.kb.charging ? this.kb.power : 0.25 }; t = this.kb.t; }
+      } else if (this.remoteAim && !this.isHuman(this.turn)) { flick = this.remoteAim; t = flick.t; }
+      else if (this.kb.used && this.isHuman(this.turn)) { flick = { t: this.kb.t, dir: this.kb.dir, power: this.kb.charging ? this.kb.power : 0.25 }; t = this.kb.t; }
     }
+    this.shown = flick;
     if (!flick && !this.drag) { v.aim.visible = false; this.emit(); return; }
     v.aim.visible = true;
     const [gx, gy] = this.w.pointOn(this.turn, t);
@@ -440,9 +555,9 @@ export class PenFightGame {
     } else if (this.kb.charging) dragInfo = { power: this.kb.power, x: -1, y: -1 };
     const h: PFHud = {
       scores: [...this.scores] as [number, number], turn: this.turn, phase: this.phase,
-      thinking: this.phase === 'aim' && !this.isHuman(this.turn), drag: dragInfo, point: this.pointTo, selfOut: this.selfOut, round: this.round,
+      thinking: this.phase === 'aim' && !this.isHuman(this.turn), drag: dragInfo, point: this.pointTo, selfOut: this.selfOut, round: this.round, seq: this.seq,
     };
-    const key = JSON.stringify([h.scores, h.turn, h.phase, h.thinking, h.point, h.selfOut, h.round, dragInfo ? [Math.round(dragInfo.power * 100), Math.round(dragInfo.x), Math.round(dragInfo.y)] : null]);
+    const key = JSON.stringify([h.scores, h.turn, h.phase, h.thinking, h.point, h.selfOut, h.round, h.seq, dragInfo ? [Math.round(dragInfo.power * 100), Math.round(dragInfo.x), Math.round(dragInfo.y)] : null]);
     if (key === this.lastHud) return;
     this.lastHud = key;
     this.cb.onHud(h);

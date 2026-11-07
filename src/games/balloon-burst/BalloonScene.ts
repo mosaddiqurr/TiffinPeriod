@@ -20,6 +20,13 @@ export interface BalloonTexts {
 
 export type BalloonEvent = { type: 'hit'; r: HitResult; human: boolean } | { type: 'over' } | { type: 'go' } | { type: 'shot'; ok: boolean; human: boolean };
 
+export interface SceneOptions {
+  /** A fixed field size, so that two devices with different screens get the very same balloons (online races). */
+  field?: { w: number; h: number };
+  /** Clock balloons (+3 s). Default: solo only. */
+  clock?: boolean;
+}
+
 interface Lane { field: Field; x: number; y: number; w: number; h: number; s: number; owner: number; gun?: AirGun }
 
 export class BalloonScene implements Scene {
@@ -42,7 +49,7 @@ export class BalloonScene implements Scene {
   aiAmmo = 0;
   private aiSight = { x: 0, y: 0 };
 
-  constructor(private mode: 'solo' | 'ai' | 'local2p', private diff: Difficulty, private duration: number, private tx: BalloonTexts, public style: PopStyle = 'pin', private seed = (Math.random() * 2 ** 31) | 0) {}
+  constructor(private mode: 'solo' | 'ai' | 'local2p', private diff: Difficulty, private duration: number, private tx: BalloonTexts, public style: PopStyle = 'pin', private seed = (Math.random() * 2 ** 31) | 0, private opts: SceneOptions = {}) {}
 
   get gunStyle() { return this.style === 'gun'; }
 
@@ -56,14 +63,19 @@ export class BalloonScene implements Scene {
       : [{ x: 0, y: 0, w, h }];
     if (this.lanes.length === 0) {
       // Fields keep their first size. Later resizes only rescale the drawing.
-      this.lanes = rects.map((r, i) => ({
-        field: new Field(r.w, r.h, createRng(this.seed), this.mode === 'ai' ? 2 : 1, this.duration, this.mode === 'solo'),
-        ...r, s: 1, owner: i,
-        gun: this.style === 'gun' ? new AirGun(r.w, r.h, pelletsFor(this.duration), i * 3.3) : undefined,
-      }));
+      const fixed = this.opts.field;
+      this.lanes = rects.map((r, i) => {
+        const fw = fixed?.w ?? r.w, fh = fixed?.h ?? r.h;
+        return {
+          field: new Field(fw, fh, createRng(this.seed), this.mode === 'ai' ? 2 : 1, this.duration, this.opts.clock ?? this.mode === 'solo'),
+          ...r, s: 1, owner: i,
+          gun: this.style === 'gun' ? new AirGun(fw, fh, pelletsFor(this.duration), i * 3.3) : undefined,
+        };
+      });
       this.aiAmmo = pelletsFor(this.duration);
       if (this.mode === 'ai') this.ai = new BalloonAI(1, this.diff, createRng(this.seed ^ 0x5bd1), w, h);
       this.cross = { x: w / 2, y: h * 0.55, on: false };
+      if (fixed) this.onResize(w, h);
     } else {
       this.lanes.forEach((l, i) => {
         const r = rects[i];

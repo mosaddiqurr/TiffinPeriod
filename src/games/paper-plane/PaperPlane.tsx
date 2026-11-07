@@ -1,4 +1,8 @@
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { createPortal } from 'react-dom';
 import type { Scene, View } from '../../engine/GameCanvas';
+import { OnlineButton, useOnlineEntry } from '../../components/online/OnlineButton';
+import { OnlinePaperPlane } from './online';
 import type { GameProps } from '../../platform/registry';
 import { useT, fmtNum, type StringTable } from '../../platform/i18n';
 import { sfx, vibrate } from '../../platform/audio';
@@ -6,9 +10,9 @@ import { createRng, type Rng } from '../../engine/rng';
 import { FloatTexts, Particles } from '../../engine/particles';
 import { clamp } from '../../engine/math';
 import { GameShell, type PadDef, type ShellConfig, type ShellResult, type ShellScene } from '../../components/GameShell';
-import { PlaneAI, TARGET_RINGS, TYPES, WORLD, launch, makeCourse, stepPlane, throwScore, type Challenge, type Course, type Fold, type HitKind, type Plane } from './model';
+import { PlaneAI, TARGET_RINGS, TYPES, WORLD, launch, makeCourse, stepPlane, throwScore, throwWind, type Challenge, type Course, type Fold, type HitKind, type Plane } from './model';
 
-const S: StringTable<'title' | 'lede' | 'r1' | 'r2' | 'r3' | 'r4' | 'r5' | 'fold' | 'glider' | 'dart' | 'hawk' | 'challenge' | 'distance' | 'accuracy' | 'obstacle' | 'folding' | 'bull' | 'miss' | 'up' | 'upSub' | 'turn' | 'throwN' | 'best' | 'wind' | 'aim' | 'ring' | 'landed' | 'crash' | 'finish' | 'won' | 'draw' | 'score' | 'keys'> = {
+export const S: StringTable<'title' | 'lede' | 'r1' | 'r2' | 'r3' | 'r4' | 'r5' | 'fold' | 'glider' | 'dart' | 'hawk' | 'challenge' | 'distance' | 'accuracy' | 'obstacle' | 'folding' | 'bull' | 'miss' | 'up' | 'upSub' | 'turn' | 'throwN' | 'best' | 'wind' | 'aim' | 'ring' | 'landed' | 'crash' | 'finish' | 'won' | 'draw' | 'score' | 'keys'> = {
   en: {
     title: 'Paper Airplane Challenge', lede: 'Fold a khata page. Throw it from the roof. Distance, accuracy or a crowded sky?',
     r5: 'Challenges: Distance (fly furthest), Accuracy (land on the roof with the chalk target, the centre scores most), Obstacles (wires and kites everywhere; reach the end for +200).',
@@ -28,12 +32,24 @@ const S: StringTable<'title' | 'lede' | 'r1' | 'r2' | 'r3' | 'r4' | 'r5' | 'fold
     aim: 'উড়োজাহাজ থেকে পেছনে টেনে ছাড়ো', ring: 'বৃত্ত! +৫০', landed: 'ছাদে নামলো! +১০০', crash: 'ধাক্কা!', finish: 'পুরো পাড়া পার! +১০০', won: '{name} জিতেছে!', draw: 'সমান সমান!', score: 'পয়েন্ট', keys: 'কী-বোর্ড: ← → কোণ, স্পেস চেপে ছোড়ো, তারপর স্পেসে নাক উঁচু',
   },
 };
-type Txt = ReturnType<typeof useT<'turn' | 'throwN' | 'best' | 'wind' | 'aim' | 'ring' | 'landed' | 'crash' | 'finish' | 'won' | 'draw' | 'score' | 'folding' | 'bull' | 'miss'>>;
+export type Txt = ReturnType<typeof useT<'turn' | 'throwN' | 'best' | 'wind' | 'aim' | 'ring' | 'landed' | 'crash' | 'finish' | 'won' | 'draw' | 'score' | 'folding' | 'bull' | 'miss'>>;
 const FONT = '"Baloo Da 2", sans-serif';
 
 interface Thrower { name: string; ai: PlaneAI | null; best: number; throws: number[] }
 
-class PlaneScene implements Scene, ShellScene {
+export type PlanePhase = 'wait' | 'fold' | 'aim' | 'fly' | 'after' | 'done';
+
+/** An online race: one thrower, the course and winds from the shared seed, no result card. */
+export interface OnlineHooks {
+  seed: number;
+  /** CSS pixels the screen's top bar covers, so the HUD sits below it. */
+  hudTop: number;
+  onPhase(phase: PlanePhase, throwIndex: number): void;
+  onThrow(score: number): void;
+  onDone(): void;
+}
+
+export class PlaneScene implements Scene, ShellScene {
   designW = 1000;
   designH = 760;
   originX = 0;
@@ -52,7 +68,8 @@ class PlaneScene implements Scene, ShellScene {
   private throwers: Thrower[] = [];
   private cur = 0;
   private round = 0;
-  private phase: 'fold' | 'aim' | 'fly' | 'after' | 'done' = 'fold';
+  private phase: PlanePhase = 'fold';
+  private told: PlanePhase | null = null;
   private challenge: Challenge;
   private phaseT = 0;
   private windBase = 0;
@@ -65,15 +82,34 @@ class PlaneScene implements Scene, ShellScene {
   private trail: Array<[number, number]> = [];
   private type;
 
-  constructor(private cfg: ShellConfig, private tx: Txt, private rng: Rng) {
+  constructor(private cfg: ShellConfig, private tx: Txt, private rng: Rng, private online?: OnlineHooks) {
     this.challenge = (['distance', 'accuracy', 'obstacle'].includes(String(cfg.opts.challenge)) ? cfg.opts.challenge : 'distance') as Challenge;
-    this.course = makeCourse(rng, this.challenge);
+    this.course = makeCourse(online ? createRng(online.seed) : rng, this.challenge);
     this.type = TYPES[(['glider', 'dart', 'hawk'].includes(String(cfg.opts.fold)) ? cfg.opts.fold : 'glider') as Fold];
     this.throwers.push({ name: cfg.names[0], ai: null, best: 0, throws: [] });
     if (cfg.mode !== 'solo') this.throwers.push({ name: cfg.names[1], ai: cfg.mode === 'ai' ? new PlaneAI(rng, cfg.diff === 'easy' ? 0.55 : cfg.diff === 'medium' ? 0.75 : 0.92) : null, best: 0, throws: [] });
     this.newThrow();
+    if (online) { this.phase = 'wait'; return; }
     this.phase = 'fold';
     sfx('page');
+  }
+
+  /** Online: the race has started on both devices. */
+  begin() {
+    if (this.phase !== 'wait') return;
+    this.phase = 'fold';
+    this.phaseT = 0;
+    sfx('page');
+  }
+
+  /** Online: the move clock ran out. Throw what the player is aiming, or a sound throw. */
+  autoThrow() {
+    if (this.phase !== 'aim') return;
+    const a = this.dragAim();
+    this.drag = null;
+    if (a) return this.throwPlane(a.angle, a.power);
+    if (this.kb.charging) { this.kb.charging = false; return this.throwPlane(this.kb.angle, Math.max(0.5, this.kb.power)); }
+    this.throwPlane(0.26, 0.78);
   }
 
   private get th() {
@@ -81,7 +117,7 @@ class PlaneScene implements Scene, ShellScene {
   }
 
   private newThrow() {
-    this.windBase = Math.round(this.rng.range(-25, 45));
+    this.windBase = this.online ? throwWind(this.online.seed, this.round) : Math.round(this.rng.range(-25, 45));
     this.course.rings.forEach((r) => (r.taken = false));
     this.plane = null;
     this.trail = [];
@@ -133,11 +169,13 @@ class PlaneScene implements Scene, ShellScene {
   }
 
   update(dt: number) {
+    if (this.online && this.told !== this.phase) { this.told = this.phase; this.online.onPhase(this.phase, this.round); }
     this.time += dt;
     this.phaseT += dt;
     this.fx.update(dt);
     this.texts.update(dt);
     if (this.kb.charging) this.kb.power = Math.min(1, this.kb.power + dt * 0.8);
+    if (this.phase === 'wait') return;
     if (this.phase === 'fold') {
       if (Math.floor(this.phaseT * 3) !== Math.floor((this.phaseT - dt) * 3)) sfx('page', { pitch: 0.9 + this.phaseT * 0.2 });
       if (this.phaseT > 1.5) { this.phase = 'aim'; this.phaseT = 0; }
@@ -167,6 +205,7 @@ class PlaneScene implements Scene, ShellScene {
     const s = throwScore(p, this.challenge, this.course);
     this.th.throws.push(s);
     this.th.best = Math.max(this.th.best, s);
+    this.online?.onThrow(s);
     const tg = this.course.target;
     if (tg && hit === 'land' && p.x >= tg.x1 && p.x <= tg.x2) { this.texts.add(p.x, p.y - 40, this.tx('bull'), '#ffe27a', 34, 1.6); sfx('fanfare'); }
     else if (tg && this.challenge === 'accuracy') { this.texts.add(p.x, p.y - 40, this.tx('miss'), '#ffd2c8', 26, 1.6); sfx(hit === 'land' ? 'good' : 'thud'); }
@@ -187,6 +226,7 @@ class PlaneScene implements Scene, ShellScene {
 
   private finish() {
     this.phase = 'done';
+    if (this.online) { this.online.onDone(); return; }
     const t = this.throwers;
     const two = t.length > 1;
     const win = two ? (t[0].best === t[1].best ? -1 : t[0].best > t[1].best ? 0 : 1) : 0;
@@ -284,13 +324,20 @@ class PlaneScene implements Scene, ShellScene {
     ctx.restore();
     // HUD
     ctx.font = `800 22px ${FONT}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillStyle = '#1f3a93';
-    ctx.fillText(`${this.tx('turn', { name: this.th.name })} · ${this.tx('throwN', { n: Math.min(3, this.round + 1) })}`, v.left + 16, v.top + 26);
-    ctx.textAlign = 'right';
     const w = this.windBase;
-    ctx.fillText(`${this.tx('wind')} ${w >= 0 ? '→' : '←'} ${fmtNum(Math.abs(w), this.cfg.lang)}   ${this.tx('best')} ${this.throwers.map((t) => fmtNum(t.best, this.cfg.lang)).join(' / ')}`, v.right - 16, v.top + 26);
-    if (p && this.phase === 'fly') { ctx.textAlign = 'center'; ctx.fillText(`${fmtNum(throwScore(p), this.cfg.lang)}`, (v.left + v.right) / 2, v.top + 60); }
+    const windTxt = `${this.tx('wind')} ${w >= 0 ? '→' : '←'} ${fmtNum(Math.abs(w), this.cfg.lang)}`;
+    const hudY = v.top + (this.online ? this.online.hudTop / v.scale : 0);
+    if (this.online) {
+      // The online screen shows throws and best in its own bar; only the wind here.
+      ctx.fillText(windTxt, v.left + 16, hudY + 26);
+    } else {
+      ctx.fillText(`${this.tx('turn', { name: this.th.name })} · ${this.tx('throwN', { n: Math.min(3, this.round + 1) })}`, v.left + 16, hudY + 26);
+      ctx.textAlign = 'right';
+      ctx.fillText(`${windTxt}   ${this.tx('best')} ${this.throwers.map((t) => fmtNum(t.best, this.cfg.lang)).join(' / ')}`, v.right - 16, hudY + 26);
+    }
+    if (p && this.phase === 'fly') { ctx.textAlign = 'center'; ctx.fillText(`${fmtNum(throwScore(p), this.cfg.lang)}`, (v.left + v.right) / 2, hudY + 60); }
     if (this.phase === 'fold') { ctx.textAlign = 'center'; ctx.font = `700 20px ${FONT}`; ctx.fillStyle = '#5b4636'; ctx.fillText(this.tx('folding'), WORLD.startX + 200 - cam, WORLD.startY - 120); }
-    if (this.phase === 'aim' && !this.th.ai) { ctx.textAlign = 'center'; ctx.font = `700 18px ${FONT}`; ctx.fillStyle = '#5b4636'; ctx.fillText(this.tx('aim'), WORLD.startX + 260 - cam, WORLD.startY - 120); }
+    if (this.phase === 'aim' && !this.th.ai) { ctx.textAlign = 'center'; ctx.font = `700 18px ${FONT}`; ctx.fillStyle = '#5b4636'; const aimTxt = this.tx('aim'); const half = ctx.measureText(aimTxt).width / 2; ctx.fillText(aimTxt, Math.max(v.left + half + 10, Math.min(WORLD.startX + 260 - cam, v.right - half - 10)), WORLD.startY - 120); }
   }
 }
 
@@ -350,13 +397,52 @@ function drawPlane(ctx: CanvasRenderingContext2D, x: number, y: number, pitch: n
 }
 
 export default function PaperPlane({ onExit }: GameProps) {
+  const online = useOnlineEntry();
+  if (online.open) return <div className="sport-root ruled"><OnlinePaperPlane onBack={online.close} code={online.code} /></div>;
+  return <PaperPlaneLocal onExit={onExit} onOnline={online.show} />;
+}
+
+/**
+ * Puts the "Play online" button into GameShell's setup sheet, just under the lede.
+ * GameShell has no slot for it (it is shared and not ours to change), so this finds the
+ * sheet in its own wrapper and renders the button there through a portal.
+ */
+function SetupSlot({ wrap, children }: { wrap: RefObject<HTMLDivElement | null>; children: ReactNode }) {
+  const [host, setHost] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    const root = wrap.current;
+    if (!root) return;
+    let cur: HTMLElement | null = null;
+    const place = () => {
+      if (cur?.isConnected) return;
+      const sheet = root.querySelector<HTMLElement>('[data-testid="setup"]');
+      if (!sheet) { if (cur) { cur = null; setHost(null); } return; }
+      const el = document.createElement('div');
+      el.className = 'pp-online-slot';
+      const lede = sheet.querySelector(':scope > .lede');
+      if (lede) lede.after(el); else sheet.prepend(el);
+      cur = el;
+      setHost(el);
+    };
+    place();
+    const mo = new MutationObserver(place);
+    mo.observe(root, { childList: true, subtree: true });
+    return () => { mo.disconnect(); cur?.remove(); };
+  }, [wrap]);
+  return host ? createPortal(children, host) : null;
+}
+
+function PaperPlaneLocal({ onExit, onOnline }: GameProps & { onOnline: () => void }) {
   const t = useT(S);
+  const wrap = useRef<HTMLDivElement>(null);
   const pads = (): PadDef[] => [
     { player: 0, action: 'up', label: t('up'), sub: t('upSub'), area: 'br', size: 'l', color: 'rgba(31,58,147,0.85)', keys: ['Space', 'ArrowUp', 'KeyW'], keyHint: 'Space' },
     { player: 0, action: 'left', label: '←', area: 'bl', hidden: true, keys: ['ArrowLeft', 'KeyA'] },
     { player: 0, action: 'right', label: '→', area: 'bl', hidden: true, keys: ['ArrowRight', 'KeyD'] },
   ];
   return (
+    <div ref={wrap} style={{ display: 'contents' }}>
+    <SetupSlot wrap={wrap}><OnlineButton onClick={onOnline} /></SetupSlot>
     <GameShell
       gameId="paper-plane" onExit={onExit} title={t('title')} lede={t('lede')}
       rules={[t('r1'), <b key="r2">{t('r2')}</b>, t('r3'), t('r4'), t('r5')]}
@@ -369,5 +455,6 @@ export default function PaperPlane({ onExit }: GameProps) {
       createScene={(cfg: ShellConfig) => new PlaneScene(cfg, t, createRng())}
       pads={pads}
     />
+    </div>
   );
 }

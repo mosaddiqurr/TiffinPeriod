@@ -76,7 +76,7 @@ export class HCDuel {
       link.on('choose', (d: { g: number; batFirst: boolean }) => { if (d.g === this.v.game && this.v.phase === 'choose') this.begin(d.batFirst ? other(this.v.mySide) : this.v.mySide); }),
       link.on('rematch', (d: { g: number }) => { if (d.g === this.v.game) { this.set({ rematch: { ...this.v.rematch, them: true } }); this.maybeRematch(); } }),
     );
-    if (mySide === 0 && setup) { link.send('setup', setup); this.v = { ...this.v, phase: 'call' }; }
+    if (setup) { if (mySide === 0) link.send('setup', setup); this.v = { ...this.v, phase: 'call' }; }
   }
 
   get view(): DuelView { return this.v; }

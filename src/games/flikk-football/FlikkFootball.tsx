@@ -8,12 +8,17 @@ import { PauseMenu, Seg, useGameBar, usePlayerNames, type Difficulty } from '../
 import { Championship, CupBoard, Flag, FlagScore, MatchUp, ModeCard, TeamGrid, favTeam, setFavTeam, stageName, useTx } from '../../components/sport/SportKit';
 import { defaultOpponent, getTeam, ratingOf } from '../../shared/teams';
 import { createTournament, footballSimulator, loadTournament, nextFixture, playerResult, saveTournament, type Tournament } from '../../shared/tournament';
-import { FORMATIONS, FORMATION_IDS, type FormationId, type Mentality, type TeamSetup } from './match';
+import { FORMATION_IDS, type TeamSetup } from './match';
 import { FlikkScene, type FlikkConfig, type FlikkEnd, type FlikkHud, type Say } from './scene';
 import { CHALLENGES, achieved, loadChStars, saveChStars, starsOf, type FChallenge } from './challenges';
 import type { Side } from './physics';
 import { FLICKS_PER_TURN, type Style } from './fixed';
+import { FormationPreview, Tactics, rulesList } from './parts';
+import { OnlineFlikk } from './online';
+import { OnlineButton, useOnlineEntry } from '../../components/online/OnlineButton';
 import './flikk.css';
+
+export { FormationPreview };
 
 const GAME = 'flikk-football';
 type Screen = 'menu' | 'quick' | 'local' | 'challenges' | 'cup' | 'match' | 'after' | 'champion';
@@ -34,62 +39,12 @@ const autoDiff = (opp: string): Difficulty => { const r = ratingOf(getTeam(opp),
 
 function HubBar({ help, lang }: { help: ReactNode; lang: string }) { useGameBar({ help }, [lang]); return null; }
 
-export function FormationPreview({ id, kit }: { id: FormationId; kit: string }) {
-  return (
-    <svg viewBox="0 0 100 70" className="ff-form-svg" aria-hidden="true">
-      <rect x="1" y="1" width="98" height="68" rx="3" fill="#2f8a4a" stroke="#fff" strokeWidth="1.2" />
-      <path d="M1 1 H99" stroke="#fff" strokeWidth="1" /><rect x="30" y="58" width="40" height="11" fill="none" stroke="#fff" strokeWidth="1" />
-      <circle cx="50" cy="65" r="3.4" fill="#f3b61f" stroke="#222" strokeWidth="0.6" />
-      {FORMATIONS[id].map(([x, y], i) => <circle key={i} cx={6 + x * 88} cy={64 - y * 58} r="3.6" fill={kit} stroke="#fff" strokeWidth="0.9" />)}
-    </svg>
-  );
-}
-
-function Tactics({ value, onChange, kit, label }: { value: TeamSetup; onChange: (v: TeamSetup) => void; kit: string; label?: string }) {
-  const { t } = useTx();
-  return (
-    <div className="ff-tactics">
-      <div className="opt-label">{label ?? t('Formation', 'ফরমেশন')}</div>
-      <div className="ff-forms" role="group" aria-label={t('Formation', 'ফরমেশন')}>
-        {FORMATION_IDS.map((f) => (
-          <button key={f} type="button" className="ff-form" aria-pressed={value.formation === f} onClick={() => { sfx('click'); onChange({ ...value, formation: f }); }} data-testid={`form-${f}`}>
-            <FormationPreview id={f} kit={kit} /><b>{f}</b>
-          </button>
-        ))}
-      </div>
-      <div className="opt-label">{t('Mentality', 'মানসিকতা')}</div>
-      <Seg label={t('Mentality', 'মানসিকতা')} value={value.mentality} onChange={(m: Mentality) => onChange({ ...value, mentality: m })}
-        options={[{ v: 'defend', label: t('Defend deep', 'রক্ষণাত্মক') }, { v: 'balanced', label: t('Balanced', 'ভারসাম্য') }, { v: 'attack', label: t('Push up', 'আক্রমণাত্মক') }]} />
-    </div>
-  );
-}
-
-function rulesList(t: (en: string, bn: string) => string, style: Style = 'free') {
-  if (style === 'fixed') return [
-    t('Fixed players: everyone stays on their spot, like table football. Only the ball moves. The player with the ball glows.', 'স্থির খেলোয়াড়: টেবিল ফুটবলের মতো সবাই নিজের জায়গায় থাকে। শুধু বল চলে। যার কাছে বল, সে জ্বলজ্বল করে।'),
-    t('Press anywhere, pull back and let go: the ball flies the other way. Pull further for more power; hook the pull to curl it.', 'যেকোনো জায়গায় চেপে পেছনে টানো, ছেড়ে দাও: বল উল্টো দিকে যাবে। বেশি টানলে বেশি জোর; বাঁকা করে টানলে বল বাঁক খাবে।'),
-    t('The first player the ball touches collects it. Your team-mate: a pass. Theirs: their ball. The keeper: a save.', 'বল প্রথম যে খেলোয়াড়ের গায়ে লাগে, সে বল ধরে ফেলে। নিজের দলের কেউ: পাস। ওদের কেউ: ওদের বল। গোলকিপার: সেভ।'),
-    t('Over a side line: throw-in to the other team. Over the end line: goal kick. Stops in open space: the nearest player gets it.', 'পাশের দাগ পার হলে: অন্য দলের থ্রো-ইন। শেষ দাগ পার হলে: গোল কিক। ফাঁকা জায়গায় থামলে: সবচেয়ে কাছের খেলোয়াড় পায়।'),
-    t(`Up to ${FLICKS_PER_TURN} flicks a turn: pass, pass, shoot. Still on the ball after the last one and their nearest player tackles you.`, `এক পালায় সর্বোচ্চ ${FLICKS_PER_TURN}টা টোকা: পাস, পাস, শট। শেষ টোকার পরও বল তোমার কাছে থাকলে ওদের কাছের খেলোয়াড় ট্যাকল করে নেবে।`),
-    t('The guide shows the path. Green ring: yours will get it. Red ring: theirs will. Red cross: it goes out.', 'দাগ দেখায় বল কোথায় যাবে। সবুজ বৃত্ত: তোমার দলের কেউ পাবে। লাল বৃত্ত: ওরা পাবে। লাল ক্রস: বাইরে যাবে।'),
-    t('Keepers slide along their lines by themselves. Every flick moves the clock on.', 'গোলকিপার নিজে নিজে গোললাইনে সরে। প্রতিটা টোকায় ঘড়ি এগোয়।'),
-    t('Keys: arrows aim and set power, Space flicks.', 'কী-বোর্ড: তীর দিয়ে দিক আর জোর, স্পেসে টোকা।'),
-  ];
-  return [
-    t('Teams take turns. Press on one of your pieces, pull back and let go to flick it into the ball.', 'পালা করে খেলা। নিজের একটা গুটি চেপে পেছনে টানো, ছেড়ে দিলেই টোকা লেগে বলে যাবে।'),
-    t('The dotted guide shows where your piece meets the ball and where the ball will go. Pull further for more power.', 'ডটেড দাগ দেখায় গুটি কোথায় বলে লাগবে আর বল কোন দিকে যাবে। বেশি টানলে বেশি জোর।'),
-    t('Hook your drag (a curved pull) to curl the shot.', 'বাঁকা করে টানলে শট বাঁক খাবে।'),
-    t('Pass: if your flick moves the ball and it stops nearest to one of your pieces, you flick again (up to 3 flicks a turn).', 'পাস: তোমার টোকায় বল নড়ে যদি তোমার কোনো গুটির কাছে থামে, তুমি আবার টোকা দেবে (এক পালায় সর্বোচ্চ ৩ বার)।'),
-    t('Keepers slide along their lines by themselves. Once a half you can Regroup: put your team back into its formation instead of flicking.', 'গোলকিপার নিজে নিজে গোললাইনে সরে। প্রতি অর্ধে একবার "সাজাও" চেপে টোকার বদলে দলকে ফরমেশনে ফিরিয়ে নিতে পারো।'),
-    t('Keys: Tab picks a piece, arrows aim and set power, Space flicks, R regroups.', 'কী-বোর্ড: Tab গুটি বাছে, তীর দিয়ে দিক আর জোর, স্পেসে টোকা, R দিয়ে সাজাও।'),
-  ];
-}
-
 export default function FlikkFootball({ onExit }: GameProps) {
   const x = useTx();
   const { t, n } = x;
   void onExit;
   const [p1, p2] = usePlayerNames();
+  const online = useOnlineEntry();
   const [screen, setScreen] = useState<Screen>('menu');
   const [mine, setMine] = useState(() => favTeam('football'));
   const [opp, setOpp] = useState(() => defaultOpponent('football', favTeam('football')));
@@ -168,6 +123,8 @@ export default function FlikkFootball({ onExit }: GameProps) {
     setScreen('after');
   };
 
+  if (online.open) return <div className="sport-root ruled"><OnlineFlikk onBack={online.close} code={online.code} /></div>;
+
   if (screen === 'match' && pending) {
     return <FlikkMatch key={matchKey} p={pending} onDone={done} onQuit={() => setScreen(pending.kind === 'cup' ? 'cup' : 'menu')} onRestart={() => launch({ ...pending, cfg: { ...pending.cfg, seed: pending.cfg.seed + 1 } })} />;
   }
@@ -218,6 +175,7 @@ export default function FlikkFootball({ onExit }: GameProps) {
       <div className="sport-eyebrow">{t('Desk football', 'ডেস্কের ফুটবল')}</div>
       <h2>{t('Flikk Football', 'ফ্লিক ফুটবল')}</h2>
       <p className="lede">{t('Eleven bottle caps a side on a green desk. Pull, aim, flick: pass, curl and score.', 'সবুজ ডেস্কে প্রতি দলে এগারোটা গুটি। টানো, নিশানা করো, টোকা দাও: পাস, বাঁক আর গোল।')}</p>
+      <OnlineButton onClick={online.show} />
       <StylePick value={style} onChange={setStyle} />
       <details className="bench-rules"><summary>{t('How to play', 'কীভাবে খেলবে')}</summary>{help}</details>
       <div className="mode-grid">

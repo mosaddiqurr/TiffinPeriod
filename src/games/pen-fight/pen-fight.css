@@ -84,3 +84,15 @@
   .pf-turn { top: 58px; font-size: 15px; }
   .pf-touch { font-size: 14px; }
 }
+
+/* Online: the other player's bar sits on top, the score chips just under it */
+.pf-online .ol-oppbar { position: absolute; left: 0; right: 0; top: 0; }
+.pf-online .pf-hud { top: 48px; }
+.pf-online .pf-turn { top: 100px; display: inline-flex; align-items: center; gap: 10px; }
+.pf-online .pf-turn .ol-clock { pointer-events: none; }
+.pf-pick-opp { margin: 12px 0 0; color: var(--ink-soft); font-weight: 600; }
+.pf-pick .actions { align-items: center; }
+@media (max-width: 640px) {
+  .pf-online .pf-hud { top: 46px; }
+  .pf-online .pf-turn { top: 94px; }
+}

@@ -17,3 +17,26 @@
 @media (max-width: 640px) {
   .bb-style-opt { flex-direction: column; align-items: flex-start; gap: 6px; }
 }
+
+/* Online race */
+.bb-online { position: absolute; inset: 0; display: flex; flex-direction: column; background: #e9d8a8; }
+.bb-oppscore { display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+.bb-oppscore b { font: 900 20px/1 var(--font-display); color: #7d3c98; max-width: none; }
+.bb-oppscore small { font-size: 13px; color: var(--ink-soft); font-weight: 700; }
+.bb-lead {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 5px 12px; font-size: 15px; font-weight: 700;
+  background: #fff3cf; color: #3a2516; box-shadow: inset 0 -1px 0 #e4d8b8; position: relative; z-index: 2;
+}
+.bb-lead b { font: 900 18px/1 var(--font-display); color: #0b5d43; }
+.bb-lead em { font-style: normal; padding: 2px 10px; border-radius: 999px; background: rgba(0,0,0,0.07); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.bb-lead.me em { background: #0b5d43; color: #fff; }
+.bb-lead.them em { background: #7d3c98; color: #fff; }
+.bb-online-stage { position: relative; flex: 1; min-height: 0; }
+.bb-online-stage .game-canvas { cursor: crosshair; }
+.bb-online-note {
+  position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); display: grid; gap: 4px; text-align: center; width: max-content; max-width: calc(100% - 32px);
+  padding: 14px 18px; border-radius: 16px; background: rgba(255, 253, 246, 0.96); box-shadow: 0 10px 24px -12px rgba(0,0,0,0.5); z-index: 2;
+}
+.bb-online-note b { font: 800 19px/1.2 var(--font-display); }
+.bb-online-note small { color: var(--ink-soft); font-size: 14px; }
+.bb-end-meta { margin: 0 0 8px; color: var(--ink-soft); }

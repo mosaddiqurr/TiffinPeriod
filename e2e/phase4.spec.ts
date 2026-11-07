@@ -75,7 +75,8 @@ test('Hand Cricket: a tournament match updates the cup board', async ({ page }) 
   let i = 0;
   await loop(page, async () => {
     await clickIf(page, 'call-odd'); await clickIf(page, 'bat-first'); await clickIf(page, 'toss-continue'); await clickIf(page, 'second-innings');
-    const b = page.getByTestId(`p0-${(i++ % 6) + 1}`); if (await b.isEnabled().catch(() => false)) await b.click({ timeout: 1500 }).catch(() => {});
+    // A short timeout: when the match ends the number buttons go, and a plain isEnabled() would wait for them forever.
+    const b = page.getByTestId(`p0-${(i++ % 6) + 1}`); if (await b.isEnabled({ timeout: 500 }).catch(() => false)) await b.click({ timeout: 1500 }).catch(() => {});
   }, 160_000);
   await page.getByTestId('after-next').click();
   await expect(page.locator('.cup-fixtures li').first()).toContainText(/Won|Lost|Tied/);

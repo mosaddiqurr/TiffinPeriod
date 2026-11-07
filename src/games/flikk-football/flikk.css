@@ -46,3 +46,14 @@
   .ff-style-opt b { font-size: 15px; }
   .ff-style-opt small { font-size: 12px; }
 }
+
+/* Online */
+.ff-online .ff-top { gap: 5px; }
+.ff-online .ol-oppbar { max-width: 560px; width: 100%; margin: 0 auto; }
+.ff-online .ff-bottom { gap: 8px; }
+.ff-online .ol-clock { flex: none; }
+.ff-pick-vs { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 12px 0 4px; }
+.ff-pick-vs span { display: grid; justify-items: center; gap: 4px; min-width: 0; }
+.ff-pick-vs b { font: 800 15px var(--font-display); max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ff-pick-vs i { font: 800 18px var(--font-display); font-style: normal; color: var(--ink-soft); }
+.ff-pick-go { display: flex; align-items: center; justify-content: center; gap: 12px; }

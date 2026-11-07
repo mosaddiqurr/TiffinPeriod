@@ -181,3 +181,31 @@ export class PlaneAI {
     p.up = this.rng.chance(this.skill) ? wantUp : this.rng.chance(0.5);
   }
 }
+
+// ---------- Shared pieces for online races ----------
+
+/** The base wind for throw `i` of a race, the same on both devices (from the lobby seed). */
+export function throwWind(seed: number, i: number): number {
+  let h = (seed ^ 0x5eed1e) >>> 0;
+  h = Math.imul(h ^ (i + 1) * 0x9e3779b1, 0x85ebca6b) >>> 0;
+  return Math.round(-25 + 70 * ((h ^ (h >>> 13)) >>> 0) / 4294967296);
+}
+
+/**
+ * Fly one throw with the computer pilot and no screen, exactly as the scene does
+ * (the same 1/120 s steps). Returns the throw's score and how long it flew.
+ */
+export function simulateThrow(c: Course, type: PlaneType, baseWind: number, ai: PlaneAI, challenge: Challenge): { score: number; seconds: number; plane: Plane } {
+  c.rings.forEach((r) => (r.taken = false));
+  const lp = ai.launchParams();
+  const p = launch(Math.max(-0.3, Math.min(1, lp.angle)), Math.max(0.2, lp.power));
+  const dt = 1 / 120;
+  while (p.alive && p.t < 60) {
+    ai.control(p, c);
+    stepPlane(p, type, baseWind, c, dt);
+  }
+  if (p.alive) p.alive = false;
+  const score = throwScore(p, challenge, c);
+  c.rings.forEach((r) => (r.taken = false));
+  return { score, seconds: p.t, plane: p };
+}

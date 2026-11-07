@@ -26,6 +26,30 @@ export interface FlikkConfig {
   /** Stop as soon as side 0 reaches this many goals (challenges). */
   stopAtGoals?: number;
   seed: number;
+  /** Who plays each side. Default: side 0 a person, side 1 the computer when vsAI, else a person. */
+  control?: [Control, Control];
+  /** Online (fixed style only): where a local flick and its result go. A 'remote' side is driven by remoteFlick / remoteSnap. */
+  net?: { send: (type: 'flick' | 'snap', data: NetFlick | NetSnap) => void };
+  /** Seconds the computer waits before a flick (default 0.75). */
+  aiThink?: () => number;
+  /** No sound or vibration (a stand-in running out of sight). */
+  silent?: boolean;
+  /** Draw the pitch turned round, so side 1 attacks up the screen. */
+  flip?: boolean;
+}
+
+export type Control = 'human' | 'ai' | 'remote';
+
+type XY = [number, number];
+/** A flick sent online: the ball and keepers where the mover flicked from, and the flick itself. */
+export interface NetFlick { seq: number; holder: number; ball: XY; keepers: [XY, XY]; angle: number; power: number; spin: number }
+/** What a flick did, as the mover saw it. `holder` is who has the ball next (after any tackle). */
+export interface NetResult { event: 'goal' | 'collect' | 'save' | 'loose' | 'throw' | 'goalkick'; goal: Side | null; holder: number; keep: boolean; pass: boolean; tackle: boolean }
+/** The mover's state when the ball settled, before the result is applied. */
+export interface NetSnap {
+  seq: number; ball: XY; keepers: [XY, XY]; res: NetResult;
+  score: [number, number]; turnsDone: number; flicks: number; half: number; chain: number;
+  passes: [number, number]; shots: [number, number];
 }
 
 export interface FlikkHud {
@@ -44,6 +68,11 @@ export interface FlikkHud {
   chain: number;
   /** Clock steps left (turns in free mode, flicks in fixed mode). */
   left: number;
+  /** Flicks taken so far in the match (online: the move number). */
+  seq: number;
+  /** Whose hands the side on the ball is in. */
+  control: Control;
+  over: boolean;
 }
 
 export interface FlikkEnd {
@@ -54,7 +83,7 @@ export interface FlikkEnd {
   stats: { passes: [number, number]; shots: [number, number] };
 }
 
-type Phase = 'aim' | 'moving' | 'goal' | 'ai' | 'wait' | 'over';
+type Phase = 'aim' | 'moving' | 'goal' | 'ai' | 'wait' | 'over' | 'remote' | 'sync';
 
 export type Say = (key: 'goal' | 'pass' | 'chain' | 'throw' | 'goalkick' | 'tackle' | 'lost' | 'turn' | 'half' | 'golden' | 'pens' | 'saved' | 'missed' | 'scored' | 'yourTurn' | 'theirTurn', vars?: Record<string, string>) => string;
 
@@ -103,8 +132,19 @@ export class FlikkScene implements Scene {
   /** Fixed mode: a flash ring on whoever just got the ball. */
   private gotIt: { id: number; t: number } | null = null;
   private preview: { key: string; p: Preview } | null = null;
+  private ctl: [Control, Control];
+  /** Flicks so far in the match: online, each flick and its result carry this number. */
+  private seq = 0;
+  /** Online: flicks from the other device waiting for their turn, and the result of the one being shown. */
+  private inbox: NetFlick[] = [];
+  private snapIn: NetSnap | null = null;
+  private snaps = new Map<number, NetSnap>();
+  /** Online: the flick on screen came from the other device (its result comes from there too). */
+  private fromRemote = false;
+  private snapWait = 0;
 
   constructor(private cfg: FlikkConfig, private say: Say, private onHud: (h: FlikkHud) => void, private onEnd: (e: FlikkEnd) => void) {
+    this.ctl = cfg.control ?? ['human', cfg.vsAI ? 'ai' : 'human'];
     this.rng = createRng(cfg.seed);
     this.turnsDone = cfg.turnsDone;
     this.score = [...cfg.score] as [number, number];
@@ -115,9 +155,14 @@ export class FlikkScene implements Scene {
     if (cfg.setup === 'attack') this.attackSetup();
     this.flags = [flagImage(cfg.teams[0]), flagImage(cfg.teams[1])];
     this.kits = [getTeam(cfg.teams[0]).kit, getTeam(cfg.teams[1]).kit];
-    this.later(0.7, () => { sfx('whistle'); this.startTurn(this.turnSide); });
+    // The same country on both sides (online): the away side wears a white change kit.
+    if (cfg.teams[0] === cfg.teams[1]) this.kits[1] = ['#f4f1e8', this.kits[1][0]];
+    this.later(0.7, () => { this.fx('whistle'); this.startTurn(this.turnSide); });
     queueMicrotask(() => this.emit());
   }
+
+  private fx(...a: Parameters<typeof sfx>) { if (!this.cfg.silent) sfx(...a); }
+  private buzz(ms: number | number[]) { if (!this.cfg.silent) vibrate(ms); }
 
   private keeperSpeeds(): [number, number] {
     const ai = 150 + this.cfg.skill * 150;
@@ -165,16 +210,88 @@ export class FlikkScene implements Scene {
     this.flicks = 0;
     this.chain = 0;
     this.sel = null;
-    this.flash(this.cfg.vsAI ? (side === 0 ? this.say('yourTurn') : this.say('theirTurn')) : this.say('turn', { id: this.cfg.teams[side] }));
+    const humans = this.ctl.filter((c) => c === 'human').length;
+    this.flash(humans === 1 ? (this.ctl[side] === 'human' ? this.say('yourTurn') : this.say('theirTurn')) : this.say('turn', { id: this.cfg.teams[side] }));
     this.nextFlick();
   }
 
   private nextFlick() {
-    const ai = this.cfg.vsAI && this.turnSide === 1;
+    const c = this.ctl[this.turnSide];
+    if (c === 'remote') { this.phase = 'remote'; this.emit(); this.takeRemote(); return; }
+    const ai = c === 'ai';
     this.phase = ai ? 'ai' : 'aim';
     if (!ai) this.autoSelect();
     this.emit();
-    if (ai) this.later(0.75, () => this.aiFlick());
+    if (ai) this.later(this.cfg.aiThink?.() ?? 0.75, () => this.aiFlick());
+  }
+
+  // ---------- Online ----------
+
+  private keeperXY(): [XY, XY] {
+    const k0 = keeperOf(this.w, 0), k1 = keeperOf(this.w, 1);
+    return [[k0.x, k0.y], [k1.x, k1.y]];
+  }
+
+  private putBodies(b: XY, k: [XY, XY]) {
+    const bl = ball(this.w);
+    bl.x = b[0]; bl.y = b[1];
+    ([0, 1] as Side[]).forEach((s) => { const kp = keeperOf(this.w, s); kp.x = k[s][0]; kp.y = k[s][1]; kp.vx = 0; kp.vy = 0; });
+  }
+
+  /** A flick made on the other device. It waits until this device reaches the same moment. */
+  remoteFlick(m: NetFlick) {
+    this.inbox = this.inbox.filter((f) => f.seq >= this.seq);
+    if (m.seq < this.seq || this.inbox.some((f) => f.seq === m.seq)) return;
+    this.inbox.push(m);
+    this.inbox.sort((a, b) => a.seq - b.seq);
+    this.takeRemote();
+  }
+
+  /** What that flick did, as the other device saw it. */
+  remoteSnap(m: NetSnap) {
+    if (m.seq < this.seq - 1) return;
+    this.snaps.set(m.seq, m);
+    if (!this.fromRemote || m.seq !== this.seq - 1) return;
+    this.snapIn = m;
+    this.snapWait = 0;
+    if (this.phase === 'sync') this.adoptSnap();
+  }
+
+  private takeRemote() {
+    if (this.phase !== 'remote' || this.ended) return;
+    this.inbox = this.inbox.filter((f) => f.seq >= this.seq);
+    const m = this.inbox[0];
+    if (!m || m.seq !== this.seq) return;
+    this.inbox.shift();
+    this.glide = null;
+    this.holder = m.holder;
+    this.putBodies(m.ball, m.keepers);
+    this.fromRemote = true;
+    this.snapIn = this.snaps.get(m.seq) ?? null;
+    this.snapWait = 0;
+    this.doFlick(this.holder, m.angle, m.power, m.spin);
+  }
+
+  private adoptSnap() {
+    const s = this.snapIn!;
+    this.snapIn = null;
+    this.snaps.delete(s.seq);
+    this.fromRemote = false;
+    stopAll(this.w);
+    this.w.goal = null;
+    this.putBodies(s.ball, s.keepers);
+    this.score = [...s.score] as [number, number];
+    this.turnsDone = s.turnsDone; this.flicks = s.flicks; this.half = s.half; this.chain = s.chain;
+    this.passes = [...s.passes] as [number, number]; this.shots = [...s.shots] as [number, number];
+    this.applyResult(s.res);
+  }
+
+  /** When the clock runs out: a sensible flick for whoever should have flicked. */
+  autoFlick(skill = 0.3) {
+    if (!this.humanTurn() || !this.fixed) return false;
+    const f = aiChooseFixed(this.w, this.turnSide, this.holder, skill, this.rng, FLICKS_PER_TURN - this.flicks);
+    this.doFlick(this.holder, f.angle, f.power, 0);
+    return true;
   }
 
   private autoSelect() {
@@ -202,13 +319,19 @@ export class FlikkScene implements Scene {
   private doFlick(piece: number, angle: number, power: number, spin: number) {
     this.piece = piece;
     this.preview = null;
+    if (this.glide) { const bl = ball(this.w); bl.x = this.glide.tx; bl.y = this.glide.ty; this.glide = null; }
+    if (this.cfg.net && this.fixed && !this.fromRemote) {
+      const bl = ball(this.w);
+      this.cfg.net.send('flick', { seq: this.seq, holder: this.holder, ball: [bl.x, bl.y], keepers: this.keeperXY(), angle, power, spin });
+    }
+    this.seq++;
     if (this.fixed) flickBall(this.w, angle, power, spin, this.holder);
     else flick(this.w, piece, angle, power, spin);
     this.phase = 'moving';
     this.drag = null;
     this.kb.on = false;
-    sfx('click', { pitch: 0.6 + power * 0.6 });
-    vibrate(8);
+    this.fx('click', { pitch: 0.6 + power * 0.6 });
+    this.buzz(8);
     const bl = ball(this.w);
     const goalY = this.turnSide === 0 ? PITCH.top : PITCH.bottom;
     if (Math.abs(bl.y - goalY) < 330) this.shots[this.turnSide]++;
@@ -224,7 +347,7 @@ export class FlikkScene implements Scene {
     if (r.keep && this.flicks < FLICKS) {
       this.passes[this.turnSide]++;
       this.flash(this.say('pass', { n: String(FLICKS - this.flicks) }));
-      sfx('good', { gain: 0.6 });
+      this.fx('good', { gain: 0.6 });
       this.nextFlick();
       return;
     }
@@ -236,31 +359,56 @@ export class FlikkScene implements Scene {
    * goal kick for the other team; a ball stopping in space goes to the nearest player. After the
    * last flick of a turn, a side still on the ball is tackled by the nearest opponent.
    */
-  private resolveFixed() {
+  private resolveFixed() { this.settleFixed(null); }
+
+  /**
+   * The ball has stopped, or gone in (`goal`). The device that flicked works out what happened
+   * and, online, sends it with its state; the other device waits for that and adopts it.
+   */
+  private settleFixed(goal: Side | null) {
     stopAll(this.w);
+    if (this.fromRemote) { this.phase = 'sync'; this.emit(); if (this.snapIn) this.adoptSnap(); return; }
+    if (this.shootout) { this.flicks++; this.shootoutKick(false); return; }
+    let res: NetResult;
+    if (goal !== null) res = { event: 'goal', goal, holder: -1, keep: false, pass: false, tackle: false };
+    else {
+      const r = judgeFixed(this.w, this.turnSide, this.holder);
+      // All flicks used and still on the ball: the nearest opponent tackles.
+      const tackle = r.keep && this.flicks + 1 >= FLICKS_PER_TURN;
+      res = { event: r.event, goal: null, holder: tackle ? tackler(this.w, this.turnSide).id : r.holder, keep: r.keep, pass: r.pass, tackle };
+    }
+    if (this.cfg.net) {
+      const bl = ball(this.w);
+      this.cfg.net.send('snap', {
+        seq: this.seq - 1, ball: [bl.x, bl.y], keepers: this.keeperXY(), res,
+        score: [...this.score] as [number, number], turnsDone: this.turnsDone, flicks: this.flicks, half: this.half, chain: this.chain,
+        passes: [...this.passes] as [number, number], shots: [...this.shots] as [number, number],
+      });
+    }
+    this.applyResult(res);
+  }
+
+  private applyResult(r: NetResult) {
+    if (r.goal !== null) { this.onGoal(r.goal); return; }
     this.flicks++;
-    if (this.shootout) { this.shootoutKick(false); return; }
     const prev = this.w.bodies.find((b) => b.id === this.holder)!;
-    const r = judgeFixed(this.w, this.turnSide, this.holder);
-    let next = r.holder;
+    const next = r.holder;
     let msg: string | null = null;
     if (r.event === 'throw') msg = this.say('throw');
     else if (r.event === 'goalkick') msg = this.say('goalkick');
-    else if (r.event === 'save') { msg = this.say('saved'); sfx('boing', { gain: 0.6 }); }
+    else if (r.event === 'save') { msg = this.say('saved'); this.fx('boing', { gain: 0.6 }); }
     if (r.pass) {
       this.passes[this.turnSide]++;
       this.chain++;
-      sfx('good', { gain: 0.6 });
+      this.fx('good', { gain: 0.6 });
       msg = this.say('chain', { n: String(this.chain) });
     } else if (!r.keep) {
-      sfx('bad', { gain: 0.4 });
+      this.fx('bad', { gain: 0.4 });
       if (!msg) msg = this.say('lost');
     }
-    if (r.keep && this.flicks >= FLICKS_PER_TURN) {
-      // All flicks used: the nearest opponent tackles.
-      next = tackler(this.w, this.turnSide).id;
+    if (r.tackle) {
       msg = this.say('tackle', { n: String(FLICKS_PER_TURN) });
-      sfx('thud', { gain: 0.5 });
+      this.fx('thud', { gain: 0.5 });
     }
     if (msg) this.flash(msg, 1.1);
     const nb = this.w.bodies.find((b) => b.id === next)!;
@@ -289,7 +437,7 @@ export class FlikkScene implements Scene {
     if (this.turnsDone >= this.cfg.totalTurns) { this.fullTime(); return; }
     if (this.half === 1 && this.cfg.startMinute === 0 && this.turnsDone >= Math.floor(this.cfg.totalTurns / 2)) {
       this.half = 2;
-      sfx('whistle');
+      this.fx('whistle');
       this.flash(this.say('half'));
       const k: Side = this.firstKick === 0 ? 1 : 0;
       this.regroupUsed = [false, false];
@@ -304,8 +452,8 @@ export class FlikkScene implements Scene {
     this.score[side]++;
     this.phase = 'goal';
     this.shake = 0.5;
-    sfx('fanfare'); setTimeout(() => sfx('clap'), 350);
-    vibrate([40, 50, 80]);
+    this.fx('fanfare'); setTimeout(() => this.fx('clap'), 350);
+    this.buzz([40, 50, 80]);
     const bl = ball(this.w);
     const kit = this.kits[side];
     for (let i = 0; i < 70; i++) {
@@ -326,7 +474,7 @@ export class FlikkScene implements Scene {
   }
 
   private fullTime() {
-    sfx('whistle');
+    this.fx('whistle');
     if (this.cfg.knockout && this.score[0] === this.score[1] && !this.golden) {
       this.golden = true;
       this.flash(this.say('golden'), 2);
@@ -342,7 +490,7 @@ export class FlikkScene implements Scene {
   private startShootout() {
     this.shootout = { kicks: [[], []], shooter: this.firstKick };
     this.flash(this.say('pens'), 2);
-    sfx('whistle');
+    this.fx('whistle');
     this.later(1.6, () => this.setupPen());
   }
 
@@ -370,7 +518,7 @@ export class FlikkScene implements Scene {
     const so = this.shootout!;
     so.kicks[so.shooter].push(goal);
     this.flash(goal ? this.say('scored') : this.say('missed'), 1.4);
-    if (goal) sfx('good'); else sfx('bad');
+    if (goal) this.fx('good'); else this.fx('bad');
     this.emit();
     const [a, b] = [so.kicks[0], so.kicks[1]];
     const ga = a.filter(Boolean).length, gb = b.filter(Boolean).length;
@@ -408,22 +556,23 @@ export class FlikkScene implements Scene {
     if (this.fixed || this.phase !== 'aim' || this.flicks > 0 || this.regroupUsed[this.turnSide] || this.shootout) return;
     this.regroupUsed[this.turnSide] = true;
     regroup(this.w, this.turnSide, this.cfg.setups[this.turnSide]);
-    sfx('whoosh');
+    this.fx('whoosh');
     this.endTurn();
   }
 
   // ---------- Input ----------
 
-  private humanTurn() { return this.phase === 'aim' && (!this.cfg.vsAI || this.turnSide === 0); }
+  private humanTurn() { return this.phase === 'aim' && this.ctl[this.turnSide] === 'human'; }
 
   pointerDown(x: number, y: number) {
     if (!this.humanTurn()) return;
+    if (this.cfg.flip) { x = PITCH.W - x; y = PITCH.H - y; }
     if (this.fixed) {
       // Press anywhere, pull back and let go: the ball goes the other way.
       this.sel = this.holder;
       this.kb.on = false;
       this.drag = { sx: x, sy: y, x, y, path: [[x, y]] };
-      sfx('tick', { gain: 0.4 });
+      this.fx('tick', { gain: 0.4 });
       return;
     }
     const ds = discsOf(this.w, this.turnSide);
@@ -433,11 +582,12 @@ export class FlikkScene implements Scene {
     this.sel = best.id;
     this.kb.on = false;
     this.drag = { sx: best.x, sy: best.y, x, y, path: [[x, y]] };
-    sfx('tick', { gain: 0.4 });
+    this.fx('tick', { gain: 0.4 });
   }
 
   pointerMove(x: number, y: number) {
     if (!this.drag) return;
+    if (this.cfg.flip) { x = PITCH.W - x; y = PITCH.H - y; }
     this.drag.x = x; this.drag.y = y;
     const p = this.drag.path;
     const last = p[p.length - 1];
@@ -517,7 +667,7 @@ export class FlikkScene implements Scene {
   private emit() {
     this.onHud({
       score: [...this.score] as [number, number], minute: this.minute, turnSide: this.turnSide, flick: this.flicks + 1,
-      thinking: this.phase === 'ai' || (this.phase === 'wait' && this.cfg.vsAI && this.turnSide === 1 && !this.banner),
+      thinking: this.phase === 'ai' || (this.phase === 'wait' && this.ctl[this.turnSide] === 'ai' && !this.banner),
       phase: this.phase, banner: this.banner?.text ?? null,
       canRegroup: this.humanTurn() && this.flicks === 0 && !this.regroupUsed[this.turnSide] && !this.shootout,
       shootout: this.shootout ? { kicks: [[...this.shootout.kicks[0]], [...this.shootout.kicks[1]]] } : null,
@@ -525,6 +675,9 @@ export class FlikkScene implements Scene {
       style: this.style,
       chain: this.chain,
       left: Math.max(0, this.cfg.totalTurns - this.turnsDone),
+      seq: this.seq,
+      control: this.ctl[this.turnSide],
+      over: this.ended,
     });
   }
 
@@ -557,9 +710,12 @@ export class FlikkScene implements Scene {
       const bl = ball(this.w);
       const sp = Math.hypot(bl.vx, bl.vy);
       this.ballSpin += sp * dt * 0.05;
-      if (sp - Math.max(sp0, this.lastBallSpeed) > 160) sfx('pop', { gain: Math.min(1, sp / MAX_SPEED) * 0.8, pitch: 0.7 });
+      if (sp - Math.max(sp0, this.lastBallSpeed) > 160) this.fx('pop', { gain: Math.min(1, sp / MAX_SPEED) * 0.8, pitch: 0.7 });
       this.lastBallSpeed = sp;
       if (this.phase === 'moving') {
+        // Online: the mover's result is here while this device's ball still rolls a little: catch up.
+        if (this.fromRemote && this.snapIn) { this.snapWait += dt; if (this.snapWait > 0.8) { this.settleFixed(null); return; } }
+        if (this.w.goal !== null && this.fixed && !this.shootout) { const g = this.w.goal; this.w.goal = null; this.settleFixed(g); return; }
         if (this.w.goal !== null) {
           if (this.shootout) { stopAll(this.w); this.shootoutKick(this.w.goal === this.shootout.shooter); this.w.goal = null; return; }
           this.onGoal(this.w.goal);
@@ -619,6 +775,9 @@ export class FlikkScene implements Scene {
     if (!this.bg) this.bg = this.background(view);
     ctx.save();
     if (this.shake > 0) ctx.translate(Math.sin(this.time * 70) * this.shake * 10, Math.cos(this.time * 53) * this.shake * 8);
+    const flip = !!this.cfg.flip;
+    ctx.save();
+    if (flip) { ctx.translate(PITCH.W, PITCH.H); ctx.rotate(Math.PI); }
     ctx.drawImage(this.bg, 0, 0);
 
     const human = this.humanTurn();
@@ -642,7 +801,9 @@ export class FlikkScene implements Scene {
       const f = this.flags[s];
       if (b.kind === 'disc' && f && f.complete) {
         ctx.save(); ctx.beginPath(); ctx.arc(b.x, b.y, 9, 0, Math.PI * 2); ctx.clip();
-        ctx.drawImage(f, b.x - 13.5, b.y - 9, 27, 18); ctx.restore();
+        // Flags stay the right way up on a turned pitch.
+        ctx.translate(b.x, b.y); if (flip) ctx.rotate(Math.PI);
+        ctx.drawImage(f, -13.5, -9, 27, 18); ctx.restore();
         ctx.beginPath(); ctx.arc(b.x, b.y, 9, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 1.2; ctx.stroke();
       }
       if (b.kind === 'keeper') { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x - 11, b.y, 4, 0, Math.PI * 2); ctx.arc(b.x + 11, b.y, 4, 0, Math.PI * 2); ctx.fill(); }
@@ -670,15 +831,16 @@ export class FlikkScene implements Scene {
     // Particles
     for (const p of this.particles) { ctx.globalAlpha = Math.min(1, p.life * 1.5); ctx.fillStyle = p.c; ctx.fillRect(p.x - 3, p.y - 2, 6, 4); }
     ctx.globalAlpha = 1;
+    ctx.restore();
 
-    // Banner
+    // Banner (never upside down)
     if (this.banner) {
       const big = this.phase === 'goal';
       ctx.font = `800 ${big ? 64 : 30}px "Baloo Da 2", system-ui, sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const tw = ctx.measureText(this.banner.text).width;
       // Fixed mode keeps small messages off the ball: on the other half from it.
-      const by = ball(this.w).y;
+      const by = flip ? PITCH.H - ball(this.w).y : ball(this.w).y;
       const y = big ? PITCH.midY : !this.fixed ? PITCH.midY - 120 : by < PITCH.midY ? PITCH.midY + 150 : PITCH.midY - 150;
       ctx.fillStyle = big ? 'rgba(0,0,0,0.45)' : 'rgba(255,253,246,0.92)';
       roundRect(ctx, 300 - tw / 2 - 22, y - (big ? 46 : 26), tw + 44, big ? 92 : 52, 14); ctx.fill();
@@ -718,9 +880,10 @@ export class FlikkScene implements Scene {
     ctx.strokeStyle = kit[0]; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(h.x, h.y, h.r + 10 + pulse * 2, 0, Math.PI * 2); ctx.stroke();
     // A marker above: "this one has it".
-    const my = h.y - h.r - 22 - pulse * 4;
+    const up = this.cfg.flip ? -1 : 1;
+    const my = h.y - up * (h.r + 22 + pulse * 4);
     ctx.fillStyle = '#ffe27a'; ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(h.x - 9, my - 10); ctx.lineTo(h.x + 9, my - 10); ctx.lineTo(h.x, my); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(h.x - 9, my - up * 10); ctx.lineTo(h.x + 9, my - up * 10); ctx.lineTo(h.x, my); ctx.closePath(); ctx.fill(); ctx.stroke();
     // Flash when someone has just got the ball.
     if (this.gotIt && this.gotIt.id === h.id) {
       const k = this.gotIt.t / 1.2;

@@ -37,3 +37,34 @@
   .hm-keys { grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 5px; }
   .hm-key { min-height: 44px; font-size: 18px; }
 }
+
+/* Online word duel */
+.hmo-round { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.hmo-round b { color: var(--pen); }
+.hmo .bench-scores { margin-bottom: 8px; }
+.hmo-opp { display: flex; align-items: center; gap: 12px; padding: 6px 12px; border-radius: 10px; margin-bottom: 12px; color: #e9efe6; }
+.hmo-mini { width: 54px; max-width: 54px; flex: none; }
+.hmo-opp-main { display: grid; gap: 6px; min-width: 0; flex: 1; }
+.hmo-dots { display: flex; flex-wrap: wrap; gap: 5px; }
+.hmo-dot { width: 16px; height: 16px; border-bottom: 3px solid rgba(244, 241, 230, 0.75); position: relative; }
+.hmo-dot.on::after { content: ''; position: absolute; left: 4px; top: 2px; width: 9px; height: 9px; border-radius: 50%; background: #f3b61f; animation: hm-pop .3s cubic-bezier(0.2, 1.6, 0.4, 1); }
+.hmo-gap { width: 8px; }
+.hmo-opp-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; }
+.hmo-opp-line b { color: #f3b61f; font: 800 17px var(--font-display); }
+.hmo-tag { font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: rgba(255,255,255,0.14); }
+.hmo-tag.won { background: #2f8f5b; }
+.hmo-tag.lost { background: #a8433b; }
+.hmo-me { display: flex; align-items: center; gap: 10px; justify-content: center; }
+.hmo-table { margin: 6px auto 12px; border-collapse: collapse; font-size: 15px; }
+.hmo-table th { text-align: left; padding: 3px 10px 3px 0; max-width: 9em; overflow-wrap: anywhere; }
+.hmo-table td { padding: 3px 0; color: var(--ink-soft); }
+.hmo-sum { text-align: left; margin: 0 auto 10px; padding-left: 1.4em; max-width: 22em; }
+.hmo .hm-end .hm-stamp { font-size: 26px; }
+@media (max-width: 700px) {
+  .hmo .hm-board { grid-template-columns: 74px 1fr; padding: 2px 10px; }
+  .hmo .hm-gallows:not(.hmo-mini) { max-width: 74px; }
+  .hmo .hmo-opp { margin-bottom: 8px; }
+  .hmo .hmo-layout { gap: 8px; }
+  .hmo .hmo-me { justify-content: flex-start; }
+  .hmo .hm-word { margin: 4px 0 10px; min-height: 48px; }
+}

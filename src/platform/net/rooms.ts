@@ -68,7 +68,7 @@ export class NetError extends Error {
 
 const RESEND_MS = 1200;
 const PING_MS = 2500;
-const GONE_MS = 15000;
+const GONE_MS = 12000;
 
 function makePeer(ch: Chan, other: string, host: boolean, me: Profile, them: Profile, code: string): Peer {
   let out = 0;
@@ -100,8 +100,11 @@ function makePeer(ch: Chan, other: string, host: boolean, me: Profile, them: Pro
     ch.on('ack', (a: { s: number; to: string }, from) => { if (from === other && a.to === ch.me) { pending.delete(a.s); lastHeard = Date.now(); } }),
     ch.on('ping', (p: { to: string }, from) => { if (from === other && p.to === ch.me) lastHeard = Date.now(); }),
     ch.on('bye', (p: { to: string }, from) => { if (from === other && p.to === ch.me) fireGone(); }),
-    ch.onPresence((ms) => { if (!ms.some((m) => m.id === other)) setTimeout(() => { if (!ch.members().some((m) => m.id === other)) fireGone(); }, 4000); }),
+    ch.onPresence((ms) => { if (!ms.some((m) => m.id === other)) setTimeout(() => { if (!ch.members().some((m) => m.id === other)) fireGone(); }, 2500); }),
   ];
+  // Leaving the page (closing the tab, going to another site) says goodbye straight away.
+  const onHide = () => { if (!closed) ch.send('bye', { to: other }); };
+  addEventListener('pagehide', onHide);
   const timer = setInterval(() => {
     const now = Date.now();
     for (const [s, p] of pending) if (now - p.at > RESEND_MS) { p.at = now; ch.send('m', { s, type: p.type, data: p.data, to: other }); }
@@ -129,6 +132,7 @@ function makePeer(ch: Chan, other: string, host: boolean, me: Profile, them: Pro
       ch.send('bye', { to: other });
       closed = true;
       clearInterval(timer);
+      removeEventListener('pagehide', onHide);
       offs.forEach((f) => f());
       setTimeout(() => ch.leave(), 300);
     },
