@@ -45,6 +45,12 @@ export interface EngineConfig {
   aiDifficulty: Difficulty;
   /** Extra answer time (ms) for this device, e.g. a touch screen. */
   extraMs?: number;
+  /**
+   * How late a lift may be reported (ms). The touch pad confirms a lift a moment after the finger
+   * leaves (to ignore contact flickers) and reports the real time; the call waits this long
+   * before it is judged, so a lift just inside the window still counts.
+   */
+  settleMs?: number;
 }
 
 /** How the computer player answers at each level (also used by the online stand-in). */
@@ -127,7 +133,7 @@ export class PakhirEngine {
         for (const [i, p] of this.players.entries()) {
           if (p.ai && !p.judged && p.aiLiftAt !== null && now >= p.aiLiftAt) this.react(i, now);
         }
-        if (now >= this.callAt + this.windowMs) this.resolve(now);
+        if (now >= this.callAt + this.windowMs + (this.cfg.settleMs ?? 0)) this.resolve(now);
         break;
       }
       case 'reveal':
@@ -195,6 +201,7 @@ export class PakhirEngine {
     }
     if (this.phase !== 'call' || p.judged || !this.item) return;
     const rt = now - this.callAt;
+    if (rt > this.windowMs) return; // too late: judged as missed when the call ends
     if (p.early || rt < ANTICIPATION_MS) {
       this.judge(i, { ok: false, reason: 'early', points: 0 });
     } else if (this.item.flies) {

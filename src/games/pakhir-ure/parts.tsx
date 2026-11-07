@@ -5,7 +5,7 @@ import { useT, type StringTable } from '../../platform/i18n';
 export const S: StringTable<
   | 'title' | 'lede' | 'r1' | 'r2' | 'r3' | 'r4' | 'input' | 'lift' | 'tap' | 'liftHelp' | 'tapHelp'
   | 'putDown' | 'getReady' | 'ure' | 'flies' | 'noFly' | 'ok' | 'held' | 'missed' | 'fooled' | 'early' | 'ms'
-  | 'padLift' | 'padTap' | 'lives' | 'level' | 'calls' | 'score' | 'correct' | 'streak' | 'fastest' | 'average'
+  | 'padLift' | 'padTap' | 'holding' | 'lives' | 'level' | 'calls' | 'score' | 'correct' | 'streak' | 'fastest' | 'average'
   | 'over' | 'won' | 'draw' | 'aiName'
 > = {
   en: {
@@ -18,7 +18,7 @@ export const S: StringTable<
     liftHelp: 'Hold the pad. Lift your finger for things that fly.', tapHelp: 'Tap the pad for things that fly.',
     putDown: 'Put your finger down', getReady: 'Get ready…', ure: 'ure!', flies: 'It flies', noFly: 'It does not fly',
     ok: 'Correct!', held: 'Well held!', missed: 'Too late!', fooled: 'Fooled you!', early: 'False start!', ms: '{n} ms',
-    padLift: 'Finger here', padTap: 'Tap here', lives: 'Lives', level: 'Level {n}', calls: 'Call {n}/{m}',
+    padLift: 'Finger here', padTap: 'Tap here', holding: 'Holding', lives: 'Lives', level: 'Level {n}', calls: 'Call {n}/{m}',
     score: 'Score', correct: 'Correct answers', streak: 'Best streak', fastest: 'Fastest reaction', average: 'Average reaction',
     over: 'Game over', won: '{name} wins!', draw: 'It is a draw!', aiName: 'Rakib (computer)',
   },
@@ -32,7 +32,7 @@ export const S: StringTable<
     liftHelp: 'প্যাডে আঙুল চেপে রাখো। যে উড়ে, তার নামে আঙুল তোলো।', tapHelp: 'যে উড়ে, তার নামে প্যাডে ট্যাপ করো।',
     putDown: 'আঙুল রাখো', getReady: 'তৈরি হও…', ure: 'উড়ে!', flies: 'উড়ে', noFly: 'উড়ে না',
     ok: 'ঠিক!', held: 'দারুণ, ধরে রেখেছ!', missed: 'দেরি হয়ে গেল!', fooled: 'ফাঁদে পড়েছ!', early: 'ফাউল! আগেই তুলেছ', ms: '{n} মি.সে.',
-    padLift: 'এখানে আঙুল রাখো', padTap: 'এখানে ট্যাপ করো', lives: 'জীবন', level: 'লেভেল {n}', calls: 'ডাক {n}/{m}',
+    padLift: 'এখানে আঙুল রাখো', padTap: 'এখানে ট্যাপ করো', holding: 'আঙুল রাখা আছে', lives: 'জীবন', level: 'লেভেল {n}', calls: 'ডাক {n}/{m}',
     score: 'পয়েন্ট', correct: 'ঠিক উত্তর', streak: 'টানা ঠিক', fastest: 'সবচেয়ে দ্রুত', average: 'গড় সময়',
     over: 'খেলা শেষ', won: '{name} জিতেছে!', draw: 'সমান সমান!', aiName: 'রাকিব (কম্পিউটার)',
   },

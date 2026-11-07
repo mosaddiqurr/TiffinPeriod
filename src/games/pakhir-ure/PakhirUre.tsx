@@ -5,7 +5,7 @@ import { UI } from '../../platform/strings';
 import { sfx, speak, vibrate } from '../../platform/audio';
 import { recordResult } from '../../platform/scores';
 import { createRng } from '../../engine/rng';
-import { HoldPad, touchExtraMs } from './pad';
+import { HoldPad, LIFT_GRACE_MS, touchExtraMs } from './pad';
 import { DifficultySeg, ModeSeg, Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames, type Difficulty, type Mode } from '../../components/ui';
 import { ITEMS, artFor } from './items';
 import { PakhirEngine, type InputStyle } from './engine';
@@ -50,6 +50,7 @@ function PakhirUreLocal({ onExit, onOnline }: GameProps & { onOnline: () => void
       calls: mode === 'solo' ? null : 20,
       aiDifficulty: diff,
       extraMs: touchExtraMs(),
+      settleMs: LIFT_GRACE_MS + 30,
     }, ITEMS, rng);
     setResult(null);
     setPaused(false);
@@ -227,10 +228,11 @@ function PakhirUreLocal({ onExit, onOnline }: GameProps & { onOnline: () => void
                 testid={`pad-${i}`}
                 disabled={paused}
                 onDown={() => engine.current?.press(i, now())}
-                onUp={() => engine.current?.release(i, now())}
+                onUp={(ago) => engine.current?.release(i, now() - ago)}
+                upLabel={input === 'lift' ? (p.holding ? t('padLift') : t('putDown')) : t('padTap')}
+                downLabel={input === 'lift' ? t('holding') : undefined}
               >
                 <Finger up={input === 'lift' ? !p.holding : false} />
-                <span className="pu-pad-label">{input === 'lift' ? t('padLift') : t('padTap')}</span>
                 <span className="key-hint hide-touch">{mode === 'local2p' ? (i === 0 ? 'A' : 'L') : 'Space'}</span>
               </HoldPad>
             )}

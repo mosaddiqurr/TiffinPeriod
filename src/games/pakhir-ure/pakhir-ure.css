@@ -57,3 +57,24 @@
    never become the touch target (so the touch stays on the pad). */
 .pu-pad { -webkit-touch-callout: none; }
 .pu-pad * { pointer-events: none; }
+
+/* ---------- Pressed or not: impossible to miss ---------- */
+.pu-pad { transition: background-color .08s, box-shadow .08s, transform .08s; overflow: hidden; }
+.pu-pad::before {
+  /* the pulsing "put your finger here" outline */
+  content: ''; position: absolute; inset: 8px; border-radius: 16px; border: 3px dashed rgba(255, 220, 120, 0.85); pointer-events: none;
+  animation: pu-call 1.1s ease-in-out infinite;
+}
+@keyframes pu-call { 50% { opacity: .35; transform: scale(.985); } }
+.pu-pad-label { position: relative; font-weight: 800; font-size: 19px; padding: 4px 14px; border-radius: 999px; background: rgba(0,0,0,0.22); }
+.pu-pad-label i { font-style: normal; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #fff; color: #0b7a4f; margin-right: 4px; font-size: 16px; }
+.pu-pad.held {
+  background: radial-gradient(120% 90% at 50% 40%, #2fbf7f 0%, #13805c 60%, #0b5d43 100%);
+  box-shadow: inset 0 0 0 4px #ffd23f, 0 0 0 4px rgba(255, 210, 63, 0.35), 0 1px 0 #073d2c; transform: translateY(5px); color: #fff;
+}
+.pu-pad.held::before { border: 0; animation: pu-ripple .45s ease-out; inset: 0; border-radius: 22px; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.45), transparent 60%); }
+@keyframes pu-ripple { from { opacity: 1; transform: scale(.4); } to { opacity: 0; transform: scale(1.4); } }
+.pu-pad.held .pu-pad-label { background: rgba(255,255,255,0.18); }
+.pu-pad.held .pu-finger .f { transform: translateY(14px); }
+.pu-pad.off::before, .pu-pad.tap::before { animation: none; opacity: .4; }
+.reduced-motion .pu-pad::before { animation: none; }

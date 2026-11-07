@@ -3,7 +3,7 @@ import { useT } from '../../platform/i18n';
 import { sfx, speak, vibrate } from '../../platform/audio';
 import { recordResult } from '../../platform/scores';
 import { RaceLink, type RaceProgress } from '../../platform/net/race';
-import { HoldPad, touchExtraMs } from './pad';
+import { HoldPad, LIFT_GRACE_MS, touchExtraMs } from './pad';
 import { Seg, useGameBar } from '../../components/ui';
 import { MoveClock, OnlineEnd, OnlineLobby, OppBar, useMoveClock, useOppGone, useRealUnmount, useRematch, type MatchProps } from '../../components/online/OnlineLobby';
 import { useTx } from '../../components/sport/SportKit';
@@ -84,7 +84,7 @@ function PUMatch({ peer, settings, seed, onLeave }: MatchProps<PUSettings>) {
     const r = new RaceLink(peer);
     race.current = r;
     gameRef.current = g;
-    engine.current = raceEngine(settings, seed, g, touchExtraMs());
+    engine.current = raceEngine(settings, seed, g, touchExtraMs(), LIFT_GRACE_MS + 30);
     setGame(g);
     setStarted(false);
     setOpp(ZERO);
@@ -236,10 +236,11 @@ function PUMatch({ peer, settings, seed, onLeave }: MatchProps<PUSettings>) {
             testid="pad-0"
             disabled={!started || myDone || gone}
             onDown={() => engine.current.press(0, now())}
-            onUp={() => engine.current.release(0, now())}
+            onUp={(ago) => engine.current.release(0, now() - ago)}
+            upLabel={settings.input === 'lift' ? (me.holding ? t('padLift') : t('putDown')) : t('padTap')}
+            downLabel={settings.input === 'lift' ? t('holding') : undefined}
           >
             <Finger up={settings.input === 'lift' ? !me.holding : false} />
-            <span className="pu-pad-label">{settings.input === 'lift' ? t('padLift') : t('padTap')}</span>
             <span className="key-hint hide-touch">Space</span>
           </HoldPad>
         </div>
