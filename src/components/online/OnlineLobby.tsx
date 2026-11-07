@@ -4,8 +4,9 @@ import { readJSON, writeJSON } from '../../platform/storage';
 import { clearHashQuery } from '../../platform/router';
 import { NetError, cleanCode, createRoom, isCode, joinRoom, quickMatch, roomLink, CODE_LEN, type Peer, type Profile } from '../../platform/net/rooms';
 import { useGameBar, usePlayerNames } from '../ui';
-import { Flag, TeamGrid, favTeam, setFavTeam, useTx } from '../sport/SportKit';
-import { getTeam } from '../../shared/teams';
+import { Flag, favTeam, useTx } from '../sport/SportKit';
+import { LobbyHome, RoomCodeCard } from './LobbyHome';
+import { ResultHero, ScoreDuel } from '../Result';
 import './online.css';
 
 // The online screen for any game: your name and country, then
@@ -71,7 +72,6 @@ export function OnlineLobby<S>(p: LobbyProps<S>) {
   const [name, setNameState] = useState(() => readJSON<string>('online.name', '') || p1);
   const [teamPick, setTeam] = useState(() => favTeam(sport));
   const team = flags ? teamPick : '';
-  const [pickTeam, setPickTeam] = useState(false);
   const [stage, setStage] = useState<Stage>('lobby');
   const [joinCode, setJoinCode] = useState(p.code ?? '');
   const [err, setErr] = useState('');
@@ -181,81 +181,59 @@ export function OnlineLobby<S>(p: LobbyProps<S>) {
   let body: ReactNode;
   if (stage === 'room' && room) {
     body = (
-      <div className="ol-wait" data-testid="room-wait">
-        <h2>{t('Your room is open', 'তোমার রুম খোলা হয়েছে')}</h2>
-        <p className="lede">{t('Send this code or link to your friend. The match starts when they join.', 'এই কোড বা লিংক বন্ধুকে পাঠাও। সে ঢুকলেই খেলা শুরু।')}</p>
-        <div className="ol-code" data-testid="room-code" aria-label={room.code}>{room.code.split('').map((c, i) => <span key={i}>{c}</span>)}</div>
-        <div className="ol-share">
-          <button className="btn big" onClick={() => void share(room.code)} data-testid="share-link">🔗 {t('Share link', 'লিংক পাঠাও')}</button>
-          <button className="btn secondary" onClick={() => void copyCode(room.code)}>{t('Copy code', 'কোড কপি')}</button>
+      <div className="olh" data-testid="room-wait">
+        <div className="olh-head center">
+          <div className="olh-title">
+            <h2>{t('Your room is open', 'তোমার রুম খোলা হয়েছে')}</h2>
+            <span className="olh-kind">{t('The match starts when your friend joins.', 'বন্ধু ঢুকলেই খেলা শুরু।')}</span>
+          </div>
         </div>
-        {copied && <p className="ol-note">{copied === 'fail' ? t('Could not copy here: tell your friend the code.', 'এখানে কপি হলো না: বন্ধুকে কোডটা বলে দাও।') : copied === 'code' ? t('Code copied.', 'কোড কপি হয়েছে।') : t('Link copied. Paste it in a message to your friend.', 'লিংক কপি হয়েছে। বন্ধুকে মেসেজে পাঠাও।')}</p>}
-        {p.describe && <p className="ol-meta">{p.describe(settings)}</p>}
-        <div className="ol-pulse"><i /><i /><i /> {t('Waiting for your friend…', 'বন্ধুর জন্য অপেক্ষা…')}</div>
-        <button className="btn secondary" onClick={cancel} data-testid="cancel">{t('Close the room', 'রুম বন্ধ করো')}</button>
+        <RoomCodeCard code={room.code} onShare={() => void share(room.code)} onCopy={() => void copyCode(room.code)} copied={copied} />
+        {p.describe && <p className="ol-meta olh-center">{p.describe(settings)}</p>}
+        <div className="ol-pulse olh-center"><i /><i /><i /> {t('Waiting for your friend…', 'বন্ধুর জন্য অপেক্ষা…')}</div>
+        <button className="btn secondary olh-center" onClick={cancel} data-testid="cancel">{t('Close the room', 'রুম বন্ধ করো')}</button>
       </div>
     );
   } else if (stage === 'search' || stage === 'joining') {
     body = (
-      <div className="ol-wait" data-testid="searching">
-        <div className="ol-radar" aria-hidden="true"><span /><span /><Who team={team} name={me.name} size={40} /></div>
-        <h2>{stage === 'search' ? t('Finding a player…', 'খেলোয়াড় খোঁজা হচ্ছে…') : t('Joining the room…', 'রুমে ঢুকছি…')}</h2>
-        {stage === 'search' && <p className="ol-meta">{t(`${waited}s`, `${n(waited)} সেকেন্ড`)}{p.describe ? ` · ${p.describe(p.quickSettings)}` : ''}</p>}
-        <button className="btn secondary" onClick={cancel} data-testid="cancel">{t('Cancel', 'বাতিল')}</button>
+      <div className="olh" data-testid="searching">
+        <div className="olh-card ol-wait">
+          <div className="ol-radar" aria-hidden="true"><span /><span /><Who team={team} name={me.name} size={48} /></div>
+          <h2>{stage === 'search' ? t('Finding a player…', 'খেলোয়াড় খোঁজা হচ্ছে…') : t('Joining the room…', 'রুমে ঢুকছি…')}</h2>
+          {stage === 'search' && <p className="ol-meta">{t(`${waited}s`, `${n(waited)} সেকেন্ড`)}{p.describe ? ` · ${p.describe(p.quickSettings)}` : ''}</p>}
+          <button className="btn secondary" onClick={cancel} data-testid="cancel">{t('Cancel', 'বাতিল')}</button>
+        </div>
       </div>
     );
   } else if (stage === 'found' && peer) {
     body = (
-      <div className="ol-found" data-testid="found">
-        <div className="ol-found-row">
-          <div className="ol-player"><Who team={me.team} name={me.name} size={64} /><b>{me.name}</b></div>
-          <span className="ol-vs">VS</span>
-          <div className="ol-player"><Who team={peer.them.team} name={peer.them.name} size={64} /><b data-testid="opp-name">{peer.them.name}</b></div>
+      <div className="olh" data-testid="found">
+        <div className="olh-card ol-found">
+          <div className="ol-found-row">
+            <div className="ol-player"><Who team={me.team} name={me.name} size={72} /><b>{me.name}</b></div>
+            <span className="ol-vs">VS</span>
+            <div className="ol-player"><Who team={peer.them.team} name={peer.them.name} size={72} /><b data-testid="opp-name">{peer.them.name}</b></div>
+          </div>
+          <h2>{t('Player found!', 'খেলোয়াড় পাওয়া গেছে!')}</h2>
         </div>
-        <h2>{t('Player found!', 'খেলোয়াড় পাওয়া গেছে!')}</h2>
       </div>
     );
   } else {
     body = (
-      <>
-        <button className="btn secondary sport-back" onClick={p.onBack}>← {t('Back', 'ফিরে যাও')}</button>
-        <div className="sport-eyebrow">{t('Online · 1v1', 'অনলাইন · ১ বনাম ১')}</div>
-        <h2>{t('Play online', 'অনলাইনে খেলো')}</h2>
-        <div className="ol-you">
-          <label className="ol-name">
-            <span>{t('Your name', 'তোমার নাম')}</span>
-            <input value={name} maxLength={16} onChange={(e) => setName(e.target.value)} placeholder={t('Name', 'নাম')} data-testid="online-name" autoComplete="nickname" />
-          </label>
-          {flags && <button className="btn secondary ol-team" onClick={() => setPickTeam(!pickTeam)} aria-expanded={pickTeam} data-testid="online-team">
-            <Flag id={team} size={26} /> {x.bi(getTeam(team).name)} <small>{t('change', 'বদলাও')}</small>
-          </button>}
-          {flags && pickTeam && <TeamGrid sport={sport} value={team} onChange={(id) => { setTeam(id); setFavTeam(sport, id); setPickTeam(false); }} label={t('Your country', 'তোমার দেশ')} />}
-        </div>
-        {err && <p className="ol-err" role="alert" data-testid="online-error">{err}</p>}
-        <div className="ol-ways">
-          <button className="ol-way main" onClick={() => void quick()} data-testid="quick-match">
-            <span className="ol-ico" aria-hidden="true">⚡</span>
-            <b>{t('Quick match', 'কুইক ম্যাচ')}</b>
-            <small>{t('Play the next player who is looking for a game.', 'যে এখন খেলা খুঁজছে, তার সাথে খেলো।')}</small>
-          </button>
-          <div className="ol-way">
-            <span className="ol-ico" aria-hidden="true">🔑</span>
-            <b>{t('Create a room', 'রুম খোলো')}</b>
-            <small>{t('Get a code and a link for a friend.', 'বন্ধুর জন্য একটা কোড আর লিংক পাও।')}</small>
-            {Opt && <div className="ol-opts"><Opt value={settings} onChange={setSettings} /></div>}
-            <button className="btn" onClick={() => void create()} data-testid="create-room">{t('Create room', 'রুম খোলো')}</button>
-          </div>
-          <div className="ol-way">
-            <span className="ol-ico" aria-hidden="true">🎟️</span>
-            <b>{t('Join a room', 'রুমে ঢোকো')}</b>
-            <small>{t('Type the code your friend sent.', 'বন্ধুর পাঠানো কোড লেখো।')}</small>
-            <form className="ol-join" onSubmit={(e) => { e.preventDefault(); void join(); }}>
-              <input value={joinCode} onChange={(e) => setJoinCode(cleanCode(e.target.value))} placeholder="AB7K3" maxLength={CODE_LEN + 4} inputMode="text" autoCapitalize="characters" autoComplete="off" spellCheck={false} aria-label={t('Room code', 'রুম কোড')} data-testid="join-code" />
-              <button className="btn" type="submit" disabled={!isCode(joinCode)} data-testid="join-room">{t('Join', 'ঢোকো')}</button>
-            </form>
-          </div>
-        </div>
-      </>
+      <LobbyHome
+        kind={t('1 vs 1', '১ বনাম ১')}
+        onBack={p.onBack}
+        name={name} setName={setName}
+        sport={flags ? sport : undefined} team={team} setTeam={setTeam}
+        err={err}
+        onQuick={() => void quick()}
+        quickSub={t('Play the next player who is looking for a game.', 'যে এখন খেলা খুঁজছে, তার সাথে খেলো।')}
+        quickMeta={p.describe ? p.describe(p.quickSettings) : undefined}
+        createSub={t('Get a code and a link to send to a friend.', 'বন্ধুকে পাঠানোর জন্য একটা কোড আর লিংক পাও।')}
+        options={Opt ? <Opt value={settings} onChange={setSettings} /> : undefined}
+        onCreate={() => void create()}
+        joinCode={joinCode} setJoinCode={setJoinCode} onJoin={() => void join()}
+      />
     );
   }
   return <div className="sport-page ol-page" data-testid="online">{body}</div>;
@@ -329,15 +307,29 @@ export function MoveClock({ left, seconds }: { left: number; seconds: number }) 
 }
 
 /** The end-of-match sheet for online games: result, rematch (both must agree) and leave. */
-export function OnlineEnd({ title, lines, gone, oppName, rematch, onRematch, onLeave }: {
-  title: string; lines?: ReactNode; gone: boolean; oppName: string;
+export interface EndSide { name: string; team?: string; score: ReactNode; note?: ReactNode }
+
+export function OnlineEnd({ title, outcome, me, them, mid, lines, gone, oppName, rematch, onRematch, onLeave }: {
+  title: string;
+  /** Your result; a player who left counts as your win. */
+  outcome?: 'win' | 'loss' | 'tie' | 'none';
+  /** Your side and theirs, shown side by side with a crown over the winner. */
+  me?: EndSide; them?: EndSide; mid?: ReactNode;
+  lines?: ReactNode; gone: boolean; oppName: string;
   rematch?: { me: boolean; them: boolean }; onRematch?: () => void; onLeave: () => void;
 }) {
   const { t } = useTx();
+  const out = gone ? 'win' : outcome ?? 'none';
+  useEffect(() => { sfx(out === 'loss' ? 'out' : 'fanfare'); }, [out]);
+  const head = gone ? t('You win!', 'তুমি জিতেছ!') : title;
+  const winner = out === 'win' ? 0 : out === 'loss' ? 1 : null;
   return (
-    <div className="overlay" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="sheet ruled" data-testid="result">
-        <h2>{gone ? t(`${oppName} left the match. You win!`, `${oppName} খেলা ছেড়ে চলে গেছে। তুমি জিতেছ!`) : title}</h2>
+    <div className="overlay" role="dialog" aria-modal="true" aria-label={head}>
+      <div className="report result-card ol-end" data-testid="result">
+        <ResultHero outcome={out} title={head} sub={gone ? t(`${oppName} left the match.`, `${oppName} খেলা ছেড়ে চলে গেছে।`) : undefined} />
+        {me && them && <ScoreDuel winner={winner} mid={mid}
+          a={{ name: me.name, badge: <Who team={me.team ?? ''} name={me.name} size={30} />, score: me.score, note: me.note, me: true }}
+          b={{ name: them.name, badge: <Who team={them.team ?? ''} name={them.name} size={30} />, score: them.score, note: them.note }} />}
         {lines}
         {!gone && rematch?.them && !rematch.me && <p className="ol-note">{t(`${oppName} wants a rematch!`, `${oppName} আবার খেলতে চায়!`)}</p>}
         <div className="actions">

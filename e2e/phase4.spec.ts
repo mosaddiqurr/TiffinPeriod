@@ -206,6 +206,7 @@ test('Hand Cricket online: a room has a 5-character code and a bad code is expla
   await page.getByTestId('create-room').click();
   await expect(page.getByTestId('room-code')).toHaveAttribute('aria-label', /^[2-9A-HJKMNP-Z]{5}$/, { timeout: 15_000 });
   await page.getByTestId('cancel').click();
+  await page.getByTestId('friend-join').click();
   await page.getByTestId('join-code').fill('zz zz2');
   await expect(page.getByTestId('join-code')).toHaveValue('ZZZZ2');
   await page.getByTestId('join-room').click();

@@ -82,7 +82,6 @@ export function Home() {
               return (
                 <a key={g.id} className="card" href={href({ name: 'play', id: g.id })} style={{ ['--accent' as string]: g.accent }} data-testid={`card-${g.id}`} onClick={() => unlockAudio()}>
                   <div className="card-art">
-                    <span className="card-no">{fmtNum(g.no, t.lang)}.</span>
                     {Doodle && <Doodle accent={g.accent} />}
                   </div>
                   <div className="card-body">
@@ -110,7 +109,7 @@ export function Home() {
         <div className="soon-grid">
           {soon.map((g) => (
             <div key={g.id} className="soon" aria-label={`${t.bi(g.title)} — ${t('mPlanned')}`}>
-              <b><span className="no">{fmtNum(g.no, t.lang)}.</span>{t.bi(g.title)}</b>
+              <b>{t.bi(g.title)}</b>
               <small>{t.bi(g.blurb)}</small>
               <span className="stamp">{t('soonStamp')}</span>
             </div>
@@ -135,11 +134,10 @@ export function Roadmap() {
         <p>{t('mLede')}</p>
         <div style={{ overflowX: 'auto' }}>
           <table className="roadmap-table">
-            <thead><tr><th>{t('mNo')}</th><th>{t('mGame')}</th><th>{t('mPlace')}</th><th>{t('mPhase')}</th><th>{t('mStatus')}</th></tr></thead>
+            <thead><tr><th>{t('mGame')}</th><th>{t('mPlace')}</th><th>{t('mPhase')}</th><th>{t('mStatus')}</th></tr></thead>
             <tbody>
               {GAMES.map((g) => (
                 <tr key={g.id}>
-                  <td>{fmtNum(g.no, t.lang)}</td>
                   <td>
                     {g.playable ? <a className="ink-link" href={href({ name: 'play', id: g.id })}>{t.bi(g.title)}</a> : <b>{t.bi(g.title)}</b>}
                     <br /><small style={{ color: 'var(--ink-soft)' }}>{t.bi(g.blurb)}</small>

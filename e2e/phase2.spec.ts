@@ -125,7 +125,7 @@ test.describe('desktop full plays', () => {
     expect(errors).toEqual([]);
   });
 
-  for (const [id, opt] of [['elonti-belonti', 'কঠিন'], ['কঠিন'], ['কঠিন'], ['কঠিন'], ['paper-boat', 'কঠিন'], ['কঠিন']] as const) {
+  for (const [id, opt] of [['elonti-belonti', 'কঠিন'], ['paper-boat', 'কঠিন']] as const) {
     test(`${id}: the computer finishes and a result appears`, async ({ page }) => {
       const errors = trackErrors(page);
       await open(page, id, opt);

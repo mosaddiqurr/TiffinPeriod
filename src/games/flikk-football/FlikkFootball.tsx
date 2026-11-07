@@ -16,6 +16,7 @@ import { FLICKS_PER_TURN, type Style } from './fixed';
 import { FormationPreview, Tactics, rulesList } from './parts';
 import { OnlineFlikk } from './online';
 import { OnlineButton, useOnlineEntry } from '../../components/online/OnlineButton';
+import { ResultHero, ScoreDuel } from '../../components/Result';
 import './flikk.css';
 
 export { FormationPreview };
@@ -147,13 +148,13 @@ export default function FlikkFootball({ onExit }: GameProps) {
     return (
       <div className="sport-root ruled">
         <div className="overlay" role="dialog" aria-modal="true" aria-label={title}>
-          <div className="report" data-testid="result">
+          <div className="report result-card" data-testid="result">
             <div className="school">{p.occasion ?? t('Flikk Football', 'ফ্লিক ফুটবল')}</div>
-            <FlagScore a={p.cfg.teams[0]} b={p.cfg.teams[1]} sa={n(e.score[0])} sb={n(e.score[1])} mid={t('FT', 'শেষ')} />
-            <h2 style={{ marginTop: 10 }}>{title}</h2>
-            {after.cupNote === 'out' && <p className="sub">{t('Out of the cup this time.', 'এবার কাপ থেকে বিদায়।')}</p>}
+            <ResultHero outcome={stamp ?? (w === null ? 'tie' : 'none')} title={title} sub={after.cupNote === 'out' ? t('Out of the cup this time.', 'এবার কাপ থেকে বিদায়।') : undefined} />
+            <ScoreDuel winner={w === null ? null : w} mid={t('FT', 'শেষ')}
+              a={{ name: x.bi(getTeam(p.cfg.teams[0]).name), badge: <Flag id={p.cfg.teams[0]} size={34} />, score: n(e.score[0]), me: p.cfg.vsAI }}
+              b={{ name: x.bi(getTeam(p.cfg.teams[1]).name), badge: <Flag id={p.cfg.teams[1]} size={34} />, score: n(e.score[1]) }} />
             <table><tbody>{rows.map(([k, v]) => <tr key={k}><td>{k}</td><td>{typeof v === 'number' ? n(v) : v}</td></tr>)}</tbody></table>
-            <div className="sign"><span />{stamp && <span className={`grade-stamp ${stamp}`}>{stamp === 'win' ? t('WON', 'জয়') : stamp === 'loss' ? t('LOST', 'হার') : t('DRAW', 'ড্র')}</span>}<span /></div>
             <div className="actions">
               {p.kind === 'cup' ? <button className="btn big" autoFocus data-testid="after-next" onClick={() => setScreen(after.cupNote === 'won' ? 'champion' : 'cup')}>{after.cupNote === 'won' ? t('Lift the cup!', 'কাপ তোলো!') : t('Back to the cup', 'কাপে ফেরো')}</button>
                 : p.kind === 'challenge' ? <><button className="btn big" autoFocus data-testid="after-retry" onClick={() => startChallenge(p.ch!)}>{t('Try again', 'আবার চেষ্টা')}</button><button className="btn secondary" onClick={() => setScreen('challenges')}>{t('All challenges', 'সব চ্যালেঞ্জ')}</button></>

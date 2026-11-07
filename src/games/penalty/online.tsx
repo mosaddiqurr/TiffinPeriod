@@ -190,9 +190,10 @@ function PKMatch({ peer, settings, seed, onLeave }: MatchProps<PKSetup>) {
       {(over || gone || v.cheat) && (
         <OnlineEnd
           title={v.cheat ? t('Connection problem. The match was stopped.', 'সংযোগে সমস্যা। খেলা থামানো হলো।') : w === me ? t('You win the shootout!', 'তুমি শুটআউট জিতেছ!') : t(`${names[opp]} wins the shootout`, `${names[opp]} শুটআউট জিতেছে`)}
+          outcome={v.cheat ? 'none' : w === me ? 'win' : 'loss'}
+          {...(v.cheat ? {} : { me: { name: names[me], team: teams[me], score: n(g[me]) }, them: { name: names[opp], team: teams[opp], score: n(g[opp]) } })}
           lines={<>
             <OnlineBoard teams={teams} names={names} so={v.so} mySide={me} />
-            <p className="lede" data-testid="final-score">{names[0]} {n(g[0])} – {n(g[1])} {names[1]}</p>
           </>}
           gone={gone && !over && !v.cheat} oppName={names[opp]}
           rematch={gone || v.cheat ? undefined : v.rematch} onRematch={gone || v.cheat || !over ? undefined : () => duel.askRematch()}

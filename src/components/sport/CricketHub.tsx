@@ -9,6 +9,7 @@ import { getTeam, ratingOf, defaultOpponent } from '../../shared/teams';
 import { createTournament, cricketSimulator, loadTournament, nextFixture, playerResult, saveTournament, type Tournament } from '../../shared/tournament';
 import { dailyChase, dailyScore, difficultyFor, isUnlocked, ladder, loadStars, saveStars, starsFor, type Chase, type CricketMode, type Difficulty } from '../../shared/cricketModes';
 import { dailyRecord, dailyStreak, saveDaily, shareOrCopy } from '../../shared/daily';
+import { ResultHero, ScoreDuel } from '../Result';
 import { Championship, CupBoard, Flag, MatchUp, ModeCard, TeamGrid, favTeam, setFavTeam, stageName, useTx } from './SportKit';
 
 // The menu and modes for the three bench cricket games.
@@ -412,15 +413,16 @@ export function CricketHub({ game, onExit }: { game: CricketAdapter; onExit: () 
     return (
       <div className="sport-root ruled">
         <div className="overlay" role="dialog" aria-modal="true" aria-label={resultTitle(s, o)}>
-          <div className="report" data-testid="result">
+          <div className="report result-card" data-testid="result">
             <div className="school">{s.occasion ?? x.bi(game.title)}</div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 10, alignItems: 'center', margin: '6px 0' }}><Flag id={s.teams[0]} size={40} /><b>{t('vs', 'বনাম')}</b><Flag id={s.teams[1]} size={40} /></div>
-            <h2>{resultTitle(s, o)}</h2>
-            {s.chase && w !== null && <p className="sub">{won ? t('Chased it down!', 'লক্ষ্য তাড়া করে জয়!') : t(`Fell ${Math.max(1, s.chase.target - humanRuns(o).runs)} short.`, `${n(Math.max(1, s.chase.target - humanRuns(o).runs))} রান কম পড়ল।`)}</p>}
+            <ResultHero outcome={outcomeStamp} title={resultTitle(s, o)}
+              sub={s.chase && w !== null ? (won ? t('Chased it down!', 'লক্ষ্য তাড়া করে জয়!') : t(`Fell ${Math.max(1, s.chase.target - humanRuns(o).runs)} short.`, `${n(Math.max(1, s.chase.target - humanRuns(o).runs))} রান কম পড়ল।`)) : undefined} />
+            <ScoreDuel winner={w} mid={t('vs', 'বনাম')}
+              a={{ name: x.bi(getTeam(s.teams[0]).name), badge: <Flag id={s.teams[0]} size={34} />, score: `${n(o.innings[o.battingFirst === 0 ? 0 : 1].runs)}/${n(o.innings[o.battingFirst === 0 ? 0 : 1].wickets)}`, me: s.vsAI }}
+              b={{ name: x.bi(getTeam(s.teams[1]).name), badge: <Flag id={s.teams[1]} size={34} />, score: `${n(o.innings[o.battingFirst === 1 ? 0 : 1].runs)}/${n(o.innings[o.battingFirst === 1 ? 0 : 1].wickets)}` }} />
             {after.cupNote === 'out' && <p className="sub">{t('Out of the cup this time.', 'এবার কাপ থেকে বিদায়।')}</p>}
             <table><tbody>{rows.map(([k, v], i) => <tr key={i}><td>{k}</td><td>{typeof v === 'number' ? n(v) : v}</td></tr>)}</tbody></table>
             {(after.newBest || after.dailyBest) && <div style={{ textAlign: 'center' }}><span className="new-best">★ {after.dailyBest ? t('Best score today', 'আজকের সেরা স্কোর') : t('New best', 'নতুন রেকর্ড')}</span></div>}
-            <div className="sign"><span />{outcomeStamp !== 'none' && <span className={`grade-stamp ${outcomeStamp}`}>{outcomeStamp === 'win' ? t('WON', 'জয়') : outcomeStamp === 'loss' ? t('LOST', 'হার') : t('TIE', 'টাই')}</span>}<span /></div>
             <div className="actions">{actions}</div>
           </div>
         </div>

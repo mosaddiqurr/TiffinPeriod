@@ -205,6 +205,7 @@ function PPMatch({ peer, settings, seed, onLeave }: MatchProps<PPSettings>) {
       {showEnd && (
         <OnlineEnd
           title={title}
+          outcome={result === 'tie' || result === 'win' || result === 'loss' ? result : undefined}
           lines={<div className="pp-ol-res" data-testid="race-scores">
             <p><b>{t('You', 'তুমি')}</b>: {list(me)} → <b>{best(me.best)}</b></p>
             <p><b>{peer.them.name}</b>: {list(opp)} → <b>{best(opp.best)}</b></p>

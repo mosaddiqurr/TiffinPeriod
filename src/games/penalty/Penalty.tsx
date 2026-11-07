@@ -13,6 +13,7 @@ import { KeeperAI, decided, goals, nextKicker, type Shootout } from './model';
 import { PenaltyScene, type KickResult } from './scene';
 import { OnlineButton, useOnlineEntry } from '../../components/online/OnlineButton';
 import { OnlinePenalty } from './online';
+import { ResultHero } from '../../components/Result';
 import './penalty.css';
 
 const GAME = 'penalty';
@@ -176,18 +177,16 @@ export default function Penalty({ onExit }: GameProps) {
     return (
       <div className="sport-root ruled">
         <div className="overlay" role="dialog" aria-modal="true" aria-label={title}>
-          <div className="report" data-testid="result">
+          <div className="report result-card" data-testid="result">
             <div className="school">{p.occasion ?? t('Penalty Shootout', 'পেনাল্টি শুটআউট')}</div>
+            <ResultHero outcome={stamp ?? 'none'} title={title} sub={cupNote === 'out' ? t('Out of the cup this time.', 'এবার কাপ থেকে বিদায়।') : undefined} />
             <KickBoard teams={p.teams} so={end.so} />
-            <h2>{title}</h2>
             <table><tbody>
               {!p.ch?.only && <tr><td>{t('Shootout', 'শুটআউট')}</td><td>{n(g[0])} – {n(g[1])}</td></tr>}
               {end.st.kicks[0] > 0 && <tr><td>{t(`Goals by ${p.names[0]}`, `${p.names[0]}-এর গোল`)}</td><td>{n(end.st.goals[0])} / {n(end.st.kicks[0])}</td></tr>}
               {end.st.kicks[1] > 0 && <tr><td>{t(`Saves by ${p.names[0]}`, `${p.names[0]}-এর সেভ`)}</td><td>{n(end.st.saves[0])} / {n(end.st.kicks[1])}</td></tr>}
               {p.ch && <tr><td>{t('Stars', 'তারা')}</td><td>{stars ? '★'.repeat(stars) : '—'}</td></tr>}
             </tbody></table>
-            {cupNote === 'out' && <p className="sub">{t('Out of the cup this time.', 'এবার কাপ থেকে বিদায়।')}</p>}
-            <div className="sign"><span />{stamp && <span className={`grade-stamp ${stamp}`}>{stamp === 'win' ? t('WON', 'জয়') : t('LOST', 'হার')}</span>}<span /></div>
             <div className="actions">
               {p.kind === 'cup' ? <button className="btn big" autoFocus data-testid="after-next" onClick={() => setScreen(cupNote === 'won' ? 'champion' : 'cup')}>{cupNote === 'won' ? t('Lift the cup!', 'কাপ তোলো!') : t('Back to the cup', 'কাপে ফেরো')}</button>
                 : p.kind === 'challenge' ? <><button className="btn big" autoFocus data-testid="after-retry" onClick={() => launch({ ...p, seed: seed() })}>{t('Try again', 'আবার চেষ্টা')}</button><button className="btn secondary" onClick={() => setScreen('challenges')}>{t('All challenges', 'সব চ্যালেঞ্জ')}</button></>

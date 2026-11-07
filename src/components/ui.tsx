@@ -5,6 +5,7 @@ import { useSettings } from '../platform/settings';
 import { sfx } from '../platform/audio';
 import { onAchievement, type Achievement } from '../platform/scores';
 import { Signature, Star } from './Doodles';
+import { ResultHero } from './Result';
 
 // ---------- Player names ----------
 export function usePlayerNames(): [string, string] {
@@ -90,12 +91,14 @@ export function PauseMenu({ onResume, onRestart, onQuit, help }: { onResume: () 
 }
 
 // ---------- Result: school report card ----------
-export function ReportCard({ outcome, title, subtitle, rows, newBest, onAgain, onSetup, onQuit }: {
+export function ReportCard({ outcome, title, subtitle, rows, newBest, versus, onAgain, onSetup, onQuit }: {
   outcome: 'win' | 'loss' | 'tie' | 'none';
   title: string;
   subtitle?: string;
   rows: Array<[string, string | number]>;
   newBest?: boolean;
+  /** Two sides side by side (optional). */
+  versus?: ReactNode;
   onAgain: () => void;
   onSetup?: () => void;
   onQuit: () => void;
@@ -104,23 +107,21 @@ export function ReportCard({ outcome, title, subtitle, rows, newBest, onAgain, o
   useEffect(() => {
     sfx(outcome === 'loss' ? 'out' : 'fanfare');
   }, [outcome]);
-  const stamp = outcome === 'win' ? t('win') : outcome === 'loss' ? t('loss') : outcome === 'tie' ? t('tie') : null;
   return (
     <Overlay label={t('reportTitle')}>
-      <div className="report" data-testid="result">
-        <div className="school">{t('reportSchool')}</div>
-        <div className="school" style={{ fontWeight: 500, color: 'var(--ink-soft)' }}>{t('reportTitle')}</div>
-        <h2>{title}</h2>
-        {subtitle && <p className="sub">{subtitle}</p>}
-        <table>
+      <div className="report result-card" data-testid="result">
+        <div className="school">{t('reportSchool')} · <span style={{ fontWeight: 500, color: 'var(--ink-soft)' }}>{t('reportTitle')}</span></div>
+        <ResultHero outcome={outcome} title={title} sub={subtitle} />
+        {newBest && <div style={{ textAlign: 'center' }}><span className="new-best">★ {t('newBest')}</span></div>}
+        {versus}
+        {rows.length > 0 && <table>
           <tbody>
             {rows.map(([k, v]) => (
               <tr key={k}><td>{k}</td><td>{typeof v === 'number' ? t.n(v) : v}</td></tr>
             ))}
           </tbody>
-        </table>
-        {newBest && <div style={{ textAlign: 'center' }}><span className="new-best">★ {t('newBest')}</span></div>}
-        <div className="sign"><span>{new Date().toLocaleDateString(t.lang === 'bn' ? 'bn-BD' : 'en-GB')}</span>{stamp && <span className={`grade-stamp ${outcome}`}>{stamp}</span>}<span style={{ textAlign: 'center' }}><Signature /><br />{t('signTeacher')}</span></div>
+        </table>}
+        <div className="sign"><span>{new Date().toLocaleDateString(t.lang === 'bn' ? 'bn-BD' : 'en-GB')}</span><span style={{ textAlign: 'center' }}><Signature /><br />{t('signTeacher')}</span></div>
         <div className="actions">
           <button className="btn big" onClick={onAgain} autoFocus>{t('playAgain')}</button>
           {onSetup && <button className="btn secondary" onClick={onSetup}>{t('changeSetup')}</button>}

@@ -232,8 +232,9 @@ function HMMatch({ peer, settings, seed, onLeave }: MatchProps<HMSettings>) {
       {(v.phase === 'over' || gone) && (
         <OnlineEnd
           title={w === 0 ? t('A draw!', 'ড্র!') : w === 1 ? t('You win!', 'তুমি জিতেছ!') : t(`${them} wins`, `${them} জিতেছে`)}
+          outcome={w === 0 ? 'tie' : w === 1 ? 'win' : 'loss'}
+          me={{ name: peer.me.name, team: peer.me.team, score: n(v.tally[0]) }} them={{ name: them, team: peer.them.team, score: n(v.tally[1]) }}
           lines={<>
-            <p className="lede" data-testid="final-score">{names[0]} {n(v.tally[0])} · {names[1]} {n(v.tally[1])}</p>
             <ol className="hmo-sum">
               {v.results.map((r, i) => (
                 <li key={i}><b>{r.word}</b> · {r.win === 1 ? peer.me.name : r.win === -1 ? them : t('draw', 'ড্র')}</li>

@@ -248,9 +248,11 @@ function PUMatch({ peer, settings, seed, onLeave }: MatchProps<PUSettings>) {
       {(bothDone || gone) && (
         <OnlineEnd
           title={resultTitle}
+          outcome={me.score === opp.score ? 'tie' : me.score > opp.score ? 'win' : 'loss'}
+          me={{ name: peer.me.name, team: peer.me.team, score: x.n(me.score) }} them={{ name: peer.them.name, team: peer.them.team, score: x.n(opp.score) }}
           lines={
             <>
-              <p className="lede" data-testid="final-scores">{peer.me.name} {x.n(me.score)} · {peer.them.name} {x.n(opp.score)}</p>
+
               <p className="ol-meta">{t('correct')}: {t.n(me.correct)}/{t.n(me.correct + me.wrong)} · {t('streak')}: {t.n(me.bestStreak)}</p>
             </>
           }

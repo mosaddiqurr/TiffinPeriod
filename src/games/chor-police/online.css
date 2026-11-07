@@ -6,7 +6,7 @@
 .cp-seats li.empty { background: transparent; box-shadow: 0 0 0 1.5px dashed #d4c69f; color: var(--ink-soft); animation: none; border: 1.5px dashed #d4c69f; box-shadow: none; }
 .cp-seat-empty { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; border: 2px dashed #c2b18b; font-weight: 800; }
 .cp-start { display: grid; gap: 8px; justify-items: start; margin-bottom: 14px; }
-.cp-room .ol-code, .cp-room .ol-share { justify-content: flex-start; }
+
 
 .cp-online .cp-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; margin-bottom: 6px; }
 .cp-online .cp-top .bench-round { margin: 0; }

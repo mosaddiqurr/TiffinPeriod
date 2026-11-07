@@ -111,7 +111,8 @@ function DBMatch({ peer, settings, onLeave }: MatchProps<DBSettings>) {
       {(st.done || gone) && (
         <OnlineEnd
           title={w === null ? t('A draw!', 'ড্র!') : w === me ? t('You win!', 'তুমি জিতেছ!') : t(`${peer.them.name} wins`, `${peer.them.name} জিতেছে`)}
-          lines={<p className="lede">{names[0]} {n(st.score[0])} · {names[1]} {n(st.score[1])}</p>}
+          outcome={w === null ? 'tie' : w === me ? 'win' : 'loss'}
+          me={{ name: peer.me.name, team: peer.me.team, score: n(st.score[me]) }} them={{ name: peer.them.name, team: peer.them.team, score: n(st.score[opp]) }}
           gone={gone && !st.done} oppName={peer.them.name}
           rematch={gone ? undefined : rematch.state} onRematch={gone ? undefined : rematch.ask}
           onLeave={onLeave}

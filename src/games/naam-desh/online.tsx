@@ -230,8 +230,9 @@ function NDMatch({ peer, settings, seed, onLeave }: MatchProps<NDSettings>) {
       {(v.phase === 'over' || gone) && (
         <OnlineEnd
           title={w === 0 ? t('A shared win!', 'সমান সমান!') : w === 1 ? t('You win!', 'তুমি জিতেছ!') : t(`${them} wins`, `${them} জিতেছে`)}
+          outcome={w === 0 ? 'tie' : w === 1 ? 'win' : 'loss'}
+          me={{ name: peer.me.name, team: peer.me.team, score: n(v.totals[0]) }} them={{ name: them, team: peer.them.team, score: n(v.totals[1]) }}
           lines={<>
-            <p className="lede" data-testid="final-score">{names[0]} {n(v.totals[0])} · {names[1]} {n(v.totals[1])}</p>
             <ol className="ndo-sum">
               {v.results.map((r, i) => <li key={i}><b>{r.letter.bn}</b> · {n(sum(r.points[0]))} – {n(sum(r.points[1]))}</li>)}
             </ol>

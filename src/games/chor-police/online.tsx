@@ -3,7 +3,7 @@ import { sfx, vibrate } from '../../platform/audio';
 import { readJSON, writeJSON } from '../../platform/storage';
 import { clearHashQuery } from '../../platform/router';
 import { recordResult } from '../../platform/scores';
-import { cleanCode, isCode, roomLink, CODE_LEN, type Profile } from '../../platform/net/rooms';
+import { isCode, cleanCode, roomLink, CODE_LEN, type Profile } from '../../platform/net/rooms';
 import { PartyError, PARTY_MAX, createParty, joinParty, quickParty, type Party } from '../../platform/net/party';
 import { Seg, useGameBar, usePlayerNames } from '../../components/ui';
 import { MoveClock, Who, useRealUnmount } from '../../components/online/OnlineLobby';
@@ -11,6 +11,8 @@ import { useTx } from '../../components/sport/SportKit';
 import { ROLE_POINTS, type Role } from './model';
 import { GUESS_SECONDS, type CPAction, type CPView } from './table';
 import { hostTable, uniqueNames } from './host';
+import { LobbyHome, RoomCodeCard } from '../../components/online/LobbyHome';
+import { ResultHero } from '../../components/Result';
 import '../../components/online/online.css';
 import './online.css';
 
@@ -98,49 +100,29 @@ export function OnlineChorPolice({ onBack, code }: { onBack: () => void; code?: 
   let body: ReactNode;
   if (stage === 'search' || stage === 'joining') {
     body = (
-      <div className="ol-wait" data-testid="searching">
-        <div className="ol-radar" aria-hidden="true"><span /><span /><Who team="" name={me.name} size={40} /></div>
-        <h2>{stage === 'search' ? t('Finding players…', 'খেলোয়াড় খোঁজা হচ্ছে…') : t('Joining the room…', 'রুমে ঢুকছি…')}</h2>
-        {stage === 'search' && <p className="ol-meta">{t(`${waited.s}s · ${waited.found} of ${PARTY_MAX} at the table`, `${n(waited.s)} সেকেন্ড · টেবিলে ${n(PARTY_MAX)} জনের ${n(waited.found)} জন`)}</p>}
-        <button className="btn secondary" onClick={cancel} data-testid="cancel">{t('Cancel', 'বাতিল')}</button>
+      <div className="olh" data-testid="searching">
+        <div className="olh-card ol-wait">
+          <div className="ol-radar" aria-hidden="true"><span /><span /><Who team="" name={me.name} size={48} /></div>
+          <h2>{stage === 'search' ? t('Finding players…', 'খেলোয়াড় খোঁজা হচ্ছে…') : t('Joining the room…', 'রুমে ঢুকছি…')}</h2>
+          {stage === 'search' && <p className="ol-meta">{t(`${waited.s}s · ${waited.found} of ${PARTY_MAX} at the table`, `${n(waited.s)} সেকেন্ড · টেবিলে ${n(PARTY_MAX)} জনের ${n(waited.found)} জন`)}</p>}
+          <button className="btn secondary" onClick={cancel} data-testid="cancel">{t('Cancel', 'বাতিল')}</button>
+        </div>
       </div>
     );
   } else {
     body = (
-      <>
-        <button className="btn secondary sport-back" onClick={onBack}>← {t('Back', 'ফিরে যাও')}</button>
-        <div className="sport-eyebrow">{t('Online · 4 players', 'অনলাইন · ৪ জন')}</div>
-        <h2>{t('Play online', 'অনলাইনে খেলো')}</h2>
-        <div className="ol-you">
-          <label className="ol-name">
-            <span>{t('Your name', 'তোমার নাম')}</span>
-            <input value={name} maxLength={16} onChange={(e) => setName(e.target.value)} placeholder={t('Name', 'নাম')} data-testid="online-name" autoComplete="nickname" />
-          </label>
-        </div>
-        {err && <p className="ol-err" role="alert" data-testid="online-error">{err}</p>}
-        <div className="ol-ways">
-          <button className="ol-way main" onClick={() => void quick()} data-testid="quick-match">
-            <span className="ol-ico" aria-hidden="true">⚡</span>
-            <b>{t('Quick match', 'কুইক ম্যাচ')}</b>
-            <small>{t('Sit at a table with players who are looking for a game.', 'যারা এখন খেলা খুঁজছে, তাদের সাথে এক টেবিলে বসো।')}</small>
-          </button>
-          <div className="ol-way">
-            <span className="ol-ico" aria-hidden="true">🔑</span>
-            <b>{t('Create a room', 'রুম খোলো')}</b>
-            <small>{t('Get a code and a link for up to three friends.', 'তিনজন পর্যন্ত বন্ধুর জন্য কোড আর লিংক পাও।')}</small>
-            <button className="btn" onClick={() => void create()} data-testid="create-room">{t('Create room', 'রুম খোলো')}</button>
-          </div>
-          <div className="ol-way">
-            <span className="ol-ico" aria-hidden="true">🎟️</span>
-            <b>{t('Join a room', 'রুমে ঢোকো')}</b>
-            <small>{t('Type the code your friend sent.', 'বন্ধুর পাঠানো কোড লেখো।')}</small>
-            <form className="ol-join" onSubmit={(e) => { e.preventDefault(); void join(); }}>
-              <input value={joinCode} onChange={(e) => setJoinCode(cleanCode(e.target.value))} placeholder="AB7K3" maxLength={CODE_LEN + 4} inputMode="text" autoCapitalize="characters" autoComplete="off" spellCheck={false} aria-label={t('Room code', 'রুম কোড')} data-testid="join-code" />
-              <button className="btn" type="submit" disabled={!isCode(joinCode)} data-testid="join-room">{t('Join', 'ঢোকো')}</button>
-            </form>
-          </div>
-        </div>
-      </>
+      <LobbyHome
+        kind={t('4 players', '৪ জন')}
+        onBack={onBack}
+        name={name} setName={setName}
+        err={err}
+        onQuick={() => void quick()}
+        quickSub={t('Sit at a table with players who are looking for a game.', 'যারা এখন খেলা খুঁজছে, তাদের সাথে এক টেবিলে বসো।')}
+        quickMeta={t(`${QUICK_ROUNDS} rounds`, `${n(QUICK_ROUNDS)} রাউন্ড`)}
+        createSub={t('Get a code and a link for up to three friends. Empty seats get other players.', 'তিনজন পর্যন্ত বন্ধুর জন্য কোড আর লিংক পাও। খালি আসনে অন্য খেলোয়াড় বসবে।')}
+        onCreate={() => void create()}
+        joinCode={joinCode} setJoinCode={setJoinCode} onJoin={() => void join()}
+      />
     );
   }
   return <div className="sport-page ol-page" data-testid="online">{body}</div>;
@@ -190,19 +172,16 @@ function PartyRoom({ party, quick, onLeave }: { party: Party; quick: boolean; on
   return (
     <div className="sport-page ol-page cp-room" data-testid="party-room">
       {hostGone ? <HostGone name={hostName} onLeave={onLeave} /> : null}
-      <button className="btn secondary sport-back" onClick={onLeave} data-testid="cancel">← {party.host ? t('Close the room', 'রুম বন্ধ করো') : t('Leave', 'বের হও')}</button>
-      <div className="sport-eyebrow">{t('Online · 4 players', 'অনলাইন · ৪ জন')}</div>
-      <h2>{quick ? t('Players found!', 'খেলোয়াড় পাওয়া গেছে!') : party.host ? t('Your room is open', 'তোমার রুম খোলা হয়েছে') : t('You are in the room', 'তুমি রুমে ঢুকেছ')}</h2>
-      {party.host && !quick && <>
-        <p className="lede">{t('Send the code or the link to up to three friends. Start whenever you like: empty seats get other players.', 'তিনজন পর্যন্ত বন্ধুকে কোড বা লিংক পাঠাও। যখন খুশি শুরু করো: খালি আসনে অন্য খেলোয়াড় বসবে।')}</p>
-        <div className="ol-code" data-testid="room-code" aria-label={party.code}>{party.code.split('').map((c, i) => <span key={i}>{c}</span>)}</div>
-        <div className="ol-share">
-          <button className="btn big" onClick={() => void share()} data-testid="share-link">🔗 {t('Share link', 'লিংক পাঠাও')}</button>
-          <button className="btn secondary" onClick={() => void copyCode()}>{t('Copy code', 'কোড কপি')}</button>
+      <div className="olh">
+      <div className="olh-head">
+        <button className="olh-back" onClick={onLeave} data-testid="cancel" aria-label={party.host ? t('Close the room', 'রুম বন্ধ করো') : t('Leave', 'বের হও')}>←</button>
+        <div className="olh-title">
+          <h2>{quick ? t('Players found!', 'খেলোয়াড় পাওয়া গেছে!') : party.host ? t('Your room is open', 'তোমার রুম খোলা হয়েছে') : t('You are in the room', 'তুমি রুমে ঢুকেছ')}</h2>
+          <span className="olh-kind"><i className="ol-dot" aria-hidden="true" />{t('4 players', '৪ জন')}{party.host && !quick ? ` · ${t('start whenever you like', 'যখন খুশি শুরু করো')}` : ''}</span>
         </div>
-        {copied && <p className="ol-note">{copied === 'fail' ? t('Could not copy here: tell your friends the code.', 'এখানে কপি হলো না: বন্ধুদের কোডটা বলে দাও।') : copied === 'code' ? t('Code copied.', 'কোড কপি হয়েছে।') : t('Link copied. Paste it in a message to your friends.', 'লিংক কপি হয়েছে। বন্ধুদের মেসেজে পাঠাও।')}</p>}
-      </>}
-      <ol className="cp-seats" data-testid="seats">
+      </div>
+      {party.host && !quick && <RoomCodeCard code={party.code} onShare={() => void share()} onCopy={() => void copyCode()} copied={copied} many />}
+      <ol className="cp-seats olh-card" data-testid="seats">
         {seats.map((m, i) => (
           <li key={i} className={m ? '' : 'empty'} data-testid={`seat-${i}`}>
             {m ? <><Who team="" name={seatNames[i]} size={30} /><b>{seatNames[i]}</b>
@@ -211,14 +190,15 @@ function PartyRoom({ party, quick, onLeave }: { party: Party; quick: boolean; on
           </li>
         ))}
       </ol>
-      {party.host && !quick && <div className="cp-start">
+      {party.host && !quick && <div className="cp-start olh-card">
         <div className="opt-label">{t('Rounds', 'রাউন্ড')}</div>
         <Seg label={t('Rounds', 'রাউন্ড')} value={rounds} onChange={setRounds} options={[3, 5, 10].map((v) => ({ v, label: n(v) }))} />
         <button className="btn big" onClick={() => start()} data-testid="start-party">
           {members.length >= PARTY_MAX ? t('Start the game', 'খেলা শুরু করো') : t(`Start · ${PARTY_MAX - members.length} more will join`, `শুরু করো · আরও ${n(PARTY_MAX - members.length)} জন বসবে`)}
         </button>
       </div>}
-      {(!party.host || quick) && <div className="ol-pulse"><i /><i /><i /> {quick ? t('Dealing the chits…', 'কাগজ বাটা হচ্ছে…') : t(`Waiting for ${hostName} to start…`, `${hostName} শুরু করার অপেক্ষা…`)}</div>}
+      {(!party.host || quick) && <div className="ol-pulse olh-center"><i /><i /><i /> {quick ? t('Dealing the chits…', 'কাগজ বাটা হচ্ছে…') : t(`Waiting for ${hostName} to start…`, `${hostName} শুরু করার অপেক্ষা…`)}</div>}
+      </div>
     </div>
   );
 }
@@ -357,9 +337,10 @@ function CPBoard({ view, isHost, hostName, hostGone, act, hostAct, onAgain, onLe
       {main}
       {view.step === 'done' && !hostGone && (
         <div className="overlay" role="dialog" aria-modal="true">
-          <div className="sheet ruled" data-testid="result">
-            <h2>{winners.length > 1 ? t(`${winners.join(' & ')} share the win!`, `${winners.join(' ও ')} যৌথভাবে জিতেছে!`) : t(`${winners[0]} wins!`, `${winners[0]} জিতেছে!`)}</h2>
-            <p className="lede">{view.scores[me] === high ? (winners.length > 1 ? t('You share the top score.', 'তুমি সবার ওপরে, যৌথভাবে।') : t('You win!', 'তুমি জিতেছ!')) : t('Better luck next time.', 'পরেরবার ভালো হবে।')}</p>
+          <div className="report result-card" data-testid="result">
+            <ResultHero outcome={view.scores[me] === high ? (winners.length > 1 ? 'tie' : 'win') : 'loss'}
+              title={view.scores[me] === high && winners.length === 1 ? t('You win!', 'তুমি জিতেছ!') : winners.length > 1 ? t(`${winners.join(' & ')} share the win!`, `${winners.join(' ও ')} যৌথভাবে জিতেছে!`) : t(`${winners[0]} wins!`, `${winners[0]} জিতেছে!`)}
+              sub={view.scores[me] === high ? (winners.length > 1 ? t('You share the top score.', 'তুমি সবার ওপরে, যৌথভাবে।') : undefined) : t('Better luck next time.', 'পরেরবার ভালো হবে।')} />
             <ol className="cp-final" data-testid="final-scores">
               {view.names.map((nm, i) => ({ nm, s: view.scores[i], i })).sort((a, b) => b.s - a.s).map((r) => (
                 <li key={r.i} className={r.i === me ? 'me' : ''}><Who team="" name={r.nm} size={24} /><span className="cp-fname">{r.nm}</span><b>{n(r.s)}</b></li>

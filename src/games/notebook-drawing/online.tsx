@@ -195,7 +195,8 @@ function NDMatch({ peer, settings, onLeave }: MatchProps<NDSettings>) {
       {(done || gone) && (
         <OnlineEnd
           title={w === null ? t('A draw!', 'ড্র!') : w === me ? t('You win!', 'তুমি জিতেছ!') : t(`${opp} wins`, `${opp} জিতেছে`)}
-          lines={<p className="lede">{names[0]} {n(v.scores[0])} · {names[1]} {n(v.scores[1])}</p>}
+          outcome={w === null ? 'tie' : w === me ? 'win' : 'loss'}
+          me={{ name: peer.me.name, team: peer.me.team, score: n(v.scores[me]) }} them={{ name: opp, team: peer.them.team, score: n(v.scores[1 - me]) }}
           gone={gone && !done} oppName={opp}
           rematch={gone ? undefined : rematch.state} onRematch={gone ? undefined : rematch.ask}
           onLeave={onLeave}

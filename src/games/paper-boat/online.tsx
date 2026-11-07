@@ -188,6 +188,7 @@ function BoatMatch({ peer, settings, seed, onLeave }: MatchProps<PBSettings>) {
       {(over || gone) && (
         <OnlineEnd
           title={title}
+          outcome={outcome === 'win' || outcome === 'loss' || outcome === 'tie' ? outcome : undefined}
           lines={over ? (
             <div className="pb-end-lines" data-testid="race-lines">
               <p><b>{peer.me.name}</b> <span>{said(mine!, x)}</span></p>

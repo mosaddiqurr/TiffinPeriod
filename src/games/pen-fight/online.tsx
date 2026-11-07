@@ -208,7 +208,8 @@ function PFMatch({ peer, settings, seed, onLeave }: MatchProps<PFSettings>) {
       {(over || gone) && (
         <OnlineEnd
           title={won ? t('You win the pen fight!', 'তুমি কলম যুদ্ধে জিতেছ!') : t(`${peer.them.name} wins the pen fight`, `${peer.them.name} কলম যুদ্ধে জিতেছে`)}
-          lines={over ? <p className="lede">{names[0]} {n(over.scores[0])} · {names[1]} {n(over.scores[1])}</p> : undefined}
+          outcome={over ? (won ? 'win' : 'loss') : undefined}
+          {...(over ? { me: { name: peer.me.name, score: n(over.scores[me]) }, them: { name: peer.them.name, score: n(over.scores[opp]) } } : {})}
           gone={gone && !over} oppName={peer.them.name}
           rematch={gone ? undefined : rematch.state} onRematch={gone ? undefined : rematch.ask}
           onLeave={onLeave}

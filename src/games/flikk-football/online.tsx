@@ -205,9 +205,10 @@ function FFMatch({ peer, settings, seed, onLeave }: MatchProps<FFSettings>) {
   const endSheet = (end || gone) && (
     <OnlineEnd
       title={!end || end.winner === null ? t('A draw!', 'ড্র!') : end.winner === me ? t('You win!', 'তুমি জিতেছ!') : t(`${peer.them.name} wins`, `${peer.them.name} জিতেছে`)}
+      outcome={!end || end.winner === null ? 'tie' : end.winner === me ? 'win' : 'loss'}
+      {...(end ? { me: { name: peer.me.name, team: peer.me.team, score: n(end.score[me]) }, them: { name: peer.them.name, team: peer.them.team, score: n(end.score[opp]) } } : {})}
+      mid={t('FT', 'শেষ')}
       lines={end ? <>
-        <FlagScore a={teams[me]} b={teams[opp]} sa={n(end.score[me])} sb={n(end.score[opp])} mid={t('FT', 'শেষ')} />
-        <p className="lede" data-testid="ff-final">{peer.me.name} {n(end.score[me])} · {peer.them.name} {n(end.score[opp])}</p>
         <p className="ol-meta">{t('Passes', 'পাস')} {n(end.stats.passes[me])}–{n(end.stats.passes[opp])} · {t('Shots', 'শট')} {n(end.stats.shots[me])}–{n(end.stats.shots[opp])}</p>
       </> : undefined}
       gone={gone && !end} oppName={peer.them.name}

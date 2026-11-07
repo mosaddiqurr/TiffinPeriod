@@ -3,7 +3,7 @@ import { sfx, vibrate } from '../../platform/audio';
 import { recordResult } from '../../platform/scores';
 import type { Peer } from '../../platform/net/rooms';
 import { Overlay, Seg, useGameBar } from '../../components/ui';
-import { OnlineLobby, useRealUnmount, type MatchProps } from '../../components/online/OnlineLobby';
+import { OnlineEnd, OnlineLobby, useRealUnmount, type MatchProps } from '../../components/online/OnlineLobby';
 import { ChaseHud, Flag, useTx } from '../../components/sport/SportKit';
 import { ballsLeft, currentOver, oversText } from '../../shared/cricket';
 import { getTeam } from '../../shared/teams';
@@ -240,23 +240,18 @@ function OnlineMatch({ peer, setup, onLeave }: { peer: Peer; setup: DuelSetup; o
       )}
       {breakNote && <div className="hc-banner ol-break" data-testid="break">{t('Innings break', 'ইনিংস বিরতি')} · {breakNote}</div>}
       {(v.phase === 'over' && !show && !breakNote) || gone || v.cheat ? (
-        <Overlay label={t('Match over', 'খেলা শেষ')}>
-          <div className="sheet ruled" data-testid="result">
-            {v.cheat ? <h2>{t('Connection problem. The match was stopped.', 'সংযোগে সমস্যা। খেলা থামানো হলো।')}</h2>
-              : gone && v.phase !== 'over' ? <h2>{t(`${names[oppSide]} left the match. You win!`, `${names[oppSide]} খেলা ছেড়ে চলে গেছে। তুমি জিতেছ!`)}</h2>
-              : <h2>{winner === null ? t('A tie!', 'টাই!') : winner === mySide ? t('You win!', 'তুমি জিতেছ!') : t(`${names[oppSide]} wins`, `${names[oppSide]} জিতেছে`)}</h2>}
-            {m && <p className="lede">{names[m.battingFirst]} {n(m.innings[0].runs)}/{n(m.innings[0].wickets)} · {names[other(m.battingFirst)]} {n(m.innings[1].runs)}/{n(m.innings[1].wickets)}</p>}
-            {v.phase === 'over' && !gone && v.rematch.them && !v.rematch.me && <p className="ol-note">{t(`${names[oppSide]} wants a rematch!`, `${names[oppSide]} আবার খেলতে চায়!`)}</p>}
-            <div className="actions">
-              {v.phase === 'over' && !gone && !v.cheat && (
-                <button className="btn big" disabled={v.rematch.me} onClick={() => duel.askRematch()} data-testid="rematch">
-                  {v.rematch.me ? t('Waiting for them…', 'ওদের অপেক্ষায়…') : t('Rematch', 'আবার খেলো')}
-                </button>
-              )}
-              <button className="btn secondary" onClick={onLeave} data-testid="leave">{t('Leave', 'বের হও')}</button>
-            </div>
-          </div>
-        </Overlay>
+        <OnlineEnd
+          title={v.cheat ? t('Connection problem. The match was stopped.', 'সংযোগে সমস্যা। খেলা থামানো হলো।') : winner === null ? t('A tie!', 'টাই!') : winner === mySide ? t('You win!', 'তুমি জিতেছ!') : t(`${names[oppSide]} wins`, `${names[oppSide]} জিতেছে`)}
+          outcome={v.cheat ? 'none' : winner === null ? 'tie' : winner === mySide ? 'win' : 'loss'}
+          {...(m && !v.cheat ? {
+            me: { name: names[mySide], team: teams[mySide], score: `${n(m.innings[m.battingFirst === mySide ? 0 : 1].runs)}/${n(m.innings[m.battingFirst === mySide ? 0 : 1].wickets)}` },
+            them: { name: names[oppSide], team: teams[oppSide], score: `${n(m.innings[m.battingFirst === oppSide ? 0 : 1].runs)}/${n(m.innings[m.battingFirst === oppSide ? 0 : 1].wickets)}` },
+          } : {})}
+          gone={gone && v.phase !== 'over' && !v.cheat} oppName={names[oppSide]}
+          rematch={v.phase === 'over' && !gone && !v.cheat ? v.rematch : undefined}
+          onRematch={v.phase === 'over' && !gone && !v.cheat ? () => duel.askRematch() : undefined}
+          onLeave={onLeave}
+        />
       ) : null}
     </div>
   );

@@ -217,9 +217,10 @@ function BBMatch({ peer, settings, seed, onLeave }: MatchProps<BBSettings>) {
       {(finished || gone) && (
         <OnlineEnd
           title={outcome === 'tie' ? t('A draw!', 'ড্র!') : outcome === 'win' ? t('You win!', 'তুমি জিতেছ!') : t(`${peer.them.name} wins`, `${peer.them.name} জিতেছে`)}
+          outcome={outcome}
+          me={{ name: peer.me.name, team: peer.me.team, score: n(myScore) }} them={{ name: peer.them.name, team: peer.them.team, score: n(opp.score) }}
           lines={finished ? (
             <div className="bb-end" data-testid="final-scores">
-              <p className="lede">{t('You', 'তুমি')} {n(myScore)} · {peer.them.name} {n(opp.score)}</p>
               {myFinal && <p className="bb-end-meta">{bt('pops')}: {n(myFinal.pops)} · {bt('combo')}: {n(myFinal.bestCombo)}</p>}
             </div>
           ) : undefined}
