@@ -239,7 +239,7 @@ function OnlineMatch({ peer, setup, onLeave }: { peer: Peer; setup: DuelSetup; o
         </Overlay>
       )}
       {breakNote && <div className="hc-banner ol-break" data-testid="break">{t('Innings break', 'ইনিংস বিরতি')} · {breakNote}</div>}
-      {(v.phase === 'over' && !show && !breakNote) || gone || v.cheat ? (
+      {(v.phase === 'over' && !shaking && !show && !breakNote) || gone || v.cheat ? (
         <OnlineEnd
           title={v.cheat ? t('Connection problem. The match was stopped.', 'সংযোগে সমস্যা। খেলা থামানো হলো।') : winner === null ? t('A tie!', 'টাই!') : winner === mySide ? t('You win!', 'তুমি জিতেছ!') : t(`${names[oppSide]} wins`, `${names[oppSide]} জিতেছে`)}
           outcome={v.cheat ? 'none' : winner === null ? 'tie' : winner === mySide ? 'win' : 'loss'}
