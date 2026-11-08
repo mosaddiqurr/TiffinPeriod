@@ -131,6 +131,7 @@ export function GameShell(p: GameShellProps) {
 
   useGameBar({
     onPause: phase === 'play' ? () => setPaused(true) : undefined,
+    onResume: () => setPaused(false),
     help: <ol>{p.rules.map((r, i) => <li key={i}>{r}</li>)}</ol>,
   }, [phase, st.lang]);
 

@@ -60,7 +60,7 @@ function BalloonBurstLocal({ onExit, onOnline }: GameProps & { onOnline: () => v
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, diff, length, style, t.lang, names.join('|')]);
 
-  useGameBar({ onPause: phase === 'play' ? () => setPaused(true) : undefined, help: <Rules t={t} style={style} length={length} /> }, [phase, t.lang, style, length]);
+  useGameBar({ onPause: phase === 'play' ? () => setPaused(true) : undefined, onResume: () => setPaused(false), help: <Rules t={t} style={style} length={length} /> }, [phase, t.lang, style, length]);
 
   // Test hook for the browser tests.
   useEffect(() => {

@@ -18,6 +18,7 @@ function canLock(): boolean {
 }
 
 let locked = false;
+let enteredFullscreen = false;
 
 /** Turn the phone sideways if the browser allows it (call it inside a tap). Returns quietly otherwise. */
 export function tryLandscape(): void {
@@ -26,16 +27,23 @@ export function tryLandscape(): void {
   const lock = () => o.lock!('landscape').then(() => { locked = true; }).catch(() => { /* not allowed here */ });
   try {
     if (document.fullscreenElement) void lock();
-    else document.documentElement.requestFullscreen({ navigationUI: 'hide' }).then(lock).catch(() => { /* not allowed */ });
+    else document.documentElement.requestFullscreen({ navigationUI: 'hide' }).then(() => {
+      enteredFullscreen = true;
+      return lock();
+    }).catch(() => { /* not allowed */ });
   } catch { /* old browser */ }
 }
 
 /** Undo tryLandscape (when the game closes). */
 export function releaseLandscape(): void {
-  if (!locked) return;
-  locked = false;
-  try { (screen.orientation as OrientationWithLock).unlock?.(); } catch { /* ignore */ }
-  try { if (document.fullscreenElement) void document.exitFullscreen().catch(() => {}); } catch { /* ignore */ }
+  if (locked) {
+    locked = false;
+    try { (screen.orientation as OrientationWithLock).unlock?.(); } catch { /* ignore */ }
+  }
+  if (enteredFullscreen) {
+    enteredFullscreen = false;
+    try { if (document.fullscreenElement) void document.exitFullscreen().catch(() => {}); } catch { /* ignore */ }
+  }
 }
 
 function usePhonePortrait(): boolean {

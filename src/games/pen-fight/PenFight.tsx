@@ -92,7 +92,7 @@ function PenFightLocal({ onExit, onOnline }: GameProps & { onOnline: () => void 
   useEffect(() => { gameRef.current?.setPaused(paused || !!done); }, [paused, done]);
 
   const stdModes = useStdModes(['ai', 'local2p']);
-  useGameBar({ onPause: matchId > 0 && !done ? () => setPaused(true) : undefined, help }, [matchId, !!done, t.lang]);
+  useGameBar({ onPause: matchId > 0 && !done ? () => setPaused(true) : undefined, onResume: () => setPaused(false), help }, [matchId, !!done, t.lang]);
 
   if (matchId === 0) {
     const pick = (side: 0 | 1, label: string) => (

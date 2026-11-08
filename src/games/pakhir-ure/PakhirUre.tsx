@@ -62,7 +62,7 @@ function PakhirUreLocal({ onExit, onOnline }: GameProps & { onOnline: () => void
     sfx('bell');
   }, [mode, input, diff, rng]);
 
-  useGameBar({ onPause: phase === 'play' ? () => setPaused(true) : undefined, help: <Rules t={t} /> }, [phase, t.lang]);
+  useGameBar({ onPause: phase === 'play' ? () => setPaused(true) : undefined, onResume: () => setPaused(false), help: <Rules t={t} /> }, [phase, t.lang]);
 
   // Pause: freeze the engine clock and cancel the call in progress.
   useEffect(() => {

@@ -77,7 +77,7 @@ function NotebookDrawingLocal({ onExit, onOnline }: GameProps & { onOnline: () =
   const totalTurns = count * turnsEach;
   const CPU_ROUNDS = 8;
 
-  useGameBar({ onPause: phase === 'draw' || phase === 'cpu' ? () => setPaused(true) : undefined, help: <Rules t={t} /> }, [phase, t.lang]);
+  useGameBar({ onPause: phase === 'draw' || phase === 'cpu' ? () => setPaused(true) : undefined, onResume: () => setPaused(false), help: <Rules t={t} /> }, [phase, t.lang]);
 
   toolState.color = tool.eraser ? PAPER : tool.color;
   toolState.w = tool.eraser ? 9 : tool.w;

@@ -25,9 +25,9 @@
 .ff-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 20px; background: #eef1fa; color: #1f3a93; font: 700 14px var(--font-body); white-space: nowrap; }
 .ff-chip b { font: 800 16px var(--font-display); }
 
-.ff-style { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 6px; }
+.ff-style { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 12px 0 6px; }
 .ff-style-opt {
-  position: relative; display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 12px; min-height: 64px;
+  position: relative; display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 12px; min-height: 64px; min-width: 0;
   border-radius: 14px; border: 0; background: #fffdf6; color: inherit;
   box-shadow: 0 0 0 1.5px #e4d8b8, 0 3px 0 #e4d8b8; transition: transform .12s, box-shadow .12s;
 }
@@ -45,6 +45,9 @@
   .ff-style.compact .ff-style-opt { flex-direction: row; align-items: center; }
   .ff-style-opt b { font-size: 15px; }
   .ff-style-opt small { font-size: 12px; }
+}
+@media (max-width: 420px) {
+  .ff-style.compact .ff-style-opt { flex-direction: column; align-items: flex-start; }
 }
 
 /* Online */
