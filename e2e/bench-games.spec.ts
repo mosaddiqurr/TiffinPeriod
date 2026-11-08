@@ -26,14 +26,16 @@ test.beforeEach(async ({ page }) => {
 });
 test.afterEach(async ({ page }) => { expect((page as Page & { gameErrors: string[] }).gameErrors).toEqual([]); });
 
-for (const lang of ['en', 'bn']) test(`four new game setups render in ${lang}`, async ({ page }) => {
+for (const lang of ['en', 'bn']) test(`bench game setups and help render in ${lang}`, async ({ page }) => {
   for (const id of ['chor-police', 'naam-desh']) {
     await openGame(page, id, lang);
     await expect(page.getByTestId('start')).toBeEnabled();
     await expect(page.getByTestId('start')).toBeInViewport();
-    await page.locator('.bench-rules summary').click();
-    await expect(page.locator('.bench-rules ol')).toBeVisible();
-    await page.locator('.bench-rules summary').click();
+    await page.getByTestId('hub-back').click();
+    await page.getByTestId('how-to').click();
+    await expect(page.locator('.sh-rules ol')).toBeVisible();
+    await page.getByTestId('how-to').click();
+    await expect(page.locator('.sh-rules')).toHaveCount(0);
     await noOverflow(page);
   }
 });

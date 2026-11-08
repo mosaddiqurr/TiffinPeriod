@@ -9,7 +9,7 @@ type ND = { view: { phase: string; r: number; g: number; totals: [number, number
 
 async function prep(page: Page, name: string) {
   await page.addInitScript((nm) => {
-    localStorage.setItem('tp.net', '"local"');
+    localStorage.setItem('tp.net', 'local');
     localStorage.setItem('tp.v1.settings', '{"lang":"en","sound":false}');
     localStorage.setItem('tp.v1.online.name', JSON.stringify(nm));
   }, name);

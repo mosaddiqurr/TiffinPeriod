@@ -1,5 +1,9 @@
 # Test Plan and Results
 
+## Mobile and deployed-site QA — 8 November 2026
+
+See [the full mobile QA report](MOBILE_QA_2026-11-08.md) for the 17-game matrix, 102 touch flows across three phone profiles and both languages, real backend checks for all 13 online games, offline checks, four reproduced defects and verified repairs. The release candidate passed a fresh production build, 193 logic tests and 13 focused mobile regressions. Physical Android and iOS testing remains outstanding. `PW_BASE_URL` now selects a deployed target for the existing Playwright suite; omit it to use the local production preview.
+
 ## Phase 4 — 7 November 2026
 
 - Unit tests: 181 pass (`npm test`), including 29 new ones in `tests/phase4.test.ts` (teams and flags, tournaments, ladders, daily seed, Number Cricket rules and computer, Dots and Boxes levels, Bangla Hangman, Flikk physics and computer (both styles, and the fixed-style guide matching real play), shootout rules, Five Stones, Eraser Flip landings and every challenge, plane challenges).

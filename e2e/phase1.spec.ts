@@ -56,7 +56,8 @@ test('Hand Cricket: a full match against the computer reaches a result', async (
     const second = page.getByTestId('second-innings');
     if (await second.isVisible()) { await second.click(); continue; }
     const btn = page.getByTestId(`p0-${(i % 6) + 1}`);
-    if (await btn.isEnabled()) await btn.click({ timeout: 2000 }).catch(() => {});
+    // The result may replace the controls between isVisible() and this query.
+    if (await btn.isEnabled({ timeout: 500 }).catch(() => false)) await btn.click({ timeout: 2000 }).catch(() => {});
     await page.waitForTimeout(120);
   }
   await expect(result).toBeVisible();
@@ -110,6 +111,8 @@ test('Balloon Burst: taps register and the 30-second round ends', async ({ page 
   await page.getByRole('button', { name: /৩০/ }).click();
   await page.getByTestId('start').click();
   const canvas = page.locator('canvas');
+  // Wide games pause behind the rotation gate on portrait phones.
+  if (await page.getByTestId('rotate-skip').isVisible()) await page.getByTestId('rotate-skip').click();
   await page.clock.runFor(3500);
   const box = (await canvas.boundingBox())!;
   for (let i = 0; i < 12; i++) {
@@ -131,6 +134,7 @@ test('Balloon Burst, mela gun: drag moves the sight, letting go fires one pellet
   await expect(page.getByTestId('style-gun')).toHaveAttribute('aria-checked', 'true');
   await page.getByRole('button', { name: /৩০/ }).click();
   await page.getByTestId('start').click();
+  if (await page.getByTestId('rotate-skip').isVisible()) await page.getByTestId('rotate-skip').click();
   await page.waitForTimeout(3600);
   const canvas = page.locator('canvas');
   const box = (await canvas.boundingBox())!;

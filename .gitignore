@@ -2,6 +2,7 @@ node_modules
 dist
 dev-dist
 test-results
+.gstack/qa-reports/
 playwright-report
 *.log
 
