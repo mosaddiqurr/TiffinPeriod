@@ -46,7 +46,7 @@
   display: grid; justify-items: start; align-content: start; gap: 6px; padding: 14px; min-height: 124px; border: 0; border-radius: 18px; cursor: pointer; text-align: left;
   background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1.5px #e0d3ad, 0 4px 0 #e0d3ad; transition: transform .08s, box-shadow .08s;
 }
-.sh-tile:hover { box-shadow: inset 0 0 0 2px var(--accent, var(--pen)), 0 4px 0 #e0d3ad; }
+@media (hover: hover) { .sh-tile:hover { box-shadow: inset 0 0 0 2px var(--accent, var(--pen)), 0 4px 0 #e0d3ad; } }
 .sh-tile:active { transform: translateY(3px); box-shadow: inset 0 0 0 1.5px #e0d3ad, 0 1px 0 #e0d3ad; }
 .sh-tile-ico {
   display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; font-size: 24px;

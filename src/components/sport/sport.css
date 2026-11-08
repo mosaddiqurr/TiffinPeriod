@@ -18,7 +18,7 @@
   padding: 12px 14px; border-radius: 12px; border: 2px solid #d4c69f; background: #fffdf6; box-shadow: 0 3px 0 #d4c69f;
   transition: transform .08s, box-shadow .08s;
 }
-.mode-card:hover { border-color: var(--accent, var(--pen)); }
+@media (hover: hover) { .mode-card:hover { border-color: var(--accent, var(--pen)); } }
 .mode-card:active { transform: translateY(2px); box-shadow: 0 1px 0 #d4c69f; }
 .mc-icon { flex: none; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 12px; background: color-mix(in srgb, var(--accent, #1f3a93) 14%, #fff); font-size: 30px; }
 .mc-icon svg { width: 42px; height: 42px; }
@@ -73,7 +73,7 @@
 }
 .mu-side.mine { padding-right: 34px; }
 .mu-side.opp { padding-left: 34px; }
-.mu-side:not(.locked):hover { background: rgba(255,255,255,0.07); }
+@media (hover: hover) { .mu-side:not(.locked):hover { background: rgba(255,255,255,0.07); } }
 .mu-side.locked { cursor: default; }
 .mu-side.editing { background: rgba(255,255,255,0.1); box-shadow: inset 0 -4px 0 #f3b61f; }
 .mu-side:focus-visible { outline: 3px solid #fff1b8; outline-offset: -5px; border-radius: 16px; }
@@ -146,7 +146,7 @@
   transition: transform .12s, box-shadow .12s;
 }
 .ttile::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: linear-gradient(90deg, var(--kit), var(--trim)); }
-.ttile:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 0 0 1.5px var(--kit), 0 6px 14px -6px rgba(0,0,0,0.35); }
+@media (hover: hover) { .ttile:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 0 0 1.5px var(--kit), 0 6px 14px -6px rgba(0,0,0,0.35); } }
 .ttile:active:not(:disabled) { transform: translateY(1px); }
 .ttile.on {
   color: #fff;
@@ -336,7 +336,7 @@
   flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px; border-radius: 18px; min-height: 150px; text-align: left;
   box-shadow: 0 0 0 1.5px #e8dcbc, 0 4px 0 #e8dcbc; border: 0; background: #fffaf0;
 }
-.hub-hero ~ .mode-grid .mode-card:hover { box-shadow: 0 0 0 2px var(--accent, var(--pen)), 0 4px 0 #e8dcbc; }
+@media (hover: hover) { .hub-hero ~ .mode-grid .mode-card:hover { box-shadow: 0 0 0 2px var(--accent, var(--pen)), 0 4px 0 #e8dcbc; } }
 .hub-hero ~ .mode-grid .mc-icon { width: 52px; height: 52px; border-radius: 14px; font-size: 28px; }
 .hub-hero ~ .mode-grid .mc-text b { font-size: 19px; }
 /* Quick match: the featured card */

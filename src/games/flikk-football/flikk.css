@@ -31,7 +31,7 @@
   border-radius: 14px; border: 0; background: #fffdf6; color: inherit;
   box-shadow: 0 0 0 1.5px #e4d8b8, 0 3px 0 #e4d8b8; transition: transform .12s, box-shadow .12s;
 }
-.ff-style-opt:hover { transform: translateY(-1px); }
+@media (hover: hover) { .ff-style-opt:hover { transform: translateY(-1px); } }
 .ff-style-opt[aria-checked='true'] { background: linear-gradient(160deg, #fff7d6, #fffdf6); box-shadow: 0 0 0 2.5px #f3b61f, 0 6px 14px -8px rgba(0,0,0,0.45); }
 .ff-style-opt span { display: grid; gap: 2px; min-width: 0; }
 .ff-style-opt b { font: 800 16px/1.15 var(--font-display); }

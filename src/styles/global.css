@@ -50,6 +50,15 @@ body {
 
 button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
+/* Phones: one tap = one press. "manipulation" turns off double-tap-to-zoom, which otherwise
+   swallows the second of two quick taps (and delays every tap). Hover styles live inside
+   @media (hover: hover) so a finger never leaves a button stuck in its hover look. */
+html { touch-action: manipulation; }
+button, a, summary, label, [role='button'], [role='switch'] {
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+button svg, button img { pointer-events: none; }
 a { color: var(--pen); }
 :focus-visible { outline: 3px solid var(--rick-teal); outline-offset: 2px; border-radius: 6px; }
 
@@ -97,7 +106,7 @@ a { color: var(--pen); }
   box-shadow: 0 1px 0 rgba(0,0,0,0.15);
   font-weight: 600; font-size: 15px; text-decoration: none; color: var(--ink);
 }
-.cover-btn:hover { background: #fff; }
+@media (hover: hover) { .cover-btn:hover { background: #fff; } }
 .cover-btn svg { width: 22px; height: 22px; }
 .lang-toggle { padding: 3px; gap: 0; }
 .lang-toggle span { padding: 4px 10px; border-radius: 18px; font-size: 14px; }
@@ -163,7 +172,8 @@ a { color: var(--pen); }
 .card:nth-child(3n+1) { --tilt: -0.7deg; }
 .card:nth-child(3n+2) { --tilt: 0.5deg; }
 .card:nth-child(3n) { --tilt: -0.2deg; }
-.card:hover, .card:focus-visible { transform: rotate(0deg) translateY(-3px); box-shadow: 0 1px 0 rgba(80,60,20,0.1), 0 14px 28px -12px rgba(60,40,10,0.45); }
+.card:focus-visible { transform: rotate(0deg) translateY(-3px); box-shadow: 0 1px 0 rgba(80,60,20,0.1), 0 14px 28px -12px rgba(60,40,10,0.45); }
+@media (hover: hover) { .card:hover { transform: rotate(0deg) translateY(-3px); box-shadow: 0 1px 0 rgba(80,60,20,0.1), 0 14px 28px -12px rgba(60,40,10,0.45); } }
 .card::before { /* washi-tape strip holding the card on the page */
   content: ''; position: absolute; top: -6px; left: 50%; width: 84px; height: 22px; margin-left: -42px;
   background: color-mix(in srgb, var(--accent) 35%, #fff6d8); opacity: 0.85; transform: rotate(-2deg);
@@ -603,3 +613,37 @@ a { color: var(--pen); }
 .sheet[data-testid='setup'] > .actions .btn.secondary { white-space: nowrap; font-size: 17px; padding-inline: 10px; }
 .sheet[data-testid='setup'] .seg:has(> button:nth-child(5)) { display: flex; flex-wrap: wrap; }
 .sheet[data-testid='setup'] .seg:has(> button:nth-child(5)) > button { flex: 1 1 auto; min-width: 64px; white-space: nowrap; }
+
+/* ---------- Phones: "turn your phone sideways" card for wide games ---------- */
+.rotate-gate {
+  position: absolute; inset: 0; z-index: 40; display: grid; place-items: center; padding: 16px;
+  background: rgba(35, 30, 20, 0.72);
+}
+.rotate-card {
+  width: min(360px, 100%); display: grid; justify-items: center; gap: 10px; text-align: center;
+  background: var(--paper); border-radius: 20px; padding: 20px 18px 16px; box-shadow: 0 20px 50px -20px rgba(0,0,0,0.6);
+}
+.rotate-card h2 { margin: 0; font: 800 26px/1.15 var(--font-display); color: var(--pen); }
+.rotate-card p { margin: 0; color: var(--ink-soft); font-size: 15.5px; line-height: 1.45; }
+.rotate-card .btn { width: 100%; }
+.rotate-card small { color: var(--ink-soft); font-size: 12.5px; line-height: 1.35; }
+.rotate-phone { width: 96px; height: 96px; }
+.rotate-phone-body { transform-origin: 60px 60px; animation: rotate-hint 2.2s ease-in-out infinite; }
+@keyframes rotate-hint { 0%, 25% { transform: rotate(0deg); } 55%, 85% { transform: rotate(-90deg); } 100% { transform: rotate(0deg); } }
+.reduced-motion .rotate-phone-body { animation: none; transform: rotate(-90deg); }
+
+/* ---------- Phones held sideways: a slimmer top bar leaves more room for the game ---------- */
+@media (orientation: landscape) and (max-height: 500px) {
+  .game-bar { min-height: 42px; padding: 3px max(10px, env(safe-area-inset-right)) 3px max(10px, env(safe-area-inset-left)); border-bottom-width: 2px; }
+  .game-bar h1 { font-size: 18px; }
+  .game-bar .cover-btn { height: 36px; min-width: 40px; }
+  .game-bar .cover-btn .lbl { display: none; }
+}
+
+/* iPhone home bar and rounded corners: keep touch pads clear of them */
+@media (hover: none), (max-width: 899px) {
+  .pad-area.area-bl { left: max(10px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom)); }
+  .pad-area.area-br { right: max(10px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); }
+  .pad-area.area-bc { bottom: max(12px, env(safe-area-inset-bottom)); }
+}
+.game-bar { padding-top: max(6px, env(safe-area-inset-top)); }

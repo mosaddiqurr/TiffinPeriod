@@ -59,7 +59,7 @@ export class PenFightGame {
   private round = 1;
   private pointTo: number | null = null;
   private selfOut = false;
-  private drag: { id: number; t: number; x: number; y: number; cx: number; cy: number; lastStep: number } | null = null;
+  private drag: { id: number; t: number; x: number; y: number; cx: number; cy: number; lastStep: number; max: number; touch: boolean } | null = null;
   private kb = { dir: 0, t: 0, power: 0, charging: false, used: false };
   private aiPlan: { f: Flick; t: number } | null = null;
   private aiPlanning = false;
@@ -194,7 +194,9 @@ export class PenFightGame {
     if (t === null) return;
     try { (e.target as Element).setPointerCapture?.(e.pointerId); } catch { /* synthetic */ }
     const [gx, gy] = this.w.pointOn(this.turn, t);
-    this.drag = { id: e.pointerId, t, x: gx, y: gy, cx: e.clientX, cy: e.clientY, lastStep: 0 };
+    // A finger needs a shorter pull for full power: a pen near the screen edge has little room behind it.
+    const touch = e.pointerType !== 'mouse';
+    this.drag = { id: e.pointerId, t, x: gx, y: gy, cx: e.clientX, cy: e.clientY, lastStep: 0, max: touch ? PULL_MAX * 0.62 : PULL_MAX, touch };
     this.view.setFocus(gx, gy);
     sfx('tick', { gain: 0.7 });
     vibrate(8);
@@ -229,7 +231,7 @@ export class PenFightGame {
     const px = gx - d.x, py = gy - d.y;
     const len = Math.hypot(px, py);
     if (len < PULL_MIN) return null;
-    return { t: d.t, dir: Math.atan2(py, px), power: Math.min(1, (len - PULL_MIN) / (PULL_MAX - PULL_MIN)) };
+    return { t: d.t, dir: Math.atan2(py, px), power: Math.min(1, (len - PULL_MIN) / (d.max - PULL_MIN)) };
   }
 
   private onKey = (e: KeyboardEvent) => {
@@ -356,7 +358,8 @@ export class PenFightGame {
         this.pendingFlicks.delete(this.seq);
         this.doFlick({ t: m.t, dir: m.dir, power: m.power });
       } else if (net && this.turn === net.me && this.phase === 'aim') this.sendAim(dt);
-      this.view.zoom += ((this.drag ? 1 : 0) - this.view.zoom) * Math.min(1, dt * 6);
+      // Mouse drags lean in a little; a finger drag keeps the whole desk still in view.
+      this.view.zoom += ((this.drag && !this.drag.touch ? 1 : 0) - this.view.zoom) * Math.min(1, dt * 6);
     }
     if (this.phase === 'moving') {
       this.acc += dt;

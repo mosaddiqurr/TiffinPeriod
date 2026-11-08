@@ -96,6 +96,8 @@ export function GameCanvas({ scene, paused, onHidden, className, label }: Props)
     const down = (e: PointerEvent) => {
       if (loop.paused) return;
       e.preventDefault();
+      // Keep getting this finger's moves even when it slides off the canvas (onto the top bar or a pad).
+      try { canvas.setPointerCapture(e.pointerId); } catch { /* synthetic event */ }
       const [x, y] = toWorld(e);
       scene.pointerDown?.(x, y, e.pointerId);
     };

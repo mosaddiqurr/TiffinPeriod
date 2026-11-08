@@ -18,8 +18,9 @@
 .hc-over .ball.s { background: #f3b61f; color: #3a2a00; border-color: #f3b61f; }
 
 .hc-arena { flex: 1; width: min(640px, 100%); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 140px; max-height: 300px; }
-.hc-hand { display: grid; place-items: center; height: 100%; min-height: 0; min-width: 0; overflow: hidden; }
-.hc-hand svg { height: 100%; max-height: 240px; width: auto; max-width: 100%; filter: drop-shadow(0 6px 4px rgba(0,0,0,0.25)); }
+.hc-hand { display: grid; place-items: center; min-height: 0; min-width: 0; filter: drop-shadow(0 6px 4px rgba(0,0,0,0.25)); }
+/* A fixed size from the screen height (not a % of the row), so phones never squash or hide the hand. */
+.hc-hand svg { display: block; height: clamp(110px, 30vh, 240px); height: clamp(110px, 30dvh, 240px); width: auto; max-width: 100%; }
 .hc-hand.left svg { transform: rotate(8deg); }
 .hc-hand.right svg { transform: rotate(-8deg); }
 .hc-hand.shake svg { animation: hc-shake 0.2s ease-in-out 3; }
@@ -33,7 +34,7 @@
 .hc-flash.runs { color: #fff; background: rgba(11, 93, 67, 0.92); }
 @keyframes hc-pop { from { scale: 0.3; } }
 
-.hc-pad { background: rgba(255, 250, 235, 0.95); padding: 8px 10px 10px; box-shadow: 0 -4px 14px -6px rgba(0,0,0,0.4); }
+.hc-pad { background: #fffaeb; padding: 8px max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); box-shadow: 0 -4px 14px -6px rgba(0,0,0,0.4); }
 .hc-pad.top { box-shadow: 0 4px 14px -6px rgba(0,0,0,0.4); }
 .hc-pad-head { display: flex; align-items: center; gap: 8px; max-width: 640px; margin: 0 auto 6px; font-size: 16px; }
 .hc-pad-head .role { font-size: 13px; padding: 1px 8px; border-radius: 10px; color: #fff; }
@@ -47,8 +48,10 @@
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   box-shadow: 0 3px 0 #cdbf9c, inset 0 0 0 1.5px #e0d4b4;
 }
-.hc-num:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #cdbf9c, inset 0 0 0 1.5px #e0d4b4; }
-.hc-num:disabled { opacity: 0.5; }
+.hc-num:active:not(.wait) { transform: translateY(2px); box-shadow: 0 1px 0 #cdbf9c, inset 0 0 0 1.5px #e0d4b4; }
+/* While a ball plays out the buttons stay clear (no fading); only the cursor says "wait". */
+.hc-num.wait { cursor: default; }
+.hc-num.last { box-shadow: 0 3px 0 #12266b, inset 0 0 0 3px var(--pen); background: #eef2ff; }
 .hc-num .mini { height: 44px; width: auto; }
 .hc-num .lbl { font-family: var(--font-display); font-weight: 800; font-size: 20px; line-height: 1; color: var(--pen); }
 .hc-num .key-hint { position: absolute; top: 4px; right: 4px; margin: 0; font-size: 11px; }
@@ -86,7 +89,18 @@
 }
 @media (orientation: portrait) and (max-width: 700px) {
   .vs-ai .hc-buttons:not(.n7):not(.n10) { grid-template-columns: repeat(6, 1fr); }
-  .vs-ai .hc-num { min-height: 64px; }
-  .vs-ai .hc-num .mini { height: 34px; }
+  .vs-ai .hc-buttons { gap: 6px; }
+  .vs-ai .hc-num { min-height: 72px; padding: 6px 0 4px; }
+  .vs-ai .hc-num .mini { height: 42px; }
   .hc-stage { gap: 6px; padding: 6px; }
+}
+
+/* Phones: the buttons never pick up a grey tap flash or start a text selection. */
+.hc-num { -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none; color: var(--ink); }
+.hc-num .mini { pointer-events: none; }
+@media (orientation: portrait) and (max-width: 700px) {
+  .two-p .hc-hand svg { height: clamp(80px, 17dvh, 150px); }
+}
+@media (max-height: 560px) and (orientation: landscape) {
+  .hc-hand svg { height: clamp(80px, 34dvh, 180px); }
 }

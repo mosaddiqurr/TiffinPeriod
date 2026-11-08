@@ -8,6 +8,7 @@ import { recordResult } from '../../platform/scores';
 import { GameCanvas } from '../../engine/GameCanvas';
 import { DifficultySeg, Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames, type Difficulty, type Mode } from '../../components/ui';
 import { BalloonScene, type BalloonEvent } from './BalloonScene';
+import { tryLandscape, useLandscapeGate } from '../../components/Landscape';
 import type { BColor, Scorer } from './field';
 import { GOLD_BONUS, pelletsFor, type PopStyle } from './gun';
 import { readJSON, writeJSON } from '../../platform/storage';
@@ -35,9 +36,17 @@ function BalloonBurstLocal({ onExit, onOnline }: GameProps & { onOnline: () => v
   const [paused, setPaused] = useState(false);
   const [scene, setScene] = useState<BalloonScene | null>(null);
   const [final, setFinal] = useState<{ scorers: Scorer[]; newBest: boolean } | null>(null);
+  // Phones play this sideways (two players keep the upright, top-and-bottom split).
+  const gate = useLandscapeGate(phase === 'play' && !paused && mode !== 'local2p');
+  // The balloon field takes its shape from the screen when it first appears, so the canvas
+  // only appears once the phone has turned (or the player chose to play upright).
+  const [canvasOn, setCanvasOn] = useState(false);
+  useEffect(() => { if (phase === 'play' && !gate.waiting) setCanvasOn(true); }, [phase, gate.waiting]);
   const names = mode === 'solo' ? [u('you')] : mode === 'ai' ? [u('you'), t('aiName')] : [n1, n2];
 
   const start = useCallback(() => {
+    if (mode !== 'local2p') tryLandscape();
+    setCanvasOn(false);
     const colorName: Record<BColor, string> = { red: t('red'), yellow: t('yellow'), green: t('green'), blue: t('blue'), pink: t('pink'), orange: t('orange') };
     const sc = new BalloonScene(mode, diff, length, {
       pop: t('pop'), miss: t('miss'), cloud: t('cloud'), time: t('time'), colorName, targetFmt: (c) => t('target', { c }),
@@ -97,14 +106,14 @@ function BalloonBurstLocal({ onExit, onOnline }: GameProps & { onOnline: () => v
     if (!scene || mode === 'local2p') return;
     const step = 38;
     const k = (e: KeyboardEvent) => {
-      if (paused) return;
+      if (paused || gate.waiting) return;
       const m: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
       if (m[e.key]) { e.preventDefault(); scene.moveCross(...m[e.key]); }
       if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); if (!e.repeat) scene.fireCross(); }
     };
     addEventListener('keydown', k);
     return () => removeEventListener('keydown', k);
-  }, [scene, mode, paused]);
+  }, [scene, mode, paused, gate.waiting]);
 
   const stdModes = useStdModes(['solo', 'ai', 'local2p']);
   const onHidden = useCallback(() => { if (phase === 'play') setPaused(true); }, [phase]);
@@ -144,7 +153,8 @@ function BalloonBurstLocal({ onExit, onOnline }: GameProps & { onOnline: () => v
 
   return (
     <div className="bb-root playing">
-      {scene && <GameCanvas scene={scene} paused={paused || phase !== 'play'} onHidden={onHidden} label={t('title')} />}
+      {scene && canvasOn && <GameCanvas scene={scene} paused={paused || phase !== 'play' || gate.waiting} onHidden={onHidden} label={t('title')} />}
+      {gate.card}
       {paused && <PauseMenu onResume={() => setPaused(false)} onRestart={start} onQuit={onExit} help={<Rules t={t} style={style} length={length} />} />}
       {phase === 'result' && final && (
         <ReportCard

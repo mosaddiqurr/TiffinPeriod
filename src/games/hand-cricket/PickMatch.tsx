@@ -67,6 +67,10 @@ export function PickMatch({ spec, onDone, onQuit, onRestart, v }: CricketMatchPr
   const [picks, setPicks] = useState<[number | null, number | null]>([null, null]);
   const [reveal, setReveal] = useState<'idle' | 'shake' | 'show'>('idle');
   const [shown, setShown] = useState<[number, number]>([0, 0]);
+  /** Whether the hands show a number yet (before the first ball they show a closed fist). */
+  const [hasShown, setHasShown] = useState(false);
+  /** The number each side tapped last, so its button stays highlighted. */
+  const [lastTap, setLastTap] = useState<[number | null, number | null]>([null, null]);
   const [flash, setFlash] = useState<{ text: string; kind: 'out' | 'six' | 'runs'; note?: string | null } | null>(null);
   const [aiToss] = useState(() => aiRef.current.chooseBatFirst());
 
@@ -103,7 +107,7 @@ export function PickMatch({ spec, onDone, onQuit, onRestart, v }: CricketMatchPr
     if (next[0] !== null && next[1] !== null) {
       const a = next[0], b = next[1];
       setTossNums([a, b]); setReveal('shake');
-      later(() => { setShown([a, b]); setReveal('show'); setTossWin(tossWinner(0, call, a, b)); sfx('good'); setPhase('tossResult'); setPicks([null, null]); }, 600);
+      later(() => { setShown([a, b]); setHasShown(true); setReveal('show'); setTossWin(tossWinner(0, call, a, b)); sfx('good'); setPhase('tossResult'); setPicks([null, null]); }, 600);
     }
   };
 
@@ -124,6 +128,7 @@ export function PickMatch({ spec, onDone, onQuit, onRestart, v }: CricketMatchPr
     if (phase !== 'play' || !match || reveal === 'shake' || flash) return;
     if (picks[side] !== null || (vsAI && side === 1)) return;
     sfx('click', { pitch: 1.2 }); vibrate(10);
+    setLastTap((l) => (side === 0 ? [num, l[1]] : [l[0], num]));
     const next: [number | null, number | null] = [...picks] as [number | null, number | null];
     next[side] = num;
     if (vsAI) next[1] = aiPick.current ?? rng.pick(v.nums);
@@ -132,7 +137,7 @@ export function PickMatch({ spec, onDone, onQuit, onRestart, v }: CricketMatchPr
     const a = next[0], b = next[1];
     setReveal('shake');
     later(() => {
-      setShown([a, b]); setReveal('show');
+      setShown([a, b]); setHasShown(true); setReveal('show');
       const bat = battingSide(match);
       const batN = bat === 0 ? a : b;
       const bowlN = bat === 0 ? b : a;
@@ -187,7 +192,7 @@ export function PickMatch({ spec, onDone, onQuit, onRestart, v }: CricketMatchPr
         </div>
         <div className={`hc-buttons n${padNums.length}`}>
           {padNums.map((num, i) => (
-            <button key={num} className="hc-num" disabled={!active} onClick={() => pick(side, num)} aria-label={String(num)} data-testid={`p${side}-${num}`}>
+            <button key={num} className={`hc-num${!active ? ' wait' : ''}${phase !== 'tossPick' && lastTap[side] === num ? ' last' : ''}`} aria-disabled={!active} onClick={() => { if (active) pick(side, num); }} aria-label={String(num)} data-testid={`p${side}-${num}`}>
               {phase === 'tossPick' ? <span className="lbl big">{n(num)}</span> : v.ButtonArt({ n: num })}
               {phase !== 'tossPick' && <span className="lbl">{n(num)}</span>}
               <span className="key-hint hide-touch">{side === 0 ? (phase === 'tossPick' ? num : v.keys[i]) : (phase === 'tossPick' ? v.p2Keys[num - 1]?.toUpperCase() : v.p2Keys[i]?.toUpperCase())}</span>
@@ -200,7 +205,8 @@ export function PickMatch({ spec, onDone, onQuit, onRestart, v }: CricketMatchPr
 
   const over = inn ? currentOver(inn.events) : [];
   const chasing = m && m.current === 1 && tg !== undefined && inn;
-  const revealN = (side: Side) => (reveal === 'show' ? shown[side] : null);
+  // While the hands shake they are fists; otherwise they keep showing the last numbers played.
+  const revealN = (side: Side) => (reveal === 'shake' || !hasShown ? null : shown[side]);
 
   return (
     <div className={`hc-root ${v.rootClass} ${vsAI ? 'vs-ai' : 'two-p'}`}>

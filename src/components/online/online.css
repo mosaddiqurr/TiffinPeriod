@@ -18,7 +18,7 @@
 .ol-way small { color: var(--ink-soft); font-size: 14px; line-height: 1.35; }
 .ol-way.main { cursor: pointer; background: linear-gradient(150deg, #0b5d43, #13805c); color: #fff; box-shadow: 0 10px 22px -12px rgba(11, 93, 67, 0.9); transition: transform .12s; }
 .ol-way.main small { color: rgba(255,255,255,0.85); }
-.ol-way.main:hover { transform: translateY(-2px); }
+@media (hover: hover) { .ol-way.main:hover { transform: translateY(-2px); } }
 .ol-ico { font-size: 26px; }
 .ol-opts { display: grid; gap: 6px; margin: 4px 0; }
 .ol-opts .seg { flex-wrap: wrap; }
@@ -88,7 +88,7 @@
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; margin: 4px 0 12px; padding: 12px 14px; border: 0; border-radius: 14px; cursor: pointer;
   background: linear-gradient(150deg, #0b5d43, #13805c); color: #fff; box-shadow: 0 10px 22px -12px rgba(11, 93, 67, 0.9); transition: transform .12s;
 }
-.ol-entry:hover { transform: translateY(-1px); }
+@media (hover: hover) { .ol-entry:hover { transform: translateY(-1px); } }
 .ol-entry span { display: grid; gap: 2px; min-width: 0; flex: 1; }
 .ol-entry b { font: 800 17px/1.15 var(--font-display); }
 .ol-entry small { font-size: 13px; color: rgba(255,255,255,0.85); }
@@ -146,7 +146,7 @@
   background: linear-gradient(140deg, #0b5d43 0%, #13805c 60%, #1d9a6c 100%);
   box-shadow: 0 6px 0 #073d2c, 0 18px 30px -18px rgba(11, 93, 67, 0.95); transition: transform .1s, box-shadow .1s;
 }
-.olh-quick:hover { transform: translateY(-1px); }
+@media (hover: hover) { .olh-quick:hover { transform: translateY(-1px); } }
 .olh-quick:active { transform: translateY(4px); box-shadow: 0 2px 0 #073d2c, 0 10px 20px -16px rgba(11, 93, 67, 0.9); }
 .olh-bolt { flex: none; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: #ffd23f; color: #6b4a00; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.15); }
 .olh-bolt svg { width: 28px; height: 28px; }

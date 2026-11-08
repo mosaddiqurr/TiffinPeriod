@@ -335,7 +335,9 @@ export class DeskView {
     const vf = (this.camera.fov * Math.PI) / 180;
     const hf = 2 * Math.atan(Math.tan(vf / 2) * aspect);
     // Distance so the desk width fits, and so its depth (seen at an angle) fits.
-    const margin = this.portrait ? 1.03 : 0.99;
+    // Phones get a wider border around the desk, so a finger can pull a pen back without leaving the screen.
+    const phone = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+    const margin = this.portrait ? (phone ? 1.2 : 1.03) : (phone ? 1.12 : 0.99);
     const dW = ((across / 2) * margin) / Math.tan(hf / 2) + (deep / 2) * Math.cos(elev);
     const dD = ((deep / 2) * Math.sin(elev) * margin * 1.02) / Math.tan(vf / 2) + (deep / 2) * Math.cos(elev);
     let dist = Math.max(dW, dD);

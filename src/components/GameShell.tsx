@@ -7,6 +7,7 @@ import { useSettings } from '../platform/settings';
 import { StartHub, useStdModes } from './StartHub';
 import { recordResult, type Outcome } from '../platform/scores';
 import { sfx } from '../platform/audio';
+import { tryLandscape, useLandscapeGate } from './Landscape';
 import { DifficultySeg, Overlay, PauseMenu, ReportCard, Seg, useGameBar, usePlayerNames, type Difficulty, type Mode } from './ui';
 
 // A reusable frame for canvas games (Phase 2 and later).
@@ -107,6 +108,7 @@ export function GameShell(p: GameShellProps) {
   const cfg: ShellConfig = { mode, diff, opts, names, reducedMotion: st.reducedMotion, lang: st.lang };
 
   const start = useCallback(() => {
+    if (p.preferLandscape) tryLandscape();
     scene?.dispose?.();
     const c = { ...cfg };
     cfgRef.current = c;
@@ -135,7 +137,7 @@ export function GameShell(p: GameShellProps) {
   const pads = phase === 'play' && cfgRef.current ? p.pads(cfgRef.current) : [];
 
   const press = (pd: PadDef, down: boolean) => {
-    if (!scene || (paused && down)) return;
+    if (!scene || ((paused || gate.waiting) && down)) return;
     scene.control?.(pd.player, pd.action, down);
     const k = `${pd.player}:${pd.action}`;
     setDownPads((d) => (d[k] === down ? d : { ...d, [k]: down }));
@@ -163,6 +165,8 @@ export function GameShell(p: GameShellProps) {
     return () => { removeEventListener('keydown', kd); removeEventListener('keyup', ku); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, scene, paused, pads.length]);
+
+  const gate = useLandscapeGate(!!p.preferLandscape && phase === 'play' && !paused);
 
   const onHidden = useCallback(() => { if (phase === 'play') setPaused(true); }, [phase]);
 
@@ -194,8 +198,8 @@ export function GameShell(p: GameShellProps) {
 
   return (
     <div className={`shell-root playing ${p.rootClass ?? ''}`}>
-      {scene && <GameCanvas scene={scene} paused={paused || phase !== 'play'} onHidden={onHidden} label={p.title} />}
-      {p.preferLandscape && <div className="shell-rotate" role="note">⟳ {u('landscapeHint')}</div>}
+      {scene && <GameCanvas scene={scene} paused={paused || phase !== 'play' || gate.waiting} onHidden={onHidden} label={p.title} />}
+      {gate.card}
       <div className="shell-pads" data-mode={mode}>
         {(['bl', 'bc', 'br', 'tl', 'tc', 'tr'] as const).map((area) => {
           const list = pads.filter((pd) => pd.area === area && !pd.hidden);

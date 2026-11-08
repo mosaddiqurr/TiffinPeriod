@@ -9,7 +9,7 @@
   position: relative; display: grid; gap: 4px; align-content: start; text-align: left; padding: 10px 12px 12px; border: 0; border-radius: 14px; color: inherit;
   background: #fffdf6; box-shadow: 0 0 0 1.5px #e4d8b8, 0 3px 0 #e4d8b8; transition: transform .12s, box-shadow .12s;
 }
-.pf-pen-opt:hover { transform: translateY(-1px); }
+@media (hover: hover) { .pf-pen-opt:hover { transform: translateY(-1px); } }
 .pf-pen-opt[aria-checked='true'] { background: linear-gradient(160deg, #fff7d6, #fffdf6); box-shadow: 0 0 0 2.5px #f3b61f, 0 6px 14px -8px rgba(0,0,0,0.45); }
 .pf-pen-opt b { font: 800 16px/1.15 var(--font-display); }
 .pf-pen-opt small { font-size: 12.5px; line-height: 1.3; color: var(--ink-soft); }
