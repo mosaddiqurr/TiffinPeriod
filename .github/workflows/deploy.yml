@@ -1,0 +1,52 @@
+# Every push to master puts the newest version on https://iyj6ikag.insforge.site.
+# It checks the code first (type check, build, unit tests); if anything fails, the live site stays as it was.
+# Needs one GitHub secret: INSFORGE_USER_API_KEY (an InsForge user API key, uak_..., from Profile → API Keys).
+
+name: Deploy to InsForge
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch: # lets you run it by hand from the Actions tab
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true # a newer push replaces a deploy that is still waiting
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      INSFORGE_PROJECT_ID: 746402a9-f372-47bd-a1df-2d1e95ca1e69
+      INSFORGE_ORG_ID: a0025795-8ec2-4bea-831f-dfaaddf267a4
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Check (type check + build + unit tests)
+        run: |
+          npm run build
+          npm test
+
+      - name: Log in to InsForge
+        env:
+          INSFORGE_USER_API_KEY: ${{ secrets.INSFORGE_USER_API_KEY }}
+        run: |
+          if [ -z "$INSFORGE_USER_API_KEY" ]; then
+            echo "::error::Add the INSFORGE_USER_API_KEY secret in GitHub (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+          npx -y @insforge/cli login --user-api-key "$INSFORGE_USER_API_KEY"
+          npx -y @insforge/cli link --project-id "$INSFORGE_PROJECT_ID" --org-id "$INSFORGE_ORG_ID" -y
+
+      - name: Deploy
+        # The site's VITE_INSFORGE_* values are saved on the InsForge deployment, so they apply automatically.
+        run: npx -y @insforge/cli deployments deploy .
