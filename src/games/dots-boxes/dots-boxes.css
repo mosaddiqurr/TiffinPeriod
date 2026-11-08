@@ -5,7 +5,7 @@
   background-image: linear-gradient(rgba(150, 180, 210, 0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(150, 180, 210, 0.35) 1px, transparent 1px);
   background-size: 18px 18px; box-shadow: var(--shadow); border: 1px solid #e2d3ad;
 }
-.db-svg { width: 100%; height: 100%; display: block; touch-action: manipulation; }
+.db-svg { width: 100%; height: 100%; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
 .db-hit { cursor: pointer; }
 .db-new { animation: db-draw .25s ease-out; }
 @keyframes db-draw { from { opacity: 0.2; } }

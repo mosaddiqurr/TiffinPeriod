@@ -100,7 +100,7 @@ test('Number Cricket: quick match to a result', async ({ page }) => {
   let i = 0;
   await loop(page, async () => {
     await clickIf(page, 'call-heads'); await clickIf(page, 'bat-first'); await clickIf(page, 'toss-continue'); await clickIf(page, 'second-innings');
-    const b = page.getByTestId(`p0-${i++ % 7}`); if (await b.isEnabled().catch(() => false)) await b.click({ timeout: 1500 }).catch(() => {});
+    const b = page.getByTestId(`p0-${i++ % 7}`); if (await b.isEnabled({ timeout: 500 }).catch(() => false)) await b.click({ timeout: 1500 }).catch(() => {});
   }, 160_000);
   expect(errors).toEqual([]);
 });
@@ -240,6 +240,35 @@ test('Dots and Boxes: a full game against the computer', async ({ page }) => {
     const ids = await page.evaluate(() => [...document.querySelectorAll('[data-testid^=line-]')].map((e) => e.getAttribute('data-testid')!));
     if (ids.length) await page.getByTestId(ids[Math.floor(Math.random() * ids.length)]).click({ timeout: 1500 }).catch(() => {});
   });
+  expect(errors).toEqual([]);
+});
+
+test('Dots and Boxes: drag from one dot to the next draws that line, a short wiggle does not', async ({ page }) => {
+  const errors = trackErrors(page);
+  await open(page, 'dots-boxes');
+  await page.getByRole('button', { name: '3×3' }).click();
+  await page.getByTestId('start').click();
+  const board = page.getByTestId('board');
+  await expect(board).toBeVisible();
+  // Board units → screen pixels (the viewBox is -0.5 .. 3.5 on a square svg).
+  const at = async (x: number, y: number) => {
+    const b = (await board.boundingBox())!;
+    return [b.x + ((x + 0.5) / 4) * b.width, b.y + ((y + 0.5) / 4) * b.height] as const;
+  };
+  const dragDots = async (from: [number, number], to: [number, number]) => {
+    const [x1, y1] = await at(...from);
+    const [x2, y2] = await at(...to);
+    await page.mouse.move(x1, y1);
+    await page.mouse.down();
+    for (let i = 1; i <= 8; i++) await page.mouse.move(x1 + ((x2 - x1) * i) / 8, y1 + ((y2 - y1) * i) / 8);
+    await page.mouse.up();
+  };
+  // Top-left dot → the dot to its right is horizontal line 0.
+  await expect(page.getByTestId('line-0')).toBeAttached();
+  await dragDots([0, 0], [0.15, 0.05]); // too short: nothing drawn
+  await expect(page.getByTestId('line-0')).toBeAttached();
+  await dragDots([0, 0], [1, 0]);
+  await expect(page.getByTestId('line-0')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
