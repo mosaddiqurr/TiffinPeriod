@@ -120,6 +120,13 @@ export function DBBoard({ st, canPlay, recent, initials, onPlay, label }: {
               {!drawn && (
                 <rect x={ge.y1 === ge.y2 ? ge.x1 + 0.14 : ge.x1 - 0.21} y={ge.y1 === ge.y2 ? ge.y1 - 0.21 : ge.y1 + 0.14} width={ge.y1 === ge.y2 ? 0.72 : 0.42} height={ge.y1 === ge.y2 ? 0.42 : 0.72} fill="transparent" className="db-hit"
                   onPointerEnter={() => { if (!dragRef.current) setHover(l); }}
+                  onPointerUp={(e) => {
+                    // Touch browsers can omit the compatibility click after dragging.
+                    if (e.pointerType !== 'mouse' && !dragRef.current?.moved && canPlay) {
+                      justDragged.current = true;
+                      onPlay(l);
+                    }
+                  }}
                   onClick={() => { if (justDragged.current) { justDragged.current = false; return; } if (canPlay) onPlay(l); }}
                   data-testid={`line-${l}`} role="button" aria-label={label(l)} />
               )}

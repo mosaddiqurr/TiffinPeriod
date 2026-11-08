@@ -243,13 +243,17 @@ test('Dots and Boxes: a full game against the computer', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('Dots and Boxes: drag from one dot to the next draws that line, a short wiggle does not', async ({ page }) => {
+test('Dots and Boxes: drag between dots, ignore short wiggles, and tap after dragging', async ({ page, isMobile }) => {
   const errors = trackErrors(page);
+  if (isMobile) await page.setViewportSize({ width: 360, height: 800 });
   await open(page, 'dots-boxes');
+  await page.getByTestId('hub-back').click();
+  await page.getByTestId('tile-local2p').click();
   await page.getByRole('button', { name: '3×3' }).click();
   await page.getByTestId('start').click();
   const board = page.getByTestId('board');
   await expect(board).toBeVisible();
+  const touch = isMobile ? await page.context().newCDPSession(page) : null;
   // Board units → screen pixels (the viewBox is -0.5 .. 3.5 on a square svg).
   const at = async (x: number, y: number) => {
     const b = (await board.boundingBox())!;
@@ -258,6 +262,12 @@ test('Dots and Boxes: drag from one dot to the next draws that line, a short wig
   const dragDots = async (from: [number, number], to: [number, number]) => {
     const [x1, y1] = await at(...from);
     const [x2, y2] = await at(...to);
+    if (touch) {
+      await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x1, y: y1, id: 1 }] });
+      for (let i = 1; i <= 8; i++) await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x1 + ((x2 - x1) * i) / 8, y: y1 + ((y2 - y1) * i) / 8, id: 1 }] });
+      await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      return;
+    }
     await page.mouse.move(x1, y1);
     await page.mouse.down();
     for (let i = 1; i <= 8; i++) await page.mouse.move(x1 + ((x2 - x1) * i) / 8, y1 + ((y2 - y1) * i) / 8);
@@ -269,6 +279,13 @@ test('Dots and Boxes: drag from one dot to the next draws that line, a short wig
   await expect(page.getByTestId('line-0')).toBeAttached();
   await dragDots([0, 0], [1, 0]);
   await expect(page.getByTestId('line-0')).toHaveCount(0);
+  await dragDots([0, 0], [0, 1]);
+  await expect(page.getByTestId('line-12')).toHaveCount(0);
+  // Regression: mobile Chrome may omit the compatibility click after a drag.
+  // Actual touch pointer-up must still play the next tapped line.
+  const line = page.getByTestId('line-1');
+  if (isMobile) await line.tap(); else await line.click();
+  await expect(line).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
