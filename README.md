@@ -122,4 +122,4 @@ $0. It uses only free and open-source tools. There are no paid APIs, no cloud re
 
 ## Online play
 
-Hand Cricket has online 1v1: quick match, rooms with a code, and invite links. It runs on InsForge Realtime, and players don't need accounts. Setup and deployment (two `VITE_INSFORGE_*` values for Netlify) are in [docs/ONLINE_PLAY.md](docs/ONLINE_PLAY.md).
+Hand Cricket has online 1v1: quick match, rooms with a code, and invite links. It runs on a Cloudflare Worker with one Durable Object per room, and players don't need accounts. The same Worker hosts the site. Setup and deployment are in [docs/ONLINE_PLAY.md](docs/ONLINE_PLAY.md).

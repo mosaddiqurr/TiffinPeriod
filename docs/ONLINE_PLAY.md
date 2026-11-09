@@ -37,7 +37,8 @@ It never leaves in the middle of a match, and it accepts rematches. Code: `src/g
 
 | File | What it does |
 | --- | --- |
-| `src/platform/net/link.ts` | The connection: named channels with presence and messages. It uses InsForge Realtime when the two `VITE_INSFORGE_*` values are set. Otherwise it uses a BroadcastChannel stand-in, so two tabs of one browser can play each other while developing. Setting `localStorage tp.net = "local"` forces the stand-in. |
+| `src/platform/net/link.ts` | The connection: named channels with presence and messages. A production build talks to the Cloudflare Worker at its own address (or `VITE_RT_URL` when set). The Vite dev server uses a BroadcastChannel stand-in, so two tabs of one browser can play each other while developing. Setting `localStorage tp.net = "local"` forces the stand-in. |
+| `worker/index.ts` | The server: a Cloudflare Worker that serves the site and runs one Durable Object per channel (who is here, relaying messages). Nothing is stored. |
 | `src/platform/net/rooms.ts` | Room codes, invite links, create, join and quick match (lobby pairing). It also gives each pair a reliable, ordered message layer (numbered messages, acknowledgements, resends, keep-alive pings, "left" detection) and holds messages that arrive before the game listens. |
 | `src/games/hand-cricket/duel.ts` | The online match rules (toss, choice, balls, rematch) with fair hidden numbers. Both devices run it. |
 | `src/games/hand-cricket/OnlineHC.tsx` | The lobby, room, search and match screens. |
@@ -45,30 +46,18 @@ It never leaves in the middle of a match, and it accepts rematches. Code: `src/g
 
 Channels are `tp:<game>:lobby` and `tp:<game>:room:<CODE>`. Players connect anonymously.
 
-## Backend (InsForge)
+## Server and hosting (Cloudflare)
 
-- Project **Tiffin Period** (region `ap-southeast`, Singapore, close to Bangladesh), in the owner's InsForge account on the free plan.
-- One channel pattern, `tp:%`, is enabled by `migrations/20261107091722_online-play-channels.sql`, applied with `npx -y @insforge/cli db migrations up --all`.
-- The CLI link lives in `.insforge/project.json`, and the local keys live in `.env.local`. Git ignores both. Never commit them.
+One Cloudflare Worker (`wrangler.jsonc`) does both jobs:
 
-## Deploying
+- **The site.** Files from `dist/` are served straight from Cloudflare's network. Bandwidth is not charged.
+- **Online play.** `GET /rt?ch=<channel>` opens a WebSocket to that channel's Durable Object (`Room`). It sends `hello` (my id and who is here), then `join` / `leave` / `msg` frames. Channel names must look like `tp:<game>:…`. Messages are limited to 16 KB and channels to 200 players. `GET /rt/ping` answers `pong`, which the app checks before going online (otherwise quick match uses the stand-in). Idle rooms sleep, and keep-alive pings are answered without waking them.
 
-**Live now:** https://iyj6ikag.insforge.site (InsForge hosting). Both values below are saved on the InsForge deployment, so redeploying is just `npx -y @insforge/cli deployments deploy .`. `.vercelignore` keeps test reports and notes out of the upload.
+**Deploying.** Cloudflare's GitHub connection (Workers Builds) builds every push to `master` with `npm run build` and deploys with `npx wrangler deploy`. By hand: `npm run deploy` (needs `npx wrangler login` once).
 
-The site needs two build-time values:
+**Running it locally.** `npm run build` then `npm run serve:cf` serves the real Worker, rooms included, at http://127.0.0.1:8787. The browser tests (`npx playwright test`) start this Worker on port 4173 by themselves, so the online tests play through the real server.
 
-```
-VITE_INSFORGE_URL=https://<appkey>.ap-southeast.insforge.app
-VITE_INSFORGE_ANON_KEY=<the project's anon key>
-```
-
-The anon key is a public browser key, not the admin API key. Get the values from `.env.local`, or run `npx -y @insforge/cli secrets get ANON_KEY` and read the URL from `.insforge/project.json`.
-
-**Netlify:** Site settings → Environment variables → add both. Then build with `npm run build` and publish the `dist` folder. Routes are hash routes, so no redirect rules are needed.
-
-**InsForge deployments** (instead of Netlify): `npx -y @insforge/cli deployments deploy .` with the same two environment variables set for the deployment.
-
-Without the two values, the site still works offline. In that case quick match gives the stand-in, and rooms only connect between tabs of the same browser.
+Online play used to run on InsForge Realtime. `migrations/` is left from that time and is not used any more.
 
 ## Adding online play to a game (the online kit)
 

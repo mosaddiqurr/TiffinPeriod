@@ -15,7 +15,8 @@ export default defineConfig({
     },
   },
   webServer: externalBaseURL ? undefined : {
-    command: 'npx vite preview --port 4173 --strictPort',
+    // The real Cloudflare Worker (site + online rooms) running locally.
+    command: 'npx wrangler dev --port 4173 --ip 127.0.0.1 --log-level warn',
     port: 4173,
     reuseExistingServer: true,
   },

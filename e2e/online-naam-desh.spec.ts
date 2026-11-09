@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// Naam Desh Ful Fol online: two pages in one browser talk over BroadcastChannel (tp.net = "local").
+// Naam Desh Ful Fol online: two pages play each other through the real online server (the local Cloudflare Worker).
 
 test.skip(({ isMobile }) => isMobile);
 test.setTimeout(300_000);
@@ -9,7 +9,6 @@ type ND = { view: { phase: string; r: number; g: number; totals: [number, number
 
 async function prep(page: Page, name: string) {
   await page.addInitScript((nm) => {
-    localStorage.setItem('tp.net', 'local');
     localStorage.setItem('tp.v1.settings', '{"lang":"en","sound":false}');
     localStorage.setItem('tp.v1.online.name', JSON.stringify(nm));
   }, name);

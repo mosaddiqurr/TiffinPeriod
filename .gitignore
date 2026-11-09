@@ -25,3 +25,7 @@ playwright-report
 .env
 .env.local
 .env*.local
+
+# Cloudflare local state
+.wrangler
+.dev.vars*

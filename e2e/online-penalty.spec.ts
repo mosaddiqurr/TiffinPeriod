@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// Penalty Shootout online: two pages in one browser talk over BroadcastChannel (tp.net = "local").
+// Penalty Shootout online: two pages play each other through the real online server (the local Cloudflare Worker).
 
 test.skip(({ isMobile }) => isMobile);
 test.setTimeout(400_000);
@@ -10,7 +10,6 @@ type Duel = { view: { so: { kicks: boolean[][] }; winner: number | null } };
 
 async function prep(page: Page, name: string) {
   await page.addInitScript((nm) => {
-    localStorage.setItem('tp.net', 'local');
     localStorage.setItem('tp.v1.settings', '{"lang":"en","sound":false}');
     localStorage.setItem('tp.v1.online.name', JSON.stringify(nm));
   }, name);

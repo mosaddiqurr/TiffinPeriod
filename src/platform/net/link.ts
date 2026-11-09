@@ -1,10 +1,9 @@
 // The wire for online play: named channels with presence (who is here) and small messages.
 //
-// - InsForge Realtime when VITE_INSFORGE_URL and VITE_INSFORGE_ANON_KEY are set (production).
-//   Players connect anonymously: no accounts. One backend channel pattern, `tp:%`, covers
-//   every game (see migrations/…_online-play-channels.sql).
-// - Otherwise (or with localStorage `tp.net` = "local") a BroadcastChannel stand-in, so two
-//   tabs of the same browser can play each other while developing and in tests.
+// - The Cloudflare Worker (worker/index.ts) in production: the built site talks to its own
+//   address, or to VITE_RT_URL when that is set. Players connect anonymously: no accounts.
+// - Otherwise (the Vite dev server, or with localStorage `tp.net` = "local") a BroadcastChannel
+//   stand-in, so two tabs of the same browser can play each other while developing and in tests.
 //
 // Everything above this file (rooms, quick match, games) only sees the `Link` and `Chan` types.
 
@@ -23,73 +22,86 @@ export interface Chan {
 }
 
 export interface Link {
-  kind: 'insforge' | 'local';
+  kind: 'cloudflare' | 'local';
   join(channel: string): Promise<Chan>;
 }
 
 const sortMembers = (m: Member[]) => [...m].sort((a, b) => a.joinedAt - b.joinedAt || (a.id < b.id ? -1 : 1));
 
-// ---------- InsForge ----------
+// ---------- Cloudflare (worker/index.ts) ----------
+//
+// One WebSocket per channel to `/rt?ch=<name>` on the server. Each channel is a Durable Object
+// that says who is here and relays messages. See worker/index.ts for the wire format.
 
-type RT = {
-  connect(): Promise<void>;
-  subscribe(ch: string): Promise<{ ok: boolean; error?: { message?: string }; presence?: { members: Array<{ presenceId: string; joinedAt?: string }> } }>;
-  unsubscribe(ch: string): void;
-  publish(ch: string, event: string, payload: unknown): Promise<unknown>;
-  on(event: string, cb: (p: any) => void): void;
-  off(event: string, cb: (p: any) => void): void;
-  socketId?: string;
-};
+/** If no frame arrives for this long, a "ping" is sent so phones and proxies keep the socket open. */
+const KEEPALIVE_MS = 25_000;
 
-const sameChannel = (meta: string | undefined, ch: string) => !!meta && (meta === ch || meta.endsWith(':' + ch) || meta === 'realtime:' + ch);
+function wsURL(base: string, ch: string): string {
+  const u = new URL('rt', base.endsWith('/') ? base : base + '/');
+  u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:';
+  u.searchParams.set('ch', ch);
+  return u.toString();
+}
 
-async function insforgeLink(url: string, key: string): Promise<Link> {
-  const { createClient } = await import('@insforge/sdk');
-  const client = createClient({ baseUrl: url, anonKey: key });
-  const rt = client.realtime as unknown as RT;
-  await rt.connect();
+async function cloudflareLink(base: string): Promise<Link> {
+  // Check the server is there before promising online play (callers fall back to a bot otherwise).
+  const ping = await fetch(new URL('rt/ping', base.endsWith('/') ? base : base + '/'), { cache: 'no-store' });
+  if (!ping.ok || (await ping.text()) !== 'pong') throw new Error('online server not reachable');
   return {
-    kind: 'insforge',
-    async join(name: string): Promise<Chan> {
-      const res = await rt.subscribe(name);
-      if (!res.ok) throw new Error(res.error?.message || 'subscribe failed');
-      const me = rt.socketId ?? '';
-      let members: Member[] = (res.presence?.members ?? []).map((m) => ({ id: m.presenceId, joinedAt: m.joinedAt ? Date.parse(m.joinedAt) : Date.now() }));
-      if (!members.some((m) => m.id === me)) members.push({ id: me, joinedAt: Date.now() });
-      members = sortMembers(members);
+    kind: 'cloudflare',
+    join: (name: string) => new Promise<Chan>((resolve, reject) => {
+      const ws = new WebSocket(wsURL(base, name));
+      let me = '';
+      let members: Member[] = [];
+      let left = false;
+      let opened = false;
       const handlers = new Map<string, Set<(d: any, from: string) => void>>();
       const pres = new Set<(m: Member[]) => void>();
-      const onMsg = (p: any) => {
-        if (!sameChannel(p?.meta?.channel, name) || p?.from === me) return;
-        handlers.get(p.type)?.forEach((cb) => cb(p.data, p.from));
-      };
-      const onJoin = (m: any) => {
-        if (!sameChannel(m?.meta?.channel, name)) return;
-        const id = m.member.presenceId;
-        if (!members.some((x) => x.id === id)) members = sortMembers([...members, { id, joinedAt: m.member.joinedAt ? Date.parse(m.member.joinedAt) : Date.now() }]);
-        pres.forEach((cb) => cb(members));
-      };
-      const onLeave = (m: any) => {
-        if (!sameChannel(m?.meta?.channel, name)) return;
-        members = members.filter((x) => x.id !== m.member.presenceId);
-        pres.forEach((cb) => cb(members));
-      };
-      rt.on('tp', onMsg); rt.on('presence:join', onJoin); rt.on('presence:leave', onLeave);
-      let left = false;
-      return {
-        name, me,
+      const tell = () => pres.forEach((cb) => cb(members));
+      const timer = setTimeout(() => { if (!opened) { reject(new Error('join timed out')); try { ws.close(); } catch { /* ignore */ } } }, 8000);
+      const keep = setInterval(() => { if (ws.readyState === WebSocket.OPEN) ws.send('ping'); }, KEEPALIVE_MS);
+      const chan: Chan = {
+        name,
+        get me() { return me; },
         members: () => members,
-        send: (type, data) => { if (!left) void rt.publish(name, 'tp', { type, data, from: me }).catch(() => {}); },
+        send: (type, data) => { if (!left && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type, data })); },
         on: (type, cb) => { if (!handlers.has(type)) handlers.set(type, new Set()); handlers.get(type)!.add(cb); return () => handlers.get(type)?.delete(cb); },
         onPresence: (cb) => { pres.add(cb); return () => pres.delete(cb); },
         leave: () => {
           if (left) return;
           left = true;
-          rt.off('tp', onMsg); rt.off('presence:join', onJoin); rt.off('presence:leave', onLeave);
-          try { rt.unsubscribe(name); } catch { /* already gone */ }
+          clearInterval(keep);
+          try { ws.close(1000, 'leave'); } catch { /* already closed */ }
         },
       };
-    },
+      ws.onmessage = (e) => {
+        if (typeof e.data !== 'string' || e.data === 'pong') return;
+        let f: any;
+        try { f = JSON.parse(e.data); } catch { return; }
+        if (f.t === 'hello') {
+          me = String(f.me);
+          members = sortMembers((f.members as Member[]) ?? []);
+          opened = true;
+          clearTimeout(timer);
+          resolve(chan);
+        } else if (f.t === 'join' && f.member) {
+          if (!members.some((m) => m.id === f.member.id)) { members = sortMembers([...members, f.member]); tell(); }
+        } else if (f.t === 'leave') {
+          const before = members.length;
+          members = members.filter((m) => m.id !== f.id);
+          if (members.length !== before) tell();
+        } else if (f.t === 'msg' && typeof f.type === 'string') {
+          handlers.get(f.type)?.forEach((cb) => cb(f.data, f.from));
+        }
+      };
+      ws.onclose = () => {
+        clearInterval(keep);
+        clearTimeout(timer);
+        if (!opened) { reject(new Error('could not join')); return; }
+        // Lost the connection: to this player, everyone else has left.
+        if (!left && members.some((m) => m.id !== me)) { members = members.filter((m) => m.id === me); tell(); }
+      };
+    }),
   };
 }
 
@@ -142,20 +154,27 @@ function localLink(): Link {
 
 let linkP: Promise<Link> | null = null;
 
-export function onlineConfigured(): boolean {
+/** Where the online server is, or null to play over the local stand-in. */
+function serverBase(): string | null {
   const env = import.meta.env as Record<string, string | undefined>;
-  return !!(env.VITE_INSFORGE_URL && env.VITE_INSFORGE_ANON_KEY);
+  if (env.VITE_RT_URL) return env.VITE_RT_URL;
+  if (!import.meta.env.PROD || typeof location === 'undefined') return null;
+  return new URL('./', location.href).toString();
+}
+
+export function onlineConfigured(): boolean {
+  return serverBase() !== null;
 }
 
 function forcedLocal(): boolean {
   try { return localStorage.getItem('tp.net') === 'local'; } catch { return false; }
 }
 
-/** The shared link (one connection for the whole app). */
+/** The shared link (one per app; each channel opens its own connection). */
 export function getLink(): Promise<Link> {
   if (linkP) return linkP;
-  const env = import.meta.env as Record<string, string | undefined>;
-  linkP = (onlineConfigured() && !forcedLocal() ? insforgeLink(env.VITE_INSFORGE_URL!, env.VITE_INSFORGE_ANON_KEY!) : Promise.resolve(localLink()))
+  const base = serverBase();
+  linkP = (base && !forcedLocal() ? cloudflareLink(base) : Promise.resolve(localLink()))
     .catch((e) => { linkP = null; throw e; });
   return linkP;
 }

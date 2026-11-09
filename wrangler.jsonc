@@ -1,0 +1,19 @@
+// Cloudflare Worker for Tiffin Period: serves the built site and runs online play.
+// Deploy: `npm run build` then `npx wrangler deploy` (Cloudflare's GitHub connection does both on every push).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tiffin-period",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    // Only the online-play paths reach the Worker code; every other request is a plain file.
+    "run_worker_first": ["/rt", "/rt/*"]
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  "observability": { "enabled": true }
+}

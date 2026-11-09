@@ -1,8 +1,0 @@
-# Not needed to build the site
-test-results/
-playwright-report/
-e2e/
-docs/
-migrations/
-AGENTS.md
-scripts/
