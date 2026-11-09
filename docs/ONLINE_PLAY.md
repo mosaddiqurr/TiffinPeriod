@@ -48,6 +48,8 @@ Channels are `tp:<game>:lobby` and `tp:<game>:room:<CODE>`. Players connect anon
 
 ## Server and hosting (Cloudflare)
 
+**Live:** https://tiffin-period.tiffin-period.workers.dev
+
 One Cloudflare Worker (`wrangler.jsonc`) does both jobs:
 
 - **The site.** Files from `dist/` are served straight from Cloudflare's network. Bandwidth is not charged.
