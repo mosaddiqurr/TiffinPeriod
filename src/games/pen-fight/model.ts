@@ -21,9 +21,19 @@ export const G = 981;
 export const STEP = 1 / 240;
 const FINGER_MASS = 8;
 const FINGER_E = 0.6;
-/** Fastest finger (cm/s) at full power. */
-export const FINGER_MAX = 235;
-const PEN_E = 0.55;
+/**
+ * Fastest finger (cm/s) at full power. Tuned so a full flick sends the light pen about
+ * three-quarters of the desk on its own, not off it: a knock-out has to be set up by
+ * getting close and hitting a pen that is already near an edge.
+ */
+export const FINGER_MAX = 175;
+/**
+ * How the finger speed follows the power bar. Below 1, so low power still moves the pen
+ * a useful amount and the last part of the bar adds less (no all-or-nothing smash).
+ */
+const POWER_CURVE = 0.8;
+/** Plastic pens: a hit is mostly "thud", so the hitter keeps going and can follow the other pen off. */
+const PEN_E = 0.35;
 const PEN_MU = 0.32;
 const SAMPLES = 8;
 const REG = 2;
@@ -45,8 +55,8 @@ export interface PenSpec {
  * - gel: the heavier gel pen with a rubber grip. Slides less, hits harder, grips the desk.
  */
 export const PENS: Record<PenId, PenSpec> = {
-  classic: { id: 'classic', len: 14.2, r: 0.45, mass: 5.5, mu: 0.2 },
-  gel: { id: 'gel', len: 14.6, r: 0.56, mass: 10.5, mu: 0.25 },
+  classic: { id: 'classic', len: 14.2, r: 0.45, mass: 5.5, mu: 0.3 },
+  gel: { id: 'gel', len: 14.6, r: 0.56, mass: 10.5, mu: 0.3 },
 };
 
 export interface PenBody {
@@ -97,7 +107,7 @@ export class PenWorld {
     const p = this.pens[i];
     const s = p.spec;
     const I = inertia(s);
-    const u = Math.max(0, Math.min(1, f.power)) * FINGER_MAX;
+    const u = Math.pow(Math.max(0, Math.min(1, f.power)), POWER_CURVE) * FINGER_MAX;
     const dx = Math.cos(f.dir), dy = Math.sin(f.dir);
     const t = Math.max(-0.5, Math.min(0.5, f.t));
     const rx = Math.cos(p.a) * t * s.len, ry = Math.sin(p.a) * t * s.len;

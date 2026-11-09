@@ -37,11 +37,11 @@ describe('Pen Fight physics', () => {
   });
   it('pens bounce off each other: the one hit moves, a hit near its end turns it', () => {
     const w = new PenWorld([PENS.classic, PENS.classic], [{ x: -10, y: 0, a: Math.PI / 2 }, { x: 5, y: 0, a: Math.PI / 2 }]);
-    w.flick(0, { t: 0, dir: 0, power: 0.7 });
+    w.flick(0, { t: 0, dir: 0, power: 1 });
     w.settle();
     expect(w.pens[1].x - 5).toBeGreaterThan(8);
     const v = new PenWorld([PENS.classic, PENS.classic], [{ x: -10, y: 5, a: Math.PI / 2 }, { x: 5, y: 0, a: Math.PI / 2 }]);
-    v.flick(0, { t: 0, dir: 0, power: 0.7 });
+    v.flick(0, { t: 0, dir: 0, power: 1 });
     v.settle();
     expect(Math.abs(v.pens[1].a - Math.PI / 2)).toBeGreaterThan(0.2);
   });

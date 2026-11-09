@@ -70,16 +70,19 @@ test.describe('desktop full plays', () => {
   test.skip(({ isMobile }) => isMobile);
   test.setTimeout(200_000);
 
-  test('Pen Fight: keyboard flicks until someone wins', async ({ page }) => {
+  test('Pen Fight: keyboard flicks until someone scores a point', async ({ page }) => {
+    // One smash no longer wins, so blind flicks take a few minutes to knock a pen off.
+    test.setTimeout(420_000);
     const errors = trackErrors(page);
     await open(page, 'pen-fight', 'সহজ');
-    for (let i = 0; i < 60 && !(await result(page).isVisible()); i++) {
+    const points = page.locator('.pf-pips i.on');
+    for (let i = 0; i < 120 && (await points.count()) === 0 && !(await result(page).isVisible()); i++) {
       await page.keyboard.down('Space');
       await page.waitForTimeout(1100);
       await page.keyboard.up('Space');
       await page.waitForTimeout(1800);
     }
-    await expect(result(page)).toBeVisible({ timeout: 30_000 });
+    await expect(points.first()).toBeAttached({ timeout: 30_000 });
     expect(errors).toEqual([]);
   });
 
